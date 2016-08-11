@@ -1,0 +1,103 @@
+<!-- Ant makefile for Spy -->
+<project name="Unifor3D" default="main">
+	
+	<!-- Definizioni property -->
+	<property environment="env" />
+
+	<property name="disk" value="${env.SystemDrive}" />
+
+	<echo message="basedir= ${basedir}" />
+	<echo message="ant.file= ${ant.file}" />
+
+	<property name="work" value="${basedir}\..\.." />
+	<echo message="work= ${work}" />
+	<echo message="work= $" />
+
+	<property name="pathImageJ" location="${work}/imagej/ij.jar" />
+	<echo message="pathImageJ= ${pathImageJ}" />
+
+	
+	
+	<!-- in questo modo posso utilizzare le wildcards per il nome del file-->
+	<path id="pathIW2AYVxx">
+		<fileset dir="${work}\iw2ayv\iw2ayv\dist\">
+			<include name="iw2ayv*.jar" />
+		</fileset>
+	</path>
+	<property name="pathIW2AYV" refid="pathIW2AYVxx" />
+	<echo message="pathIW2AYV= ${pathIW2AYV}" />
+
+
+	<property name="output" location="build" />
+	<property name="source" location="src" />
+	<property name="eclipse-home" value="${basedir}\..\.." />
+
+	
+	
+	<property name="productDir" location="C:/Programmi/ImageJ/Plugins/Unifor3D" />
+	<property name="pathImageJ" location="../ImageJ/ij.jar" />
+	
+	<property name="output" location="build" />
+
+  
+	<!-- ##############			MAIN ROUTINE 		############## -->
+	<target name="main" depends="init, compile,  cond_INS, cond_OLD, cond_WIN7">
+	</target>
+	
+
+	<!-- INITIALIZE delete and recreate empy directory -->
+	<target name="init" description="Initialize">
+		<delete dir="${output}" />
+		<mkdir dir="${output}" />
+
+		<property name="productDirINSIDE" location="${work}\imagej\Plugins" />
+		<available file="${productDirINSIDE}" type="dir" property="ins" />
+		<echo message="ins=${ins}" />
+
+		<property name="productDirOLD" location="${disk}/Programmi\ImageJ\Plugins" />
+		<available file="${productDirOLD}" type="dir" property="old" />
+		<echo message="oldS=${old}" />
+
+		<property name="productDirWIN7" location="${disk}/Programmi2\ImageJ\plugins" />
+		<available file="${productDirWIN7}" type="dir" property="win7" />
+		<echo message="win7=${win7}" />
+	</target>
+
+	
+	<!-- COMPILE java classes -->
+	  <target name="compile" description="Compile everything.">
+		<!--javac srcdir="${source}" destdir="${output}" optimize="on" target="1.5" encoding="iso8859-1" debug="on" classpath="${pathImageJ};${pathIW2AYV}" /-->
+	    <javac srcdir="." destdir="build" optimize="on" target="1.6" source="1.6" encoding="iso8859-1" debug="on" classpath="${pathImageJ};${pathIW2AYV}">
+	    </javac>
+	  </target>
+
+	
+	
+	<target name="cond_INS" depends="init" if="ins">
+		<echo message="Eseguo cond_INS" />
+		<delete dir="${productDirINSIDE}/Unifor3D" />
+		<mkdir dir="${productDirINSIDE}/Unifor3D" />
+		<copy todir="${productDirINSIDE}/Unifor3D">
+			<fileset dir="${output}" includes="*.class" />
+		</copy>
+	</target>
+
+	<target name="cond_OLD" depends="init" if="old">
+		<echo message="Eseguo cond_OLD" />
+		<delete dir="${productDirOLD}/Unifor3D" />
+		<mkdir dir="${productDirOLD}/Unifor3D" />
+		<copy todir="${productDirOLD}/Unifor3D">
+			<fileset dir="${output}" includes="*.class" />
+		</copy>
+	</target>
+	<target name="cond_WIN7" depends="init" if="win7">
+		<echo message="Eseguo cond_WIN7" />
+		<delete dir="${productDirWIN7}/Unifor3D" />
+		<mkdir dir="${productDirWIN7}/Unifor3D" />
+		<copy todir="${productDirWIN7}/Unifor3D">
+			<fileset dir="${output}" includes="*.class" />
+		</copy>
+	</target>	
+  
+</project>
+

@@ -1,0 +1,14 @@
+Uniformity3D - indicazioni
+
+Immagini 3D contenute in uno stack
+
+Rapporto S/N:  S = Max sigma Volume
+
+
+1) Aprire Stack
+2a) Definire ROI3D in automatico
+2b) Su ogni strato definire ROI2D, calcolare la media dei pixel posti in un vettore comprendente i pixel di tutte le roi
+3) Volume differenza è dato dalla differenza tra un acquisizione e la successiva STACK1 - STACK2
+3b) Sulle setesse roi di 2b calcolare sigma dei pixel posti in un vettore comprendente i pixel di tutte le roi
+6) Histogramma del segnale 3D
+7) A partire dalla  media dello stack costruire lo stack delle simulate su 5 livelli
