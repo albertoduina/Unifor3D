@@ -49,36 +49,33 @@ public class Unifor3D_ implements PlugIn {
 		if (nuovo1 == true) {
 			DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA PRIMA ACQUISIZIONE");
 			String dir1 = od1.getDirectory();
-			MyLog.waitHere("dir1= "+dir1);
-			
-	
-			
 			String[] dir1a = new File(dir1).list();
-			MyLog.logVector( dir1a, "dir1a");
-			MyLog.waitHere();
-			
-			
-			int num1 = dir1a.length;
-			String[] sortedList1 = pathSorter(dir1a);
-			MyLog.logVector( sortedList1, "sortedList1");
-			MyLog.waitHere();
+			String[] dir1b = new String[dir1a.length];
+			for (int i1 = 0; i1 < dir1a.length; i1++) {
+				dir1b[i1] = dir1 + "\\" + dir1a[i1];
+			}
+
+			String[] sortedList1 = pathSorter(dir1b);
 			ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
 			UtilAyv.showImageMaximized2(imp10);
-
+			MyLog.waitHere();
 
 			DirectoryChooser od2 = new DirectoryChooser("SELEZIONARE CARTELLA SECONDA ACQUISIZIONE");
 			String dir2 = od2.getDirectory();
 			String[] dir2a = new File(dir2).list();
-			int num2 = dir2a.length;
-			String[] sortedList2 = pathSorter(dir2a);
+			String[] dir2b = new String[dir2a.length];
+			for (int i1 = 0; i1 < dir2a.length; i1++) {
+				dir1b[i1] = dir2 + "\\" + dir2a[i1];
+			}
+			String[] sortedList2 = pathSorter(dir2b);
 			ImagePlus imp20 = MyStackUtils.imagesToStack16(sortedList2);
 			UtilAyv.showImageMaximized2(imp20);
-			
+			MyLog.waitHere();
+
 			IJ.showMessage("FINE LAVORO");
 		}
 	} // chiude run
 
-	
 	// ############################################################################
 
 	/***
@@ -97,7 +94,7 @@ public class Unifor3D_ implements PlugIn {
 		for (int w1 = 0; w1 < path.length; w1++) {
 			ImagePlus imp1 = opener1.openImage(path[w1]);
 			if (imp1 == null) {
-				IJ.log("pathSorter: image file unavailable?");
+				IJ.log("pathSorter: image file unavailable: " + path[w1] + " ?");
 				return null;
 			}
 		}
