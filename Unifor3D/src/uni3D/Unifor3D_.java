@@ -8,6 +8,7 @@ import java.util.List;
 import utils.ArrayUtils;
 import utils.InputOutput;
 import utils.MyConst;
+import utils.MyLog;
 import utils.MyStackUtils;
 import utils.ReadDicom;
 import utils.UtilAyv;
@@ -38,11 +39,7 @@ public class Unifor3D_ implements PlugIn {
 			return;
 		}
 
-		TextWindow tw = new TextWindow("Sequenze", "<-- INIZIO Sequenze -->", 300, 200);
-		Frame lw = WindowManager.getFrame("Sequenze");
-		if (lw == null)
-			return;
-		lw.setLocation(10, 10);
+		IJ.log("UNIFOR3D vi da'il benvenuto");
 
 		// chiede di selezionare manualmente le cartelle con le
 		// immagini Si suppone che le immagini siano trasferite utilizzando un
@@ -52,9 +49,19 @@ public class Unifor3D_ implements PlugIn {
 		if (nuovo1 == true) {
 			DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA PRIMA ACQUISIZIONE");
 			String dir1 = od1.getDirectory();
+			MyLog.waitHere("dir1= "+dir1);
+			
+	
+			
 			String[] dir1a = new File(dir1).list();
+			MyLog.logVector( dir1a, "dir1a");
+			MyLog.waitHere();
+			
+			
 			int num1 = dir1a.length;
 			String[] sortedList1 = pathSorter(dir1a);
+			MyLog.logVector( sortedList1, "sortedList1");
+			MyLog.waitHere();
 			ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
 			UtilAyv.showImageMaximized2(imp10);
 

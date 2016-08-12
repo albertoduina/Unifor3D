@@ -1,4 +1,4 @@
-<!-- Ant makefile for Spy -->
+<!-- Ant makefile for Unifor3D -->
 <project name="Unifor3D" default="main">
 	
 	<!-- Definizioni property -->
@@ -16,6 +16,11 @@
 	<property name="pathImageJ" location="${work}/imagej/ij.jar" />
 	<echo message="pathImageJ= ${pathImageJ}" />
 
+	<property name="output" location="build" />
+	<echo message="output= ${output}" />
+
+	<property name="source" location="src/uni3D" />
+	<echo message="source= ${source}" />
 	
 	
 	<!-- in questo modo posso utilizzare le wildcards per il nome del file-->
@@ -41,7 +46,7 @@
 
   
 	<!-- ##############			MAIN ROUTINE 		############## -->
-	<target name="main" depends="init, compile,  cond_INS, cond_OLD, cond_WIN7">
+	<target name="main" depends="init, compile, move1, jar, cond_INS, cond_OLD, cond_WIN7">
 	</target>
 	
 
@@ -49,6 +54,8 @@
 	<target name="init" description="Initialize">
 		<delete dir="${output}" />
 		<mkdir dir="${output}" />
+		<buildnumber />
+		<tstamp />
 
 		<property name="productDirINSIDE" location="${work}\imagej\Plugins" />
 		<available file="${productDirINSIDE}" type="dir" property="ins" />
@@ -67,18 +74,48 @@
 	<!-- COMPILE java classes -->
 	  <target name="compile" description="Compile everything.">
 		<!--javac srcdir="${source}" destdir="${output}" optimize="on" target="1.5" encoding="iso8859-1" debug="on" classpath="${pathImageJ};${pathIW2AYV}" /-->
-	    <javac srcdir="." destdir="build" optimize="on" target="1.6" source="1.6" encoding="iso8859-1" debug="on" classpath="${pathImageJ};${pathIW2AYV}">
-	    </javac>
+	    <!--javac srcdir="." destdir="build" optimize="on" target="1.6" source="1.6" encoding="iso8859-1" debug="on" classpath="${pathImageJ};${pathIW2AYV}"/-->
+		<javac srcdir="${source}" destdir="${output}" optimize="on" target="1.6" source="1.6" encoding="iso8859-1" debug="on" classpath="${pathImageJ};${pathIW2AYV}" />
 	  </target>
 
 	
+	<target name="move1" description="Move the sources.">
+			<copy verbose="true" todir="${output}">
+				<fileset dir="." includes=" *.txt , *.pdf, *.rtf, *.number, *.jpg, *.xml, *.config, *.csv" />
+			</copy>
+		</target>
+
+	
+	<!-- Create MANIFEST and JARS application  -->
+	<target name="jar" description="JARs the Task">
+		<echo message="Eseguo CREA JAR" />
+		<delete file="MANIFEST.MF" />
+		<property name="version.num" value="1.00" />
+		<manifest file="MANIFEST.MF">
+			<!--attribute name="Built-By" value="${user.name}" /-->
+			<attribute name="Built-By" value="AlbertoDuina" />
+			<attribute name="Built-Date" value="${TODAY}" />
+			<attribute name="Main-Class" value="Unifor3D.Unifor3D_" />
+			<!--attribute name="Implementation-Version" value="${version.num}-b${build.number}" /-->
+			<!--attribute name="Implementation-Version" value="b${build.number}" /-->
+		</manifest>
+		<jar destfile="${output}/Unifor3D_b${build.number}.jar" manifest="MANIFEST.MF">
+			<fileset dir="${output}" />
+		</jar>
+		<delete dir="${output}/uni3D" />
+		<copy todir="${dist}">
+			<fileset dir="${output}" includes="*.jar" />
+		</copy>
+	</target>
+
+
 	
 	<target name="cond_INS" depends="init" if="ins">
 		<echo message="Eseguo cond_INS" />
 		<delete dir="${productDirINSIDE}/Unifor3D" />
 		<mkdir dir="${productDirINSIDE}/Unifor3D" />
 		<copy todir="${productDirINSIDE}/Unifor3D">
-			<fileset dir="${output}" includes="*.class" />
+			<fileset dir="${output}" includes="*.jar" />
 		</copy>
 	</target>
 
@@ -87,7 +124,7 @@
 		<delete dir="${productDirOLD}/Unifor3D" />
 		<mkdir dir="${productDirOLD}/Unifor3D" />
 		<copy todir="${productDirOLD}/Unifor3D">
-			<fileset dir="${output}" includes="*.class" />
+			<fileset dir="${output}" includes="*.jar" />
 		</copy>
 	</target>
 	<target name="cond_WIN7" depends="init" if="win7">
@@ -95,7 +132,7 @@
 		<delete dir="${productDirWIN7}/Unifor3D" />
 		<mkdir dir="${productDirWIN7}/Unifor3D" />
 		<copy todir="${productDirWIN7}/Unifor3D">
-			<fileset dir="${output}" includes="*.class" />
+			<fileset dir="${output}" includes="*.jar" />
 		</copy>
 	</target>	
   

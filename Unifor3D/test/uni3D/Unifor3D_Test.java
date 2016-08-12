@@ -1,15 +1,28 @@
 package uni3D;
 
-import java.io.File;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+
 
 public class Unifor3D_Test {
+	
+		@Before
+		public void setUp() throws Exception {
+		}
 
-	/**
-	 * ok
-	 */
-	public void testCopyDirectory() {
-		// ripulisco la zona di test
+		@After
+		public void tearDown() throws Exception {
+			// new WaitForUserDialog("Do something, then click OK.").show();
+
+		}
+		@Test
+		public final void testMainUniforTestGe() {
+
+			assertTrue(true);
+		}
 	}
-}
+
