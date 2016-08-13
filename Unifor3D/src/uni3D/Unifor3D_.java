@@ -14,6 +14,7 @@ import utils.MyCircleDetector;
 import utils.MyConst;
 import utils.MyLine;
 import utils.MyLog;
+import utils.MyPlot;
 import utils.MyStackUtils;
 import utils.ReadDicom;
 import utils.UtilAyv;
@@ -22,9 +23,12 @@ import ij.gui.ImageWindow;
 import ij.gui.Line;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
+import ij.gui.Plot;
+import ij.gui.PlotWindow;
 import ij.gui.PointRoi;
 import ij.io.*;
 import ij.plugin.*;
+import ij.process.ImageStatistics;
 import ij.text.TextWindow;
 
 //=====================================================
@@ -39,7 +43,7 @@ public class Unifor3D_ implements PlugIn {
 	static int timeout = 200;
 
 	public void run(String arg) {
-		
+
 		double minMean1 = +10;
 		double maxMean1 = +4096;
 		double minNoiseImaDiff = -2048;
@@ -55,17 +59,12 @@ public class Unifor3D_ implements PlugIn {
 		double minBubbleGapLimit = 0;
 		double maxBubbleGapLimit = 2;
 
-	
-
-
 		try {
 			Class.forName("utils.IW2AYV");
 		} catch (ClassNotFoundException e) {
 			IJ.error("ATTENZIONE, manca il file iw2ayv_xxx.jar");
 			return;
 		}
-
-		IJ.log("UNIFOR3D vi da'il benvenuto");
 
 		// chiede di selezionare manualmente le cartelle con le
 		// immagini Si suppone che le immagini siano trasferite utilizzando un
@@ -82,8 +81,8 @@ public class Unifor3D_ implements PlugIn {
 
 		String[] sortedList1 = pathSorter(dir1b);
 		ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
-		imp10.show();
-		MyLog.waitHere();
+		// imp10.show();
+		// MyLog.waitHere();
 
 		DirectoryChooser od2 = new DirectoryChooser("SELEZIONARE CARTELLA SECONDA ACQUISIZIONE");
 		String dir2 = od2.getDirectory();
@@ -94,33 +93,33 @@ public class Unifor3D_ implements PlugIn {
 		}
 		String[] sortedList2 = pathSorter(dir2b);
 		ImagePlus imp20 = MyStackUtils.imagesToStack16(sortedList2);
-		imp20.show();
-		MyLog.waitHere();
-		
-		
-		for (int i1=0; i1<sortedList1.length; i1++){
+		// imp20.show();
+		// MyLog.waitHere();
+
+		for (int i1 = 0; i1 < sortedList1.length; i1++) {
 
 			// ===============================================
 			ImagePlus imp11 = null;
-				imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
-				ImageUtils.imageToFront(imp11);
-				if (imp11 == null)
+			imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
+			ImageUtils.imageToFront(imp11);
+			if (imp11 == null)
 				MyLog.waitHere("Non trovato il file " + sortedList1[i1]);
 			ImagePlus imp13 = UtilAyv.openImageNoDisplay(sortedList2[i1], true);
 			if (imp13 == null)
 				MyLog.waitHere("Non trovato il file " + sortedList2[i1]);
+			String info10 = "info10";
+			Boolean autoCalled = false;
+			Boolean step = true;
+			Boolean verbose = true;
+			Boolean test = true;
+			Boolean fast = false;
 
 			double out2[] = positionSearch11(imp11, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, verbose,
 					test, fast, timeout);
 			if (out2 == null) {
-				MyLog.waitHere("out2==null");
-				return null;
+				continue;
 			}
-
-		
-		
-		
-
+		}
 		IJ.showMessage("FINE LAVORO");
 	} // chiude run
 
@@ -280,12 +279,19 @@ public class Unifor3D_ implements PlugIn {
 		MyCannyEdgeDetector mce = new MyCannyEdgeDetector();
 		mce.setGaussianKernelRadius(2.0f);
 		mce.setLowThreshold(2.5f);
-		mce.setHighThreshold(10.0f);
+		mce.setHighThreshold(20.0f);
 		mce.setContrastNormalized(false);
 
 		ImagePlus imp12 = mce.process(imp11);
 		imp12.setOverlay(over12);
-		MyLog.waitHere("output del CannyEdgeDetector 8 bit (solo 0 e 255) spessore 1 pixel");
+		imp12.show();
+		ImageStatistics stat12 = imp12.getStatistics();
+		if (stat12.max < 255) {
+			MyLog.waitHere("CannyEdgeDetector fallito");
+			return null;
+		}
+
+		MyLog.waitHere("output CannyEdgeDetector");
 
 		double[][] peaks1 = new double[4][1];
 		double[][] peaks2 = new double[4][1];
@@ -520,8 +526,8 @@ public class Unifor3D_ implements PlugIn {
 			xCenterCircle = Math.round(boundRec.x + boundRec.width / 2);
 			yCenterCircle = Math.round(boundRec.y + boundRec.height / 2);
 			diamCircle = boundRec.width;
-			if (!manualOverride)
-				writeStoredRoiData(boundRec);
+			// if (!manualOverride)
+			// writeStoredRoiData(boundRec);
 
 			MyCircleDetector.drawCenter(imp12, over12, xCenterCircle, yCenterCircle, colore3);
 
@@ -946,6 +952,116 @@ public class Unifor3D_ implements PlugIn {
 
 		double dist = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) - r2;
 		return dist;
+	}
+
+	/**
+	 * Qui sono raggruppati tutti i messaggi del plugin, in questo modo e'
+	 * facilitata la eventuale modifica / traduzione dei messaggi.
+	 * 
+	 * @param select
+	 * @return
+	 */
+	public static String listaMessaggi(int select) {
+		String[] lista = new String[100];
+		// ---------+-----------------------------------------------------------+
+		lista[0] = "L'immagine in input viene processata con il Canny Edge Detector";
+		lista[1] = "L'immagine risultante e' una immagine ad 8 bit, con i soli valori \n"
+				+ "0 e 255. Lo spessore del perimetro del cerchio e' di 1 pixel";
+		lista[2] = "Si tracciano ulteriori linee, passanti per il centro dell'immagine, \n"
+				+ "su queste linee si cercano le intersezioni con il cerchio";
+		lista[3] = "Analizzando il profilo del segnale lungo la linea si ricavano \n"
+				+ "le coordinate delle due intersezioni con la circonferenza.";
+		lista[4] = "Per tenere conto delle possibili bolle d'aria del fantoccio, si \n"
+				+ "escludono dalla bisettice orizzontale il picco di sinistra e dalla \n"
+				+ "bisettrice verticale il picco superiore ";
+		lista[5] = "Sono mostrati in verde i punti utilizzati per il fit della circonferenza";
+		lista[6] = "La circonferenza risultante dal fit e' mostrata in rosso";
+		lista[7] = "Il centro del fantoccio e' contrassegnato dal pallino rosso";
+		lista[8] = "Si determina ora l'eventuale dimensione delle bolla d'aria, \n"
+				+ "essa viene automaticamente compensata entro il limite del \n" + "\"maxBubbleGapLimit\"= ";
+		lista[9] = "Viene mostrata la circonferenza con area 80% del fantoccio, chiamata MROI";
+		lista[10] = "Il centro della MROI e' contrassegnato dal pallino verde";
+		lista[11] = "11";
+		lista[12] = "12";
+		lista[13] = "13";
+		lista[14] = "E'richiesto l'intervento manuale per il posizionamento di \n"
+				+ "una ROI circolare di diametro corrispondente a quello esterno \n" + "del fantoccio";
+		lista[15] = "Verifica posizionamento cerchio";
+		lista[16] = "Troppa distanza tra i punti forniti ed il fit del cerchio";
+		lista[17] = "Non si riescono a determinare le coordinate di almeno 3 punti del cerchio \n"
+				+ "posizionare manualmente una ROI circolare di diametro uguale al fantoccio e\n" + "premere  OK";
+		lista[18] = "Eventualmente spostare la MROI circolare di area pari all'80% del fantoccio";
+		lista[19] = "19";
+		lista[20] = "Viene ora esaltato il segnale sul fondo, al solo scopo di mostrare \n"
+				+ "la ricerca del massimo segnale per i ghosts";
+		lista[21] = "La circonferenza esterna del fantoccio, determinata \n" + "in precedenza e' mostrata in rosso";
+		lista[22] = "Il centro del fantoccio e' contrassegnato dal pallino rosso";
+		lista[23] = "Sono evidenziate le posizioni di massimo segnale medio, per \n" + "il calcolo dei ghosts";
+		lista[24] = "Valore insolito di segnale del Ghost nella posizione selezionata, \n"
+				+ "modificare eventualmente la posizione \n";
+		lista[25] = "25";
+		lista[26] = "26";
+		lista[27] = "27";
+		lista[28] = "28";
+		lista[29] = "29";
+		lista[30] = "Ricerca della posizione per il calcolo del segnale di fondo";
+		lista[31] = "La circonferenza esterna del fantoccio, determinata in precedenza \n" + "e' mostrata in rosso";
+		lista[32] = "Il centro del fantoccio e' contrassegnato dal pallino rosso";
+		lista[33] = "Evidenziata la posizione per il calcolo del fondo";
+		lista[34] = "Simulazione di ricerca posizione per calcolo del fondo non riuscita";
+		lista[35] = "Roi per i ghost e fondo, sovrapposte alla immagine con fondo esaltato";
+		lista[36] = "36";
+		lista[37] = "37";
+		lista[38] = "38";
+		lista[39] = "39";
+		// ---------+-----------------------------------------------------------+
+		lista[40] = "Si calcolano le statistiche sull'area MROI, evidenziata in verde,\n"
+				+ "il segnale medio vale S1= ";
+		lista[41] = "Per valutare il noise, calcoliamo la immagine differenza tra \n"
+				+ "le due immagini, l'immagine risultante e' costituita da rumore \n" + "piu' eventuali artefatti";
+		lista[42] = "Il calcolo del rumore viene effettuato sulla immagine differenza, \n"
+				+ "nell'area uguale a MROI, evidenziata in rosso, si indica con SD la \n"
+				+ "Deviazione Standard di questa area SD1 = ";
+		lista[43] = "Utilizzando la media del segnale sulla MROI evidenziata in verde \n"
+				+ "sulla prima immagine e la deviazione standard di una identica roi evidenziata \n"
+				+ "in rosso sulla immagine differenza, si calcola il rapporto Segnale/Rumore\n \n"
+				+ "  snRatio = Math.sqrt(2) * S1 / SD1 \n \n  snRatio= ";
+		lista[44] = "Viene generata una immagine a 5 sfumature di grigio, utilizzando \n"
+				+ "come riferimento l'area evidenziata in rosso";
+		lista[45] = "Questa e' l'immagine simulata, i gradini di colore evidenziano le \n" + "aree disuniformi";
+		lista[46] = "Per il calcolo dell'Uniformita' percentuale si ricavano dalla MROI anche \n" + "i segnali ";
+		lista[47] = "Da cui ottengo l'Uniformita' Integrale Percentuale\n \n"
+				+ "  uiPerc = (1 - (max - min) / (max + min)) * 100 \n \n" + "  uiPerc = ";
+		lista[48] = "48";
+		lista[49] = "49";
+		// ---------+-----------------------------------------------------------+
+		lista[50] = "Per valutare i ghosts viene calcolata la statistica per ognuna delle 4 ROI, \n"
+				+ "lo stesso per il fondo  \n \n  ghostPerc = ((mediaGhost - mediaFondo) / S1) * 100.0\n \n";
+		lista[51] = "Spostamento automatico eccessivo per compensare la bolla \n"
+				+ "d'aria presente nel fantoccio, verra' richiesto l'intervento \n" + "manuale";
+		lista[52] = "52";
+		lista[53] = "53";
+		lista[54] = "54";
+		lista[55] = "55";
+		lista[56] = "56";
+		lista[57] = "57";
+		lista[58] = "58";
+		lista[59] = "59";
+		// ---------+-----------------------------------------------------------+
+		lista[60] = "Eventualmente modificare la circonferenza con area 80% del \n" + "fantoccio, chiamata MROI";
+		lista[61] = "61";
+		lista[62] = "62";
+		lista[63] = "63";
+		lista[64] = "64";
+		lista[65] = "vetMinimi==null, verificare esistenza della riga P12MIN nel file limiti.csv";
+		lista[66] = "vetMaximi==null, verificare esistenza della riga P12MAX nel file limiti.csv";
+		lista[67] = "67";
+		lista[68] = "68";
+		lista[69] = "69";
+		// ---------+-----------------------------------------------------------+
+
+		String out = lista[select];
+		return out;
 	}
 
 } // ultima
