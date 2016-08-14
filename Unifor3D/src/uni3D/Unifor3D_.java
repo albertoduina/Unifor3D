@@ -110,9 +110,16 @@ public class Unifor3D_ implements PlugIn {
 			String info10 = "info10";
 			Boolean autoCalled = false;
 			Boolean step = true;
-			Boolean verbose = true;
-			Boolean test = true;
+			Boolean verbose = false;
+			Boolean test = false;
 			Boolean fast = false;
+			
+			
+			int timeout = 100;
+
+			
+			
+			
 
 			double out2[] = positionSearch11(imp11, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, verbose,
 					test, fast, timeout);
@@ -278,16 +285,16 @@ public class Unifor3D_ implements PlugIn {
 
 		MyCannyEdgeDetector mce = new MyCannyEdgeDetector();
 		mce.setGaussianKernelRadius(2.0f);
-		mce.setLowThreshold(2.5f);
-		mce.setHighThreshold(20.0f);
+		mce.setLowThreshold(25.0f);
+		mce.setHighThreshold(35.0f);
 		mce.setContrastNormalized(false);
 
 		ImagePlus imp12 = mce.process(imp11);
 		imp12.setOverlay(over12);
-		imp12.show();
+		UtilAyv.showImageMaximized2(imp12);
+		
 		ImageStatistics stat12 = imp12.getStatistics();
 		if (stat12.max < 255) {
-			MyLog.waitHere("CannyEdgeDetector fallito");
 			return null;
 		}
 
@@ -449,8 +456,10 @@ public class Unifor3D_ implements PlugIn {
 						count++;
 						myXpoints[count] = (int) (myPeaks[3][i2]);
 						myYpoints[count] = (int) (myPeaks[4][i2]);
+//						ImageUtils.plotPoints(imp12, over12, (int) (myPeaks[3][i2]), (int) (myPeaks[4][i2]), colore1,
+//								1);
 						ImageUtils.plotPoints(imp12, over12, (int) (myPeaks[3][i2]), (int) (myPeaks[4][i2]), colore1,
-								8.1);
+								0);
 						imp12.updateAndDraw();
 						ImageUtils.imageToFront(imp12);
 					}
@@ -485,13 +494,13 @@ public class Unifor3D_ implements PlugIn {
 		// -------------------------------------------------------------------
 		// MyLog.waitHere("uno");
 
-		if (xPoints3.length < 3 || test) {
-			UtilAyv.showImageMaximized(imp11);
-			MyLog.waitHere(
-					"Non si riescono a determinare le coordinate di almeno 3 punti del cerchio \n posizionare manualmente una ROI circolare di diametro uguale al fantoccio e\n premere  OK",
-					debug, timeout1);
-			manual = true;
-		}
+//		if (xPoints3.length < 3 || test) {
+//			UtilAyv.showImageMaximized(imp11);
+//			MyLog.waitHere(
+//					"Non si riescono a determinare le coordinate di almeno 3 punti del cerchio \n posizionare manualmente una ROI circolare di diametro uguale al fantoccio e\n premere  OK",
+//					debug, timeout1);
+//			manual = true;
+//		}
 
 		if (!manual) {
 
@@ -500,7 +509,7 @@ public class Unifor3D_ implements PlugIn {
 			pr12.setSize(4);
 			imp12.setRoi(pr12);
 			if (demo) {
-				ImageUtils.addOverlayRoi(imp12, colore1, 8.1);
+				ImageUtils.addOverlayRoi(imp12, colore1, 3.1);
 				pr12.setPointType(2);
 				pr12.setSize(4);
 
@@ -522,6 +531,7 @@ public class Unifor3D_ implements PlugIn {
 
 			if (demo)
 				MyLog.waitHere("La circonferenza risultante dal fit e' mostrata in rosso", debug, timeout1);
+			MyLog.waitHere();
 			Rectangle boundRec = imp12.getProcessor().getRoi();
 			xCenterCircle = Math.round(boundRec.x + boundRec.width / 2);
 			yCenterCircle = Math.round(boundRec.y + boundRec.height / 2);
@@ -530,6 +540,7 @@ public class Unifor3D_ implements PlugIn {
 			// writeStoredRoiData(boundRec);
 
 			MyCircleDetector.drawCenter(imp12, over12, xCenterCircle, yCenterCircle, colore3);
+			MyLog.waitHere("004");
 
 			// ----------------------------------------------------------
 			// Misuro l'errore sul fit rispetto ai punti imposti
@@ -561,6 +572,7 @@ public class Unifor3D_ implements PlugIn {
 				manual = true;
 			}
 
+			MyLog.waitHere("005");
 			//
 			// ----------------------------------------------------------
 			// disegno la ROI del centro, a solo scopo dimostrativo !
@@ -670,7 +682,8 @@ public class Unifor3D_ implements PlugIn {
 				// PLOTTAGGIO PUNTI
 				ImageUtils.plotPoints(imp12, over12, peaks12);
 			}
-
+			MyLog.waitHere("006");
+			
 			double d1 = maxBubbleGapLimit;
 			double d2 = maxBubbleGapLimit;
 			double d3 = maxBubbleGapLimit;
@@ -717,6 +730,7 @@ public class Unifor3D_ implements PlugIn {
 				imp11.getRoi().setStrokeColor(colore2);
 				over12.addElement(imp11.getRoi());
 				imp11.deleteRoi();
+				MyLog.waitHere("007");
 
 				MyLog.waitHere(listaMessaggi(51) + " dMin= " + dMin, debug, timeout1);
 			} else {
@@ -726,9 +740,11 @@ public class Unifor3D_ implements PlugIn {
 				xCenterMROI = boundingRectangle2.x + boundingRectangle2.width / 2;
 				yCenterMROI = boundingRectangle2.y + boundingRectangle2.height / 2;
 				// imp12.killRoi();
+				MyLog.waitHere("008");
 			}
 		}
-
+		MyLog.waitHere("001");
+		manual=false;
 		if (manual) {
 			// ==================================================================
 			// INTERVENTO MANUALE PER CASI DISPERATI, SAN GENNARO PENSACI TU
@@ -774,7 +790,9 @@ public class Unifor3D_ implements PlugIn {
 			diamMROI = diamCircleMan80;
 			imp12.setRoi(new OvalRoi(xCenterMROI, yCenterMROI, diamMROI, diamMROI));
 		}
+		MyLog.waitHere("002");
 
+		demo=true;
 		if (demo) {
 			imp12.updateAndDraw();
 			imp12.getRoi().setStrokeColor(colore2);
@@ -784,6 +802,8 @@ public class Unifor3D_ implements PlugIn {
 			MyLog.waitHere(listaMessaggi(10), debug, timeout1);
 		}
 
+		MyLog.waitHere("003");
+
 		imp12.close();
 		double[] out2 = new double[6];
 		out2[0] = xCenterCircle;
@@ -792,6 +812,7 @@ public class Unifor3D_ implements PlugIn {
 		out2[3] = xCenterMROI;
 		out2[4] = yCenterMROI;
 		out2[5] = diamMROI;
+		MyLog.waitHere("Fine PositionSearch11");
 		return out2;
 	}
 
