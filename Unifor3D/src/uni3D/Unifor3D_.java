@@ -40,23 +40,24 @@ import ij.text.TextWindow;
 
 public class Unifor3D_ implements PlugIn {
 	static boolean debug = false;
-	static int timeout = 200;
+	static int timeout = 2000;
+	static boolean demo1 = false;
 
 	public void run(String arg) {
 
-		double minMean1 = +10;
-		double maxMean1 = +4096;
-		double minNoiseImaDiff = -2048;
-		double maxNoiseImaDiff = +2048;
-		double minSnRatio = +10;
-		double maxSnRatio = +800;
-		double minGhostPerc = -20;
-		double maxGhostPerc = +20;
-		double minUiPerc = +5;
-		double maxUiPerc = +100;
-		double minFitError = +0;
+		// double minMean1 = +10;
+		// double maxMean1 = +4096;
+		// double minNoiseImaDiff = -2048;
+		// double maxNoiseImaDiff = +2048;
+		// double minSnRatio = +10;
+		// double maxSnRatio = +800;
+		// double minGhostPerc = -20;
+		// double maxGhostPerc = +20;
+		// double minUiPerc = +5;
+		// double maxUiPerc = +100;
+		// double minFitError = +0;
 		double maxFitError = +20;
-		double minBubbleGapLimit = 0;
+		// double minBubbleGapLimit = 0;
 		double maxBubbleGapLimit = 2;
 
 		try {
@@ -99,9 +100,7 @@ public class Unifor3D_ implements PlugIn {
 		for (int i1 = 0; i1 < sortedList1.length; i1++) {
 
 			// ===============================================
-			ImagePlus imp11 = null;
-			imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
-			ImageUtils.imageToFront(imp11);
+			ImagePlus imp11 = UtilAyv.openImageNoDisplay(sortedList1[i1], true);
 			if (imp11 == null)
 				MyLog.waitHere("Non trovato il file " + sortedList1[i1]);
 			ImagePlus imp13 = UtilAyv.openImageNoDisplay(sortedList2[i1], true);
@@ -112,17 +111,11 @@ public class Unifor3D_ implements PlugIn {
 			Boolean step = true;
 			Boolean verbose = false;
 			Boolean test = false;
-			Boolean fast = false;
-			
-			
-			int timeout = 100;
-
-			
-			
-			
+			Boolean fast = true;
 
 			double out2[] = positionSearch11(imp11, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, verbose,
 					test, fast, timeout);
+			imp11.close();
 			if (out2 == null) {
 				continue;
 			}
@@ -285,20 +278,21 @@ public class Unifor3D_ implements PlugIn {
 
 		MyCannyEdgeDetector mce = new MyCannyEdgeDetector();
 		mce.setGaussianKernelRadius(2.0f);
-		mce.setLowThreshold(25.0f);
-		mce.setHighThreshold(35.0f);
+		mce.setLowThreshold(15.0f);
+		mce.setHighThreshold(16.0f);
 		mce.setContrastNormalized(false);
 
 		ImagePlus imp12 = mce.process(imp11);
 		imp12.setOverlay(over12);
 		UtilAyv.showImageMaximized2(imp12);
-		
+
 		ImageStatistics stat12 = imp12.getStatistics();
 		if (stat12.max < 255) {
 			return null;
 		}
 
-		MyLog.waitHere("output CannyEdgeDetector");
+		if (demo1)
+			MyLog.waitHere("000\noutput CannyEdgeDetector");
 
 		double[][] peaks1 = new double[4][1];
 		double[][] peaks2 = new double[4][1];
@@ -456,8 +450,9 @@ public class Unifor3D_ implements PlugIn {
 						count++;
 						myXpoints[count] = (int) (myPeaks[3][i2]);
 						myYpoints[count] = (int) (myPeaks[4][i2]);
-//						ImageUtils.plotPoints(imp12, over12, (int) (myPeaks[3][i2]), (int) (myPeaks[4][i2]), colore1,
-//								1);
+						// ImageUtils.plotPoints(imp12, over12, (int)
+						// (myPeaks[3][i2]), (int) (myPeaks[4][i2]), colore1,
+						// 1);
 						ImageUtils.plotPoints(imp12, over12, (int) (myPeaks[3][i2]), (int) (myPeaks[4][i2]), colore1,
 								0);
 						imp12.updateAndDraw();
@@ -494,24 +489,27 @@ public class Unifor3D_ implements PlugIn {
 		// -------------------------------------------------------------------
 		// MyLog.waitHere("uno");
 
-//		if (xPoints3.length < 3 || test) {
-//			UtilAyv.showImageMaximized(imp11);
-//			MyLog.waitHere(
-//					"Non si riescono a determinare le coordinate di almeno 3 punti del cerchio \n posizionare manualmente una ROI circolare di diametro uguale al fantoccio e\n premere  OK",
-//					debug, timeout1);
-//			manual = true;
-//		}
+		// if (xPoints3.length < 3 || test) {
+		// UtilAyv.showImageMaximized(imp11);
+		// MyLog.waitHere(
+		// "Non si riescono a determinare le coordinate di almeno 3 punti del
+		// cerchio \n posizionare manualmente una ROI circolare di diametro
+		// uguale al fantoccio e\n premere OK",
+		// debug, timeout1);
+		// manual = true;
+		// }
 
 		if (!manual) {
 
 			PointRoi pr12 = new PointRoi(xPoints3, yPoints3, xPoints3.length);
 			pr12.setPointType(2);
-			pr12.setSize(4);
+			pr12.setSize(2);
 			imp12.setRoi(pr12);
+
 			if (demo) {
 				ImageUtils.addOverlayRoi(imp12, colore1, 3.1);
 				pr12.setPointType(2);
-				pr12.setSize(4);
+				pr12.setSize(2);
 
 				// over12.addElement(imp12.getRoi());
 				// over12.setStrokeColor(Color.green);
@@ -523,15 +521,21 @@ public class Unifor3D_ implements PlugIn {
 			// eseguo ora fitCircle per trovare centro e dimensione del
 			// fantoccio
 			// ---------------------------------------------------
+			if (xPoints3.length < 3) {
+				imp12.getWindow().dispose();
+				imp11.getWindow().dispose();
+				return null;
+			}
 			ImageUtils.fitCircle(imp12);
-			if (demo) {
+			Boolean demo2 = true;
+			Boolean demo3 = false;
+			if (demo2) {
 				imp12.getRoi().setStrokeColor(colore1);
 				over12.addElement(imp12.getRoi());
 			}
 
-			if (demo)
+			if (demo3)
 				MyLog.waitHere("La circonferenza risultante dal fit e' mostrata in rosso", debug, timeout1);
-			MyLog.waitHere();
 			Rectangle boundRec = imp12.getProcessor().getRoi();
 			xCenterCircle = Math.round(boundRec.x + boundRec.width / 2);
 			yCenterCircle = Math.round(boundRec.y + boundRec.height / 2);
@@ -540,7 +544,9 @@ public class Unifor3D_ implements PlugIn {
 			// writeStoredRoiData(boundRec);
 
 			MyCircleDetector.drawCenter(imp12, over12, xCenterCircle, yCenterCircle, colore3);
-			MyLog.waitHere("004");
+			if (demo1)
+				MyLog.waitHere("002\nLa circonferenza risultante dal fit e' mostrata in rosso ed ha  \nxCenterCircle= "
+						+ xCenterCircle + "  yCenterCircle= " + yCenterCircle + " diamCircle= " + diamCircle);
 
 			// ----------------------------------------------------------
 			// Misuro l'errore sul fit rispetto ai punti imposti
@@ -553,6 +559,7 @@ public class Unifor3D_ implements PlugIn {
 				sumError += Math.abs(vetDist[i1]);
 			}
 			if (sumError > maxFitError) {
+
 				// -------------------------------------------------------------
 				// disegno il cerchio ed i punti, in modo da date un feedback
 				// grafico al messaggio di eccessivo errore nel fit
@@ -569,10 +576,10 @@ public class Unifor3D_ implements PlugIn {
 				over12.addElement(imp11.getRoi());
 				imp11.deleteRoi();
 				MyLog.waitHere(listaMessaggi(16), debug, timeout1);
+				MyLog.waitHere("maxFitError");
 				manual = true;
 			}
 
-			MyLog.waitHere("005");
 			//
 			// ----------------------------------------------------------
 			// disegno la ROI del centro, a solo scopo dimostrativo !
@@ -645,6 +652,9 @@ public class Unifor3D_ implements PlugIn {
 				ycorr = (int) gapVert / 2;
 			}
 
+			if ((xcorr + ycorr) > maxBubbleGapLimit)
+				MyLog.waitHere("xcorr= " + xcorr + " ycorr= " + ycorr);
+
 			// ---------------------------------------
 			// qesto e' il risultato della nostra correzione e saranno i dati
 			// della MROI
@@ -652,6 +662,12 @@ public class Unifor3D_ implements PlugIn {
 
 			xCenterMROI = xCenterCircle + xcorr;
 			yCenterMROI = yCenterCircle + ycorr;
+
+			if (demo1)
+				MyLog.waitHere("0015\nCorrezioni per bolla d'aria: \nxcorr= " + xcorr + " ycorr= " + ycorr
+						+ "\nDATI MROI 80% xCenterMROI= " + xCenterMROI + " yCenterMROI= " + yCenterMROI + " diamMROI= "
+						+ diamMROI);
+
 			// ---------------------------------------
 			// verifico ora che l'entita' della bolla non sia cosi' grande da
 			// portare l'area MROI troppo a contatto del profilo fantoccio
@@ -682,8 +698,7 @@ public class Unifor3D_ implements PlugIn {
 				// PLOTTAGGIO PUNTI
 				ImageUtils.plotPoints(imp12, over12, peaks12);
 			}
-			MyLog.waitHere("006");
-			
+
 			double d1 = maxBubbleGapLimit;
 			double d2 = maxBubbleGapLimit;
 			double d3 = maxBubbleGapLimit;
@@ -707,6 +722,8 @@ public class Unifor3D_ implements PlugIn {
 			dMin = Math.min(dMin, d4);
 
 			if (dMin < maxBubbleGapLimit) {
+				if (demo1)
+					MyLog.waitHere("dMin= " + dMin + " maxBubbleGapLimit= " + maxBubbleGapLimit);
 				manual = true;
 				// -------------------------------------------------------------
 				// disegno il cerchio ed i punti, in modo da date un feedback
@@ -730,7 +747,8 @@ public class Unifor3D_ implements PlugIn {
 				imp11.getRoi().setStrokeColor(colore2);
 				over12.addElement(imp11.getRoi());
 				imp11.deleteRoi();
-				MyLog.waitHere("007");
+				if (demo1)
+					MyLog.waitHere("010\nBOLLA D'ARIA ECCESSIVA");
 
 				MyLog.waitHere(listaMessaggi(51) + " dMin= " + dMin, debug, timeout1);
 			} else {
@@ -740,16 +758,18 @@ public class Unifor3D_ implements PlugIn {
 				xCenterMROI = boundingRectangle2.x + boundingRectangle2.width / 2;
 				yCenterMROI = boundingRectangle2.y + boundingRectangle2.height / 2;
 				// imp12.killRoi();
-				MyLog.waitHere("008");
+				if (demo1)
+					MyLog.waitHere("006\nMROI 80% in giallo");
 			}
 		}
-		MyLog.waitHere("001");
-		manual=false;
+		manual = false;
 		if (manual) {
+			MyLog.waitHere("INTERVENTO MANUALE");
 			// ==================================================================
 			// INTERVENTO MANUALE PER CASI DISPERATI, SAN GENNARO PENSACI TU
 			// ==================================================================
 			fast = false;
+
 			imp12.close();
 			over12.clear();
 			if (!imp11.isVisible())
@@ -790,9 +810,7 @@ public class Unifor3D_ implements PlugIn {
 			diamMROI = diamCircleMan80;
 			imp12.setRoi(new OvalRoi(xCenterMROI, yCenterMROI, diamMROI, diamMROI));
 		}
-		MyLog.waitHere("002");
 
-		demo=true;
 		if (demo) {
 			imp12.updateAndDraw();
 			imp12.getRoi().setStrokeColor(colore2);
@@ -801,10 +819,15 @@ public class Unifor3D_ implements PlugIn {
 			MyCircleDetector.drawCenter(imp12, over12, xCenterCircle + xcorr, yCenterCircle + ycorr, colore2);
 			MyLog.waitHere(listaMessaggi(10), debug, timeout1);
 		}
-
-		MyLog.waitHere("003");
+		ImageWindow ww11 = imp11.getWindow();
+		if (ww11 != null)
+			ww11.dispose();
+		ImageWindow ww12 = imp12.getWindow();
+		if (ww12 != null)
+			ww12.dispose();
 
 		imp12.close();
+
 		double[] out2 = new double[6];
 		out2[0] = xCenterCircle;
 		out2[1] = yCenterCircle;
@@ -812,7 +835,8 @@ public class Unifor3D_ implements PlugIn {
 		out2[3] = xCenterMROI;
 		out2[4] = yCenterMROI;
 		out2[5] = diamMROI;
-		MyLog.waitHere("Fine PositionSearch11");
+		if (demo1)
+			MyLog.waitHere("020\nFine PositionSearch11");
 		return out2;
 	}
 

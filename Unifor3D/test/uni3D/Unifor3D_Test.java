@@ -25,11 +25,6 @@ public class Unifor3D_Test {
 			// new WaitForUserDialog("Do something, then click OK.").show();
 
 		}
-		@Test
-		public final void testMainUniforTestGe() {
-
-			assertTrue(true);
-		}
 		
 		
 		@Test
@@ -42,13 +37,13 @@ public class Unifor3D_Test {
 			ImagePlus imp11 = UtilAyv.openImageNoDisplay(path1, true);
 
 			boolean autoCalled = false;
-			boolean step = true;
+			boolean step = false;
 			boolean demo = false;
 			boolean test = false;
-			boolean fast = false;
-			double maxFitError = 5;
-			double maxBubbleGapLimit = 2;
-			int timeout = 100;
+			boolean fast = true;
+			double maxFitError = 10;
+			double maxBubbleGapLimit = 5;
+			int timeout = 1000;
 
 			double out2[] = Unifor3D_.positionSearch11(imp11, maxFitError,
 					maxBubbleGapLimit, "", autoCalled, step, demo, test, fast,
