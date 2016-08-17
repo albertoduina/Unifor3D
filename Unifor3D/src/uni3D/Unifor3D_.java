@@ -26,8 +26,10 @@ import ij.gui.Overlay;
 import ij.gui.Plot;
 import ij.gui.PlotWindow;
 import ij.gui.PointRoi;
+import ij.gui.Roi;
 import ij.io.*;
 import ij.plugin.*;
+import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 import ij.text.TextWindow;
 
@@ -59,6 +61,7 @@ public class Unifor3D_ implements PlugIn {
 		double maxFitError = +20;
 		// double minBubbleGapLimit = 0;
 		double maxBubbleGapLimit = 2;
+		ArrayList<Integer> pixList11 = new ArrayList<Integer>();
 
 		try {
 			Class.forName("utils.IW2AYV");
@@ -117,11 +120,70 @@ public class Unifor3D_ implements PlugIn {
 					test, fast, timeout);
 			imp11.close();
 			if (out2 == null) {
+				IJ.log("immagine " + i1 + " null");
 				continue;
 			}
+			pixVectorize(imp11, out2, pixList11);
+		}
+		UtilAyv.cleanUp();
+		int[] pixList = ArrayUtils.arrayListToArrayInt(pixList11);
+		double mean11 = UtilAyv.vetMean(pixList);
+		MyLog.waitHere("mean11= " + mean11);
+		int[] classi = pixClassi(pixList);
+		for (int i1 = 0; i1 < classi.length; i1++) {
+			IJ.log("" + i1 + " " + classi[i1]);
 		}
 		IJ.showMessage("FINE LAVORO");
 	} // chiude run
+
+	public static void pixVectorize(ImagePlus imp11, double[] out2, ArrayList<Integer> pixList11) {
+
+		double xCenterMROI = out2[3];
+		double yCenterMROI = out2[4];
+		double diamMROI = out2[5];
+		imp11.setRoi(new OvalRoi(xCenterMROI - diamMROI / 2, yCenterMROI - diamMROI / 2, diamMROI, diamMROI));
+		Roi roi11 = imp11.getRoi();
+
+		ImageProcessor ip11 = imp11.getProcessor();
+		ImageProcessor mask11 = roi11 != null ? roi11.getMask() : null;
+		Rectangle r11 = roi11 != null ? roi11.getBounds() : new Rectangle(0, 0, ip11.getWidth(), ip11.getHeight());
+		for (int y = 0; y < r11.height; y++) {
+			for (int x = 0; x < r11.width; x++) {
+				if (mask11 == null || mask11.getPixel(x, y) != 0) {
+					pixList11.add((int) ip11.getPixelValue(x + r11.x, y + r11.y));
+				}
+			}
+		}
+	}
+
+	public static int[] pixClassi(int[] vetPix) {
+
+		int value;
+		// per le prove utilizzo un vettore da 0 a 4095
+		int[] vetClassi = new int[4096];
+		for (int i1 = 0; i1 < vetPix.length; i1++) {
+			value = vetPix[i1];
+			vetClassi[value]++;
+		}
+		return vetClassi;
+	}
+
+	public static int[] getMinMax(int[] a) {
+		int min = Integer.MAX_VALUE;
+		int max = -Integer.MAX_VALUE;
+		int value;
+		for (int i = 0; i < a.length; i++) {
+			value = a[i];
+			if (value < min)
+				min = value;
+			if (value > max)
+				max = value;
+		}
+		int[] minAndMax = new int[2];
+		minAndMax[0] = min;
+		minAndMax[1] = max;
+		return minAndMax;
+	}
 
 	// ############################################################################
 
@@ -522,8 +584,13 @@ public class Unifor3D_ implements PlugIn {
 			// fantoccio
 			// ---------------------------------------------------
 			if (xPoints3.length < 3) {
-				imp12.getWindow().dispose();
-				imp11.getWindow().dispose();
+				ImageWindow iw112 = imp12.getWindow();
+				if (iw112 != null)
+					iw112.dispose();
+				ImageWindow iw111 = imp11.getWindow();
+				if (iw111 != null)
+					iw111.dispose();
+
 				return null;
 			}
 			ImageUtils.fitCircle(imp12);
@@ -592,8 +659,11 @@ public class Unifor3D_ implements PlugIn {
 
 			}
 
+			Boolean noDebug = false;
 			// =============================================================
 			// COMPENSAZIONE PER EVENTUALE BOLLA D'ARIA NEL FANTOCCIO
+			// la mantengo, anche se nei fantocci attuali non c'è bolla. Notato
+			// sporadici interventi con spostamenti limitati.
 			// ==============================================================
 
 			// Traccio nuovamente le bisettrici verticale ed orizzontale, solo
@@ -640,7 +710,7 @@ public class Unifor3D_ implements PlugIn {
 			}
 
 			if (demo)
-				MyLog.waitHere(listaMessaggi(8) + maxBubbleGapLimit, debug, timeout1);
+				MyLog.waitHere(listaMessaggi(8) + maxBubbleGapLimit, noDebug, timeout1);
 
 			// Effettuo in ogni caso la correzione, solo che in assenza di bolla
 			// d'aria la correzione sara' irrisoria, in presenza di bolla la
@@ -722,7 +792,7 @@ public class Unifor3D_ implements PlugIn {
 			dMin = Math.min(dMin, d4);
 
 			if (dMin < maxBubbleGapLimit) {
-				if (demo1)
+				if (noDebug)
 					MyLog.waitHere("dMin= " + dMin + " maxBubbleGapLimit= " + maxBubbleGapLimit);
 				manual = true;
 				// -------------------------------------------------------------
@@ -750,7 +820,8 @@ public class Unifor3D_ implements PlugIn {
 				if (demo1)
 					MyLog.waitHere("010\nBOLLA D'ARIA ECCESSIVA");
 
-				MyLog.waitHere(listaMessaggi(51) + " dMin= " + dMin, debug, timeout1);
+				if (noDebug)
+					MyLog.waitHere(listaMessaggi(51) + " dMin= " + dMin, debug, timeout1);
 			} else {
 				imp12.setRoi(new OvalRoi(xCenterMROI - diamMROI / 2, yCenterMROI - diamMROI / 2, diamMROI, diamMROI));
 				Rectangle boundingRectangle2 = imp12.getProcessor().getRoi();
