@@ -31,7 +31,6 @@ import ij.io.*;
 import ij.plugin.*;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
-import ij.process.LUT;
 import ij.text.TextWindow;
 
 //=====================================================
@@ -41,7 +40,7 @@ import ij.text.TextWindow;
 //     Linguaggio: Java per ImageJ
 //=====================================================
 
-public class Unifor3D_ implements PlugIn {
+public class Unifor3D_2 implements PlugIn {
 	static boolean debug = false;
 	final static int timeout = 100;
 	static boolean demo1 = false;
@@ -97,33 +96,7 @@ public class Unifor3D_ implements PlugIn {
 		// imp10.show();
 		// MyLog.waitHere();
 		// Orthogonal_Views();
-
-		// Mostro l'immagine ed applico Orthogonal_Views. Recupero le due immagini delle due direzioni "sintetizzate"
 		
-		
-		imp10.show();
-		IJ.run(imp10, "Orthogonal Views", "");	
-		
-		
-		Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
-		
-	//	ImagePlus imp101 = Orthogonal_Views.getImage();
-		
-		ImagePlus imp102 = ort1.getXZImage();
-		if (imp102==null) MyLog.waitHere("imp102=null");
-
-		ImagePlus imp103 = ort1.getYZImage();
-		if (imp103==null) MyLog.waitHere("imp103=null");
-		// impUno.show();
-		// impDue.show();
-		ImagePlus imp202=imp102.duplicate();
-		imp202.setLut(LUT.createLutFromColor(Color.red));	
-		imp202.show();
-		
-		ImagePlus imp203=imp103.duplicate();
-		imp203.setLut(LUT.createLutFromColor(Color.green));	
-		imp203.show();
-		MyLog.waitHere();
 		
 		
 		
