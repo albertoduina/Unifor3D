@@ -83,10 +83,10 @@ public class Unifor3D_ implements PlugIn {
 		for (int i1 = 0; i1 < dir1a.length; i1++) {
 			dir1b[i1] = dir1 + "\\" + dir1a[i1];
 		}
-
 		String[] sortedList1 = pathSorter(dir1b);
 		ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
-
+		//----------------------------------------------
+		
 		ImagePlus imp00 = UtilAyv.openImageNoDisplay(sortedList1[0], true);
 		double dimPixel = ReadDicom.readDouble(
 				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_PIXEL_SPACING), 1));
@@ -216,15 +216,20 @@ public class Unifor3D_ implements PlugIn {
 //		ImageProcessor ipSimulata= null;
 		
 		int count = -1;
-
+		ImagePlus imp11;
+		ImagePlus imp13;
+		
 		for (int i1 = startSlice; i1 < endSlice; i1++) {
 			IJ.showStatus("" + i1 + " / " + endSlice);
 
 			// ===============================================
-			ImagePlus imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
+			imp11 = MyStackUtils.imageFromStack(imp10, i1);
+//			ImagePlus imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
 			if (imp11 == null)
 				MyLog.waitHere("Non trovato il file " + sortedList1[i1]);
-			ImagePlus imp13 = UtilAyv.openImageNoDisplay(sortedList2[i1], true);
+			imp11.show();
+			imp13 =  MyStackUtils.imageFromStack(imp20, i1);
+	//		ImagePlus imp13 = UtilAyv.openImageNoDisplay(sortedList2[i1], true);
 			if (imp13 == null)
 				MyLog.waitHere("Non trovato il file " + sortedList2[i1]);
 			double thisPos = ReadDicom.readDouble(
@@ -286,12 +291,12 @@ public class Unifor3D_ implements PlugIn {
 			newStack.addSlice(sliceInfo2, ipSimulata);
 			impSimulata.close();
 			impDiff.close();
-			System.gc();
+			imp11.close();
+			imp13.close();
 		}
 		IJ.showStatus("START simulataStack");
 		ImagePlus simulataStack = new ImagePlus("STACK_SIMULATE", newStack);
 		IJ.showStatus("END simulataStack");
-		// UtilAyv.cleanUp();
 		IJ.showStatus("END cleanup");
 		simulataStack.show();
 		MyLog.waitHere("SIMULATA");
