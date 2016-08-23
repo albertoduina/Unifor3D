@@ -48,19 +48,7 @@ public class Unifor3D_ implements PlugIn {
 
 	public void run(String arg) {
 
-		// double minMean1 = +10;
-		// double maxMean1 = +4096;
-		// double minNoiseImaDiff = -2048;
-		// double maxNoiseImaDiff = +2048;
-		// double minSnRatio = +10;
-		// double maxSnRatio = +800;
-		// double minGhostPerc = -20;
-		// double maxGhostPerc = +20;
-		// double minUiPerc = +5;
-		// double maxUiPerc = +100;
-		// double minFitError = +0;
 		double maxFitError = +20;
-		// double minBubbleGapLimit = 0;
 		double maxBubbleGapLimit = 2;
 		ArrayList<Integer> pixList11 = new ArrayList<Integer>();
 
@@ -74,18 +62,22 @@ public class Unifor3D_ implements PlugIn {
 		// chiede di selezionare manualmente le cartelle con le
 		// immagini Si suppone che le immagini siano trasferite utilizzando un
 		// hard-disk OPPURE che venga fatto un DicomSorter.
-		// QUINDI: IL PROGRAMMA SI FIDA DELL'OPERATORE
+		// QUINDI: IL PROGRAMMA SI FIDA (sicuramente sbagliando) DELL'OPERATORE
 
+		// ------------------------------
 		String dir10 = Prefs.get("prefer.Unifor3D_dir1", "none");
 		DirectoryChooser.setDefaultDirectory(dir10);
 		DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA PRIMA ACQUISIZIONE");
-		// if (dir10 != "none")
-
 		String dir1 = od1.getDirectory();
 		Prefs.set("prefer.Unifor3D_dir1", dir1);
-
 		DirectoryChooser.setDefaultDirectory(dir10);
-
+		// ------------------------------
+		String dir20 = Prefs.get("prefer.Unifor3D_dir2", "none");
+		DirectoryChooser.setDefaultDirectory(dir20);
+		DirectoryChooser od2 = new DirectoryChooser("SELEZIONARE CARTELLA SECONDA ACQUISIZIONE");
+		String dir2 = od2.getDirectory();
+		Prefs.set("prefer.Unifor3D_dir2", dir2);
+		// ------------------------------
 		String[] dir1a = new File(dir1).list();
 		String[] dir1b = new String[dir1a.length];
 		for (int i1 = 0; i1 < dir1a.length; i1++) {
@@ -94,48 +86,108 @@ public class Unifor3D_ implements PlugIn {
 
 		String[] sortedList1 = pathSorter(dir1b);
 		ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
-		// imp10.show();
-		// MyLog.waitHere();
-		// Orthogonal_Views();
 
-		// Mostro l'immagine ed applico Orthogonal_Views. Recupero le due immagini delle due direzioni "sintetizzate"
-		
-		
+		ImagePlus imp00 = UtilAyv.openImageNoDisplay(sortedList1[0], true);
+		double dimPixel = ReadDicom.readDouble(
+				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_PIXEL_SPACING), 1));
+		double sliceThick = ReadDicom.readDouble(
+				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_SLICE_THICKNESS), 1));
+
+		// Mostro l'immagine ed applico Orthogonal_Views. Recupero le due
+		// immagini delle due direzioni "sintetizzate"
+
 		imp10.show();
-		IJ.run(imp10, "Orthogonal Views", "");	
-		
-		
+		IJ.run(imp10, "Orthogonal Views", "");
 		Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
-		
-	//	ImagePlus imp101 = Orthogonal_Views.getImage();
-		
+
 		ImagePlus imp102 = ort1.getXZImage();
-		if (imp102==null) MyLog.waitHere("imp102=null");
+		if (imp102 == null)
+			MyLog.waitHere("imp102=null");
+		// ImagePlus imp202 = imp102.duplicate();
+		ImagePlus imp202 = new Duplicator().run(imp102);
+		IJ.wait(10);
+
+		// MyLog.waitHere("202");
 
 		ImagePlus imp103 = ort1.getYZImage();
-		if (imp103==null) MyLog.waitHere("imp103=null");
-		// impUno.show();
-		// impDue.show();
-		ImagePlus imp202=imp102.duplicate();
-		imp202.setLut(LUT.createLutFromColor(Color.red));	
+		if (imp103 == null)
+			MyLog.waitHere("imp103=null");
+		// ImagePlus imp203 = imp103.duplicate();
+		ImagePlus imp203 = new Duplicator().run(imp103);
+		IJ.wait(10);
+
+		// MyLog.waitHere("203");
+
+		String info10 = "info10";
+		Boolean autoCalled = false;
+		Boolean step = true;
+		Boolean demo0 = false;
+		Boolean test = false;
+		Boolean fast = true;
+
+		double out202[] = positionSniper(imp202, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, demo0, test,
+				fast, timeout);
+		if (out202 == null)
+			MyLog.waitHere("null");
+		Overlay over202 = new Overlay();
+		imp202.setOverlay(over202);
+		double xCenterEXT = out202[0];
+		double yCenterEXT = out202[1];
+		double diamEXT = out202[2];
+		imp202.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT - diamEXT / 2, diamEXT, diamEXT));
+		imp202.getRoi().setStrokeColor(Color.green);
+		over202.addElement(imp202.getRoi());
+		imp202.deleteRoi();
 		imp202.show();
-		
-		ImagePlus imp203=imp103.duplicate();
-		imp203.setLut(LUT.createLutFromColor(Color.green));	
+		MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp202, roi verde");
+
+		double out203[] = positionSniper(imp203, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, demo0, test,
+				fast, timeout);
+		if (out203 == null)
+			MyLog.waitHere("out203 null");
+		Overlay over203 = new Overlay();
+		imp203.setOverlay(over203);
+		xCenterEXT = out203[0];
+		yCenterEXT = out203[1];
+		diamEXT = out203[2];
+		imp203.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT - diamEXT / 2, diamEXT, diamEXT));
+		imp203.getRoi().setStrokeColor(Color.green);
+		over203.addElement(imp203.getRoi());
+		imp203.deleteRoi();
 		imp203.show();
-		MyLog.waitHere();
-		
-		
-		
-		
-		
-		String dir20 = Prefs.get("prefer.Unifor3D_dir2", "none");
+		MyLog.waitHere("VERIFICA POSIZIONAMENTO SU IMMAGINE imp203, roi verde");
 
-		DirectoryChooser.setDefaultDirectory(dir20);
-		DirectoryChooser od2 = new DirectoryChooser("SELEZIONARE CARTELLA SECONDA ACQUISIZIONE");
+		int centerSlice = 0;
+		if ((out202[1] - out203[0]) < 2 || (out202[1] - out203[0]) < 2) {
+			centerSlice = (int) out202[1];
+		} else
+			MyLog.waitHere("non riesco a determinare la posizione Z");
+		ImagePlus imp101 = MyStackUtils.imageFromStack(imp10, centerSlice);
+		if (imp101 == null)
+			MyLog.waitHere("imp101=null");
+		ImagePlus imp201 = imp101.duplicate();
 
-		String dir2 = od2.getDirectory();
-		Prefs.set("prefer.Unifor3D_dir2", dir2);
+		double out201[] = positionSniper(imp201, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, demo0, test,
+				fast, timeout);
+		if (out201 == null)
+			MyLog.waitHere("out201 null");
+		Overlay over201 = new Overlay();
+		imp201.setOverlay(over201);
+		xCenterEXT = out201[0];
+		yCenterEXT = out201[1];
+		diamEXT = out201[2];
+		imp201.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT - diamEXT / 2, diamEXT, diamEXT));
+
+		imp201.getRoi().setStrokeColor(Color.green);
+		over201.addElement(imp201.getRoi());
+		imp201.deleteRoi();
+		imp201.show();
+
+		MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp201, roi verde");
+
+		MyLog.waitHere("posizione centro 1 x= " + out202[0] + " z= " + out202[1] + " d= " + out202[2]
+				+ "\nposizione centro 2 y= " + out203[1] + " z= " + out203[0] + " d= " + out203[2]
+				+ "\nposizione centro 3 y= " + out201[0] + " y= " + out201[1] + " d= " + out201[2]);
 
 		String[] dir2a = new File(dir2).list();
 		String[] dir2b = new String[dir2a.length];
@@ -144,81 +196,85 @@ public class Unifor3D_ implements PlugIn {
 		}
 		String[] sortedList2 = pathSorter(dir2b);
 		ImagePlus imp20 = MyStackUtils.imagesToStack16(sortedList2);
-		ImagePlus impStackSimulata;
-		// imp20.show();
-		// MyLog.waitHere();
+
 		int height = ReadDicom.readInt(ReadDicom.readDicomParameter(imp20, MyConst.DICOM_ROWS));
 		int width = ReadDicom.readInt(ReadDicom.readDicomParameter(imp20, MyConst.DICOM_COLUMNS));
+		double diamMAX = out201[2];
+
+		int xMROI = (int) Math.round(out201[0]);
+		int yMROI = (int) Math.round(out201[1]);
+		double diamMROI = out201[2] * MyConst.P3_AREA_PERC_80_DIAM;
+
+		int startSlice = centerSlice - (int) Math.round(diamMROI / 2);
+		int endSlice = startSlice + (int) Math.round(diamMROI);
+		imp00 = UtilAyv.openImageNoDisplay(sortedList1[centerSlice], true);
+		double centerPos = ReadDicom.readDouble(
+				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_IMAGE_POSITION), 1));
+
 		ImageStack newStack = new ImageStack(width, height);
+//		ImagePlus impSimulata=null;
+//		ImageProcessor ipSimulata= null;
+		
 		int count = -1;
 
-		for (int i1 = 0; i1 < sortedList1.length; i1++) {
+		for (int i1 = startSlice; i1 < endSlice; i1++) {
+			IJ.showStatus("" + i1 + " / " + endSlice);
 
 			// ===============================================
-			ImagePlus imp11 = UtilAyv.openImageNoDisplay(sortedList1[i1], true);
+			ImagePlus imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
 			if (imp11 == null)
 				MyLog.waitHere("Non trovato il file " + sortedList1[i1]);
 			ImagePlus imp13 = UtilAyv.openImageNoDisplay(sortedList2[i1], true);
 			if (imp13 == null)
 				MyLog.waitHere("Non trovato il file " + sortedList2[i1]);
-			String info10 = "info10";
-			Boolean autoCalled = false;
-			Boolean step = true;
-			Boolean demo0 = false;
-			Boolean test = false;
-			Boolean fast = true;
+			double thisPos = ReadDicom.readDouble(
+					ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp11, MyConst.DICOM_IMAGE_POSITION), 1));
 
-			double out2[] = positionSearch11(imp11, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, demo0,
-					test, fast, timeout);
-			if (out2 == null) {
-				IJ.log("immagine " + i1 + " null");
-				continue;
-			}
 			count++;
 
-			imp11.deleteRoi();
-			// ======================================================
-			// qui effettuo la visualizzazoione dell'immagine
-			UtilAyv.showImageMaximized2(imp11);
 			Overlay over111 = new Overlay();
 			imp11.setOverlay(over111);
+			double project = 0;
+			if (thisPos < centerPos) {
+				project = centerPos - thisPos;
+			} else {
+				project = thisPos - centerPos;
+			}
 
-			double xCenterEXT = out2[0];
-			double yCenterEXT = out2[1];
-			double diamEXT = out2[2];
-			imp11.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT - diamEXT / 2, diamEXT, diamEXT));
+			double radius1 = diamMAX / 2;
+			double diamEXT2 = Math.sqrt(radius1 * radius1 - project * project) * 2;
+
+			imp11.setRoi(new OvalRoi(xMROI - diamEXT2 / 2, yMROI - diamEXT2 / 2, diamEXT2, diamEXT2));
 			imp11.getRoi().setStrokeColor(Color.green);
 			over111.addElement(imp11.getRoi());
-			imp11.deleteRoi();
 
-			double xCenterMROI = out2[3];
-			double yCenterMROI = out2[4];
-			double diamMROI = out2[5];
-			imp11.setRoi(new OvalRoi(xCenterMROI - diamMROI / 2, yCenterMROI - diamMROI / 2, diamMROI, diamMROI));
+			double radius2 = diamMROI / 2;
+			double diamMROI2 = Math.sqrt(radius2 * radius2 - project * project) * 2;
+			imp11.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 / 2, diamMROI2, diamMROI2));
 			imp11.getRoi().setStrokeColor(Color.red);
 			over111.addElement(imp11.getRoi());
 			imp11.deleteRoi();
 			imp11.updateAndRepaintWindow();
+			IJ.wait(10);
 
-			IJ.wait(timeout);
 			ImageWindow iw111 = imp11.getWindow();
 			if (iw111 != null)
 				iw111.dispose();
 			// ======================================================
 
-			pixVectorize(imp11, out2, pixList11);
+			pixVectorize(imp11, xMROI, yMROI, diamMROI2, pixList11);
 
 			ImagePlus impDiff = UtilAyv.genImaDifference(imp11, imp13);
-			imp11.setRoi(new OvalRoi(xCenterMROI - diamMROI / 2, yCenterMROI - diamMROI / 2, diamMROI, diamMROI));
+			imp11.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 / 2, diamMROI2, diamMROI2));
 			ImageStatistics stat11 = imp11.getStatistics();
 			double uiPerc11 = uiPercCalculation(stat11.max, stat11.min);
-			impDiff.setRoi(new OvalRoi(xCenterMROI - diamMROI / 2, yCenterMROI - diamMROI / 2, diamMROI, diamMROI));
+			impDiff.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 / 2, diamMROI2, diamMROI2));
 			ImageStatistics statImaDiff = impDiff.getStatistics();
 			double stdDevImaDiff = statImaDiff.stdDev;
 			double noiseImaDiff = stdDevImaDiff / Math.sqrt(2);
 			double snRatio = Math.sqrt(2) * stat11.mean / stdDevImaDiff;
-			ImagePlus impSimulata = ImageUtils.generaSimulata5Classi((int) (xCenterMROI - diamMROI / 2),
-					(int) (yCenterMROI - diamMROI / 2), (int) diamMROI, imp11, step, demo0, test);
+			ImagePlus impSimulata = ImageUtils.generaSimulata5Classi((int) (xMROI - diamMROI2 / 2),
+					(int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step, demo0, test);
 			ImageProcessor ipSimulata = impSimulata.getProcessor();
 			if (count == 0)
 				newStack.update(ipSimulata);
@@ -228,21 +284,28 @@ public class Unifor3D_ implements PlugIn {
 			if (sliceInfo2 != null)
 				sliceInfo1 += "\n" + sliceInfo2;
 			newStack.addSlice(sliceInfo2, ipSimulata);
+			impSimulata.close();
+			impDiff.close();
+			System.gc();
 		}
+		IJ.showStatus("START simulataStack");
 		ImagePlus simulataStack = new ImagePlus("STACK_SIMULATE", newStack);
-		UtilAyv.cleanUp();
+		IJ.showStatus("END simulataStack");
+		// UtilAyv.cleanUp();
+		IJ.showStatus("END cleanup");
 		simulataStack.show();
-		MyLog.waitHere();
+		MyLog.waitHere("SIMULATA");
 
 		int[] pixList = ArrayUtils.arrayListToArrayInt(pixList11);
 		double mean11 = UtilAyv.vetMean(pixList);
 		MyLog.waitHere("mean11= " + mean11);
 		int[] classi = pixClassi(pixList);
-		for (int i1 = 0; i1 < classi.length; i1++) {
-			IJ.log("" + i1 + " " + classi[i1]);
-		}
+		// for (int i1 = 0; i1 < classi.length; i1++) {
+		// IJ.log("" + i1 + " " + classi[i1]);
+		// }
 		IJ.showMessage("FINE LAVORO");
-	} // chiude run
+	} // chiude
+		// run
 
 	/**
 	 * Calculation of Integral Uniformity Percentual
@@ -260,11 +323,9 @@ public class Unifor3D_ implements PlugIn {
 		return uiPerc;
 	}
 
-	public static void pixVectorize(ImagePlus imp11, double[] out2, ArrayList<Integer> pixList11) {
+	public static void pixVectorize(ImagePlus imp11, double xCenterMROI, double yCenterMROI, double diamMROI,
+			ArrayList<Integer> pixList11) {
 
-		double xCenterMROI = out2[3];
-		double yCenterMROI = out2[4];
-		double diamMROI = out2[5];
 		imp11.setRoi(new OvalRoi(xCenterMROI - diamMROI / 2, yCenterMROI - diamMROI / 2, diamMROI, diamMROI));
 		Roi roi11 = imp11.getRoi();
 
@@ -388,6 +449,651 @@ public class Unifor3D_ implements PlugIn {
 			slicePosition[w1] = slicePosition1;
 		}
 		return slicePosition;
+	}
+
+	/**
+	 * Ricerca posizione ROI per calcolo uniformita'. Versione con Canny Edge
+	 * Detector. Questa versione è da utilizzare per il fantoccio sferico
+	 * 
+	 * @param imp11
+	 *            immagine in input
+	 * @param info1
+	 *            messaggio esplicativo
+	 * @param autoCalled
+	 *            true se chiamato in automatico
+	 * @param step
+	 *            true se in modo passo passo
+	 * @param verbose
+	 *            true se in modo verbose
+	 * @param test
+	 *            true se in test con junit, nessuna visualizzazione e richiesta
+	 *            conferma
+	 * @param fast
+	 *            true se in modo batch
+	 * @return
+	 */
+	public static double[] positionSniper(ImagePlus imp11, double maxFitError, double maxBubbleGapLimit, String info1,
+			boolean autoCalled, boolean step, boolean demo0, boolean test, boolean fast, int timeout1) {
+
+		// ================================================================================
+		// Inizio calcoli geometrici
+		// ================================================================================
+		//
+
+		Color colore1 = Color.red;
+		Color colore2 = Color.green;
+		Color colore3 = Color.red;
+
+		// boolean debug = false;
+		boolean manual = false;
+
+		int xCenterCircle = 0;
+		int yCenterCircle = 0;
+		int xCenterCircleMan = 0;
+		int yCenterCircleMan = 0;
+		int diamCircleMan = 0;
+		int xCenterCircleMan80 = 0;
+		int yCenterCircleMan80 = 0;
+		int diamCircleMan80 = 0;
+		int diamCircle = 0;
+		int xCenterMROI = 0;
+		int yCenterMROI = 0;
+		int diamMROI = 0;
+		int xcorr = 0;
+		int ycorr = 0;
+		boolean showProfiles = false;
+
+		int height = imp11.getHeight();
+		int width = imp11.getWidth();
+		int diamRoiMan = 173;
+
+		ImageWindow iw11 = null;
+		ImageWindow iw12 = null;
+		if (demo0) {
+			iw11 = imp11.getWindow();
+		}
+
+		Overlay over12 = new Overlay();
+
+		// double dimPixel = ReadDicom.readDouble(
+		// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp11,
+		// MyConst.DICOM_PIXEL_SPACING), 1));
+
+		MyCannyEdgeDetector mce = new MyCannyEdgeDetector();
+		mce.setGaussianKernelRadius(2.0f);
+		mce.setLowThreshold(15.0f);
+		mce.setHighThreshold(16.0f);
+		mce.setContrastNormalized(false);
+
+		ImagePlus imp12 = mce.process(imp11);
+		imp12.setOverlay(over12);
+		imp12.show();
+
+		ImageStatistics stat12 = imp12.getStatistics();
+		if (stat12.max < 255) {
+			return null;
+		}
+
+		if (demo1)
+			MyLog.waitHere("000\noutput CannyEdgeDetector");
+
+		double[][] peaks1 = new double[4][1];
+		double[][] peaks2 = new double[4][1];
+		double[][] peaks3 = new double[4][1];
+		double[][] peaks4 = new double[4][1];
+		double[][] peaks5 = new double[4][1];
+		double[][] peaks6 = new double[4][1];
+		double[][] peaks7 = new double[4][1];
+		double[][] peaks8 = new double[4][1];
+		double[][] peaks9 = new double[4][1];
+		double[][] peaks10 = new double[4][1];
+		double[][] peaks11 = new double[4][1];
+		double[][] peaks12 = new double[4][1];
+
+		boolean strokewidth = true;
+		double strWidth = 1.5;
+
+		// ------ riadattamento da p10
+
+		double[][] myPeaks = new double[4][1];
+		int[] myXpoints = new int[16];
+		int[] myYpoints = new int[16];
+
+		int[] xcoord = new int[2];
+		int[] ycoord = new int[2];
+		boolean manualOverride = false;
+
+		int[] vetx0 = new int[8];
+		int[] vetx1 = new int[8];
+		int[] vety0 = new int[8];
+		int[] vety1 = new int[8];
+
+		vetx0[0] = 0;
+		vety0[0] = height / 2;
+		vetx1[0] = width;
+		vety1[0] = height / 2;
+		// ----
+		vetx0[1] = width / 2;
+		vety0[1] = 0;
+		vetx1[1] = width / 2;
+		vety1[1] = height;
+		// ----
+		vetx0[2] = 0;
+		vety0[2] = 0;
+		vetx1[2] = width;
+		vety1[2] = height;
+		// -----
+		vetx0[3] = width;
+		vety0[3] = 0;
+		vetx1[3] = 0;
+		vety1[3] = height;
+		// -----
+		vetx0[4] = width / 4;
+		vety0[4] = 0;
+		vetx1[4] = width * 3 / 4;
+		vety1[4] = height;
+		// ----
+		vetx0[5] = width * 3 / 4;
+		vety0[5] = 0;
+		vetx1[5] = width / 4;
+		vety1[5] = height;
+		// ----
+		vetx0[6] = width;
+		vety0[6] = height * 1 / 4;
+		vetx1[6] = 0;
+		vety1[6] = height * 3 / 4;
+		// ----
+		vetx0[7] = 0;
+		vety0[7] = height * 1 / 4;
+		vetx1[7] = width;
+		vety1[7] = height * 3 / 4;
+
+		String[] vetTitle = { "orizzontale", "verticale", "diagonale sinistra", "diagonale destra", "inclinata 1",
+				"inclinata 2", "inclinata 3", "inclinata 4" };
+
+		// multipurpose line analyzer
+
+		int count = -1;
+
+		// int[] xPoints3 = null;
+		// int[] yPoints3 = null;
+		boolean vertical = false;
+		boolean valido = true;
+		for (int i1 = 0; i1 < 8; i1++) {
+
+			// IJ.log("------------> i1= " + i1);
+
+			xcoord[0] = vetx0[i1];
+			ycoord[0] = vety0[i1];
+			xcoord[1] = vetx1[i1];
+			ycoord[1] = vety1[i1];
+			imp12.setRoi(new Line(xcoord[0], ycoord[0], xcoord[1], ycoord[1]));
+			if (demo0) {
+				imp12.getRoi().setStrokeColor(colore2);
+				over12.addElement(imp12.getRoi());
+				imp12.updateAndDraw();
+			}
+
+			if (i1 == 1)
+				vertical = true;
+			else
+				vertical = false;
+
+			if (demo0 && i1 == 0)
+				showProfiles = true;
+			else
+				showProfiles = false;
+
+			myPeaks = cannyProfileAnalyzer2(imp12, vetTitle[i1], showProfiles, demo0, debug, vertical, timeout);
+
+			// myPeaks = profileAnalyzer(imp12, dimPixel, vetTitle[i1],
+			// showProfiles, vertical, timeout);
+
+			// String direction1 = ReadDicom.readDicomParameter(imp11,
+			// MyConst.DICOM_IMAGE_ORIENTATION);
+			// String direction2 = "1\0\0\01\0";
+
+			if (myPeaks != null) {
+
+				// per evitare le bolle d'aria escludero' il punto in alto per
+				// l'immagine assiale ed il punto a sinistra dell'immagine
+				// sagittale. Considero punto in alto quello con coordinata y <
+				// mat/2 e come punto a sinistra quello con coordinata x < mat/2
+				for (int i2 = 0; i2 < myPeaks[0].length; i2++) {
+					valido = true;
+					// MyLog.waitHere("direction1= " + direction1 + " i1= " +
+					// i1);
+
+					// if ((direction1.compareTo("0\\1\\0\\0\\0\\-1") == 0) &&
+					// (i1 == 0)) {
+					// // MyLog.waitHere("interdizione 0");
+					//
+					// if (((int) (myPeaks[0][i2]) < width / 2)) {
+					// valido = false;
+					// // MyLog.waitHere("linea orizzontale eliminato punto
+					// // sx");
+					// } else
+					// ;
+					// // MyLog.waitHere("linea orizzontale mantenuto punto
+					// // dx");
+					// }
+					//
+					// if ((direction1.compareTo("1\\0\\0\\0\\1\\0") == 0) &&
+					// (i1 == 1)) {
+					// // MyLog.waitHere("interdizione 1");
+					// if (((int) (myPeaks[1][i2]) < height / 2)) {
+					// valido = false;
+					// // MyLog.waitHere("linea verticale eliminato punto
+					// // sup");
+					// } else
+					// ;
+					// // MyLog.waitHere("linea verticale mantenuto punto
+					// // inf");
+					// }
+
+					if (valido) {
+
+						count++;
+						myXpoints[count] = (int) (myPeaks[3][i2]);
+						myYpoints[count] = (int) (myPeaks[4][i2]);
+						ImageUtils.plotPoints(imp12, over12, (int) (myPeaks[3][i2]), (int) (myPeaks[4][i2]), colore1,
+								1);
+						ImageUtils.plotPoints(imp12, over12, (int) (myPeaks[3][i2]), (int) (myPeaks[4][i2]), colore1,
+								0);
+						imp12.updateAndDraw();
+						ImageUtils.imageToFront(imp12);
+					}
+					// MyLog.logVector(myXpoints, "myXpoints");
+					// MyLog.logVector(myYpoints, "myYpoints");
+				}
+			}
+		}
+		if (demo0)
+			MyLog.waitHere("Si tracciano ulteriori linee", debug, timeout);
+
+		int[] xPoints3 = new int[1];
+		int[] yPoints3 = new int[1];
+		if (count >= 1) {
+			xPoints3 = new int[count];
+			yPoints3 = new int[count];
+
+			count++;
+			xPoints3 = new int[count];
+			yPoints3 = new int[count];
+
+			for (int i3 = 0; i3 < count; i3++) {
+				xPoints3[i3] = myXpoints[i3];
+				yPoints3[i3] = myYpoints[i3];
+			}
+		}
+
+		over12.clear();
+
+		// ----------------------------------------------------------------------
+		// Verifica di avere trovato almeno 3 punti, altrimenti chiede la
+		// selezione manuale del cerchio
+		// -------------------------------------------------------------------
+		// MyLog.waitHere("uno");
+
+		// if (xPoints3.length < 3 || test) {
+		// UtilAyv.showImageMaximized(imp11);
+		// MyLog.waitHere(
+		// "Non si riescono a determinare le coordinate di almeno 3 punti del
+		// cerchio \n posizionare manualmente una ROI circolare di diametro
+		// uguale al fantoccio e\n premere OK",
+		// debug, timeout1);
+		// manual = true;
+		// }
+
+		if (!manual) {
+
+			PointRoi pr12 = new PointRoi(xPoints3, yPoints3, xPoints3.length);
+			pr12.setPointType(2);
+			pr12.setSize(2);
+			imp12.setRoi(pr12);
+
+			if (demo0) {
+				ImageUtils.addOverlayRoi(imp12, colore1, 3.1);
+				pr12.setPointType(2);
+				pr12.setSize(2);
+
+				// over12.addElement(imp12.getRoi());
+				// over12.setStrokeColor(Color.green);
+				// imp12.setOverlay(over12);
+				// imp12.updateAndDraw();
+				// MyLog.waitHere(listaMessaggi(5), debug, timeout1);
+			}
+			// ---------------------------------------------------
+			// eseguo ora fitCircle per trovare centro e dimensione del
+			// fantoccio
+			// ---------------------------------------------------
+			if (xPoints3.length < 3) {
+				ImageWindow iw112 = imp12.getWindow();
+				if (iw112 != null)
+					iw112.dispose();
+				ImageWindow iw111 = imp11.getWindow();
+				if (iw111 != null)
+					iw111.dispose();
+
+				return null;
+			}
+			ImageUtils.fitCircle(imp12);
+			Boolean demo2 = true;
+			Boolean demo3 = true;
+			if (demo2) {
+				imp12.getRoi().setStrokeColor(colore1);
+				over12.addElement(imp12.getRoi());
+			}
+
+			if (demo3)
+				MyLog.waitHere("La circonferenza risultante dal fit e' mostrata in rosso", debug, timeout1);
+			Rectangle boundRec = imp12.getProcessor().getRoi();
+			xCenterCircle = Math.round(boundRec.x + boundRec.width / 2);
+			yCenterCircle = Math.round(boundRec.y + boundRec.height / 2);
+			diamCircle = boundRec.width;
+			// if (!manualOverride)
+			// writeStoredRoiData(boundRec);
+
+			MyCircleDetector.drawCenter(imp12, over12, xCenterCircle, yCenterCircle, colore3);
+			if (demo1)
+				MyLog.waitHere("002\nLa circonferenza risultante dal fit e' mostrata in rosso ed ha  \nxCenterCircle= "
+						+ xCenterCircle + "  yCenterCircle= " + yCenterCircle + " diamCircle= " + diamCircle);
+
+			// ----------------------------------------------------------
+			// Misuro l'errore sul fit rispetto ai punti imposti
+			// -----------------------------------------------------------
+			double[] vetDist = new double[xPoints3.length];
+			double sumError = 0;
+			for (int i1 = 0; i1 < xPoints3.length; i1++) {
+				vetDist[i1] = pointCirconferenceDistance(xPoints3[i1], yPoints3[i1], xCenterCircle, yCenterCircle,
+						diamCircle / 2);
+				sumError += Math.abs(vetDist[i1]);
+			}
+			if (sumError > maxFitError) {
+
+				// -------------------------------------------------------------
+				// disegno il cerchio ed i punti, in modo da date un feedback
+				// grafico al messaggio di eccessivo errore nel fit
+				// -------------------------------------------------------------
+				UtilAyv.showImageMaximized(imp11);
+				over12.clear();
+				imp11.setOverlay(over12);
+				imp11.setRoi(new OvalRoi(xCenterCircle - diamCircle / 2, yCenterCircle - diamCircle / 2, diamCircle,
+						diamCircle));
+				imp11.getRoi().setStrokeColor(colore1);
+				over12.addElement(imp11.getRoi());
+				imp11.setRoi(new PointRoi(xPoints3, yPoints3, xPoints3.length));
+				imp11.getRoi().setStrokeColor(colore2);
+				over12.addElement(imp11.getRoi());
+				imp11.deleteRoi();
+				MyLog.waitHere(listaMessaggi(16), debug, timeout1);
+				MyLog.waitHere("maxFitError");
+				manual = true;
+			}
+
+			//
+			// ----------------------------------------------------------
+			// disegno la ROI del centro, a solo scopo dimostrativo !
+			// ----------------------------------------------------------
+			//
+
+			if (demo0) {
+				MyCircleDetector.drawCenter(imp12, over12, xCenterCircle, yCenterCircle, colore1);
+				MyLog.waitHere(listaMessaggi(7), debug, timeout1);
+
+			}
+
+			Boolean noDebug = false;
+			// =============================================================
+			// COMPENSAZIONE PER EVENTUALE BOLLA D'ARIA NEL FANTOCCIO
+			// la mantengo, anche se nei fantocci attuali non c'è bolla. Notato
+			// sporadici interventi con spostamenti limitati.
+			// ==============================================================
+
+			// Traccio nuovamente le bisettrici verticale ed orizzontale, solo
+			// che anziche' essere sul centro dell'immagine, ora sono poste sul
+			// centro del cerchio circoscritto al fantoccio
+
+			// BISETTRICE VERTICALE FANTOCCIO
+
+			imp12.setRoi(new Line(xCenterCircle, 0, xCenterCircle, height));
+			if (demo0) {
+				imp12.getRoi().setStrokeColor(colore2);
+				over12.addElement(imp12.getRoi());
+				imp12.updateAndDraw();
+			}
+			peaks9 = cannyProfileAnalyzer2(imp12, "BISETTRICE VERTICALE FANTOCCIO", showProfiles, false, false, false,
+					1);
+
+			// MyLog.logMatrix(peaks9, "peaks9");
+			// MyLog.waitHere();
+
+			// PLOTTAGGIO PUNTI
+
+			double gapVert = 0;
+			if (peaks9 != null) {
+				ImageUtils.plotPoints(imp12, over12, peaks9);
+				gapVert = diamCircle / 2 - (yCenterCircle - peaks9[4][0]);
+			}
+
+			// BISETTRICE ORIZZONTALE FANTOCCIO
+
+			imp12.setRoi(new Line(0, yCenterCircle, width, yCenterCircle));
+			if (demo0) {
+				imp12.getRoi().setStrokeColor(colore2);
+				over12.addElement(imp12.getRoi());
+				imp12.updateAndDraw();
+			}
+			peaks10 = cannyProfileAnalyzer2(imp12, "BISETTRICE ORIZZONTALE FANTOCCIO", showProfiles, false, false,
+					false, 1);
+
+			double gapOrizz = 0;
+			if (peaks10 != null) {
+				ImageUtils.plotPoints(imp12, over12, peaks10);
+				gapOrizz = diamCircle / 2 - (xCenterCircle - peaks10[3][0]);
+			}
+
+			if (demo0)
+				MyLog.waitHere(listaMessaggi(8) + maxBubbleGapLimit, noDebug, timeout1);
+
+			// Effettuo in ogni caso la correzione, solo che in assenza di bolla
+			// d'aria la correzione sara' irrisoria, in presenza di bolla la
+			// correzione sara' apprezzabile
+
+			if (gapOrizz > gapVert) {
+				xcorr = (int) gapOrizz / 2;
+			} else {
+				ycorr = (int) gapVert / 2;
+			}
+
+			if ((xcorr + ycorr) > maxBubbleGapLimit)
+				MyLog.waitHere("xcorr= " + xcorr + " ycorr= " + ycorr);
+
+			// ---------------------------------------
+			// qesto e' il risultato della nostra correzione e saranno i dati
+			// della MROI
+			diamMROI = (int) Math.round(diamCircle * MyConst.P3_AREA_PERC_80_DIAM);
+
+			xCenterMROI = xCenterCircle + xcorr;
+			yCenterMROI = yCenterCircle + ycorr;
+
+			if (demo1)
+				MyLog.waitHere("0015\nCorrezioni per bolla d'aria: \nxcorr= " + xcorr + " ycorr= " + ycorr
+						+ "\nDATI MROI 80% xCenterMROI= " + xCenterMROI + " yCenterMROI= " + yCenterMROI + " diamMROI= "
+						+ diamMROI);
+
+			// ---------------------------------------
+			// verifico ora che l'entita' della bolla non sia cosi' grande da
+			// portare l'area MROI troppo a contatto del profilo fantoccio
+			// calcolato sulle bisettrici
+			// ---------------------------------------
+			imp12.setRoi(new Line(xCenterMROI, 0, xCenterMROI, height));
+			if (demo0) {
+				imp12.getRoi().setStrokeColor(colore2);
+				over12.addElement(imp12.getRoi());
+				imp12.updateAndDraw();
+			}
+			peaks11 = cannyProfileAnalyzer2(imp12, "BISETTRICE VERTICALE MROI", showProfiles, false, false, false, 1);
+			if (peaks11 != null) {
+				// PLOTTAGGIO PUNTI
+				ImageUtils.plotPoints(imp12, over12, peaks11);
+			}
+
+			imp12.setRoi(new Line(0, yCenterMROI, width, yCenterMROI));
+			if (demo0) {
+				imp12.getRoi().setStrokeColor(colore2);
+				over12.addElement(imp12.getRoi());
+				imp12.updateAndDraw();
+			}
+			peaks12 = cannyProfileAnalyzer2(imp12, "BISETTRICE ORIZZONTALE MROI", showProfiles, false, false, false, 1);
+			if (peaks12 != null) {
+				// PLOTTAGGIO PUNTI
+				ImageUtils.plotPoints(imp12, over12, peaks12);
+			}
+
+			double d1 = maxBubbleGapLimit;
+			double d2 = maxBubbleGapLimit;
+			double d3 = maxBubbleGapLimit;
+			double d4 = maxBubbleGapLimit;
+			double dMin = 9999;
+
+			// verticale
+			if (peaks11 != null) {
+				d1 = -(peaks11[4][0] - (yCenterMROI - diamMROI / 2));
+				d2 = peaks11[4][1] - (yCenterMROI + diamMROI / 2);
+			}
+			// orizzontale
+			if (peaks12 != null) {
+				d3 = -(peaks12[3][0] - (xCenterMROI - diamMROI / 2));
+				d4 = peaks12[3][1] - (xCenterMROI + diamMROI / 2);
+			}
+
+			dMin = Math.min(dMin, d1);
+			dMin = Math.min(dMin, d2);
+			dMin = Math.min(dMin, d3);
+			dMin = Math.min(dMin, d4);
+
+			if (dMin < maxBubbleGapLimit) {
+				if (noDebug)
+					MyLog.waitHere("dMin= " + dMin + " maxBubbleGapLimit= " + maxBubbleGapLimit);
+				manual = true;
+				// -------------------------------------------------------------
+				// disegno il cerchio ed i punti, in modo da date un feedback
+				// grafico al messaggio di eccessivo errore da bolla d'aria
+				// -------------------------------------------------------------
+				// UtilAyv.showImageMaximized(imp11);
+				over12.clear();
+				imp11.setOverlay(over12);
+				imp11.setRoi(new OvalRoi(xCenterCircle - diamCircle / 2, yCenterCircle - diamCircle / 2, diamCircle,
+						diamCircle));
+				imp11.getRoi().setStrokeColor(colore1);
+				over12.addElement(imp11.getRoi());
+				imp11.setRoi(new PointRoi(xPoints3, yPoints3, xPoints3.length));
+				imp11.getRoi().setStrokeColor(colore2);
+				over12.addElement(imp11.getRoi());
+				imp11.deleteRoi();
+				imp11.setRoi(new OvalRoi(xCenterMROI - diamMROI / 2, yCenterMROI - diamMROI / 2, diamMROI, diamMROI));
+				imp11.getRoi().setStrokeColor(colore1);
+				over12.addElement(imp11.getRoi());
+				imp11.setRoi(new PointRoi(xPoints3, yPoints3, xPoints3.length));
+				imp11.getRoi().setStrokeColor(colore2);
+				over12.addElement(imp11.getRoi());
+				imp11.deleteRoi();
+				if (demo1)
+					MyLog.waitHere("010\nBOLLA D'ARIA ECCESSIVA");
+
+				if (noDebug)
+					MyLog.waitHere(listaMessaggi(51) + " dMin= " + dMin, debug, timeout1);
+			} else {
+				imp12.setRoi(new OvalRoi(xCenterMROI - diamMROI / 2, yCenterMROI - diamMROI / 2, diamMROI, diamMROI));
+				Rectangle boundingRectangle2 = imp12.getProcessor().getRoi();
+				diamMROI = (int) boundingRectangle2.width;
+				xCenterMROI = boundingRectangle2.x + boundingRectangle2.width / 2;
+				yCenterMROI = boundingRectangle2.y + boundingRectangle2.height / 2;
+				// imp12.killRoi();
+				if (demo1)
+					MyLog.waitHere("006\nMROI 80% in giallo");
+			}
+		}
+		manual = false;
+		if (manual) {
+			MyLog.waitHere("INTERVENTO MANUALE");
+			// ==================================================================
+			// INTERVENTO MANUALE PER CASI DISPERATI, SAN GENNARO PENSACI TU
+			// ==================================================================
+			fast = false;
+
+			over12.clear();
+			imp12.close();
+			if (!imp11.isVisible())
+				UtilAyv.showImageMaximized(imp11);
+			imp11.setRoi(new OvalRoi(width / 2 - diamRoiMan / 2, height / 2 - diamRoiMan / 2, diamRoiMan, diamRoiMan));
+			MyLog.waitHere(listaMessaggi(14), debug, timeout1);
+
+			if (timeout1 > 0) {
+				// in questo caso (simulazione in corso) devo simulare
+				// l'intervento manuale dell'operatore. Lo simulo impostando una
+				// nuova posizione della Roi con Roi.setLocation
+				imp11.getRoi().setLocation(40, 29);
+				imp11.updateAndDraw();
+				// MyLog.waitHere();
+			}
+
+			Rectangle boundRec11 = imp11.getProcessor().getRoi();
+			xCenterCircleMan = Math.round(boundRec11.x + boundRec11.width / 2);
+			yCenterCircleMan = Math.round(boundRec11.y + boundRec11.height / 2);
+			diamCircleMan = boundRec11.width;
+			diamCircleMan80 = (int) Math.round(diamCircleMan * MyConst.P3_AREA_PERC_80_DIAM);
+			imp11.setRoi(new OvalRoi(xCenterCircleMan - diamCircleMan80 / 2, yCenterCircleMan - diamCircleMan80 / 2,
+					diamCircleMan80, diamCircleMan80));
+			MyLog.waitHere(listaMessaggi(18), debug, timeout1);
+
+			Rectangle boundRec111 = imp11.getProcessor().getRoi();
+			xCenterCircleMan80 = Math.round(boundRec111.x + boundRec111.width / 2);
+			yCenterCircleMan80 = Math.round(boundRec111.y + boundRec111.height / 2);
+			diamCircleMan80 = boundRec111.width;
+
+			// carico qui i dati dell'avvenuto posizionamento manuale
+			xCenterCircle = xCenterCircleMan;
+			yCenterCircle = yCenterCircleMan;
+			diamCircle = diamCircleMan;
+
+			xCenterMROI = xCenterCircleMan80;
+			yCenterMROI = yCenterCircleMan80;
+			diamMROI = diamCircleMan80;
+			imp12.setRoi(new OvalRoi(xCenterMROI, yCenterMROI, diamMROI, diamMROI));
+		}
+
+		if (demo0) {
+			imp12.updateAndDraw();
+			imp12.getRoi().setStrokeColor(colore2);
+			over12.addElement(imp12.getRoi());
+			MyLog.waitHere(listaMessaggi(9), debug, timeout1);
+			MyCircleDetector.drawCenter(imp12, over12, xCenterCircle + xcorr, yCenterCircle + ycorr, colore2);
+			MyLog.waitHere(listaMessaggi(10), debug, timeout1);
+		}
+		ImageWindow ww11 = imp11.getWindow();
+		if (ww11 != null)
+			ww11.dispose();
+		ImageWindow ww12 = imp12.getWindow();
+		if (ww12 != null)
+			ww12.dispose();
+
+		over12.clear();
+		imp12.close();
+		imp11.deleteRoi();
+		imp11.updateImage();
+
+		double[] out2 = new double[6];
+		out2[0] = xCenterCircle;
+		out2[1] = yCenterCircle;
+		out2[2] = diamCircle;
+		out2[3] = xCenterMROI;
+		out2[4] = yCenterMROI;
+		out2[5] = diamMROI;
+		if (demo1)
+			MyLog.waitHere("020\nFine PositionSearch11");
+		return out2;
 	}
 
 	/**
@@ -1038,6 +1744,144 @@ public class Unifor3D_ implements PlugIn {
 		if (demo1)
 			MyLog.waitHere("020\nFine PositionSearch11");
 		return out2;
+	}
+
+	/**
+	 * Riceve una ImagePlus derivante da un CannyEdgeDetector con impostata una
+	 * Line, restituisce le coordinate dei 2 picchi, se non sono esattamente 2
+	 * restituisce null.
+	 * 
+	 * @param imp1
+	 * @param dimPixel
+	 * @param title
+	 * @param showProfiles
+	 * @param demo
+	 * @param debug
+	 * @return
+	 */
+	public static double[][] cannyProfileAnalyzer2(ImagePlus imp1, String title, boolean showProfiles, boolean demo,
+			boolean debug, boolean vertical, int timeout) {
+
+		double[][] profi3 = MyLine.decomposer(imp1);
+		if (profi3 == null) {
+			MyLog.waitHere("profi3 == null");
+			return null;
+		}
+		int count1 = 0;
+		boolean ready1 = false;
+		double max1 = 0;
+		for (int i1 = 0; i1 < profi3[0].length; i1++) {
+
+			if (profi3[2][i1] > max1) {
+				max1 = profi3[2][i1];
+				ready1 = true;
+			}
+			if ((profi3[2][i1] == 0) && ready1) {
+				max1 = 0;
+				count1++;
+				ready1 = false;
+			}
+		}
+		// devo ora contare i pixel a 255 che ho trovato, ne accettero' solo 2,
+		if (count1 != 2) {
+			if (demo)
+				MyLog.waitHere("" + title + " trovati un numero di punti diverso da 2, count= " + count1
+						+ " scartiamo questi risultati");
+			return null;
+		}
+
+		// peaks1 viene utilizzato in un altra routine, per cui gli elementi 0,
+		// 1 e
+		// ed 2 sono utilizzati per altro, li lascio a 0
+		double[][] peaks1 = new double[6][count1];
+
+		int count2 = 0;
+		boolean ready2 = false;
+		double max2 = 0;
+
+		for (int i1 = 0; i1 < profi3[0].length; i1++) {
+
+			if (profi3[2][i1] > max2) {
+				peaks1[3][count2] = profi3[0][i1];
+				peaks1[4][count2] = profi3[1][i1];
+				max2 = profi3[2][i1];
+				peaks1[5][count2] = max2;
+
+				ready2 = true;
+			}
+			if ((profi3[2][i1] == 0) && ready2) {
+				max2 = 0;
+				count2++;
+				ready2 = false;
+			}
+		}
+
+		// ----------------------------------------
+		// AGGIUNGO 1 AI PUNTI TROVATI
+		// ---------------------------------------
+
+		for (int i1 = 0; i1 < peaks1.length; i1++) {
+			for (int i2 = 0; i2 < peaks1[0].length; i2++)
+				if (peaks1[i1][i2] > 0)
+					peaks1[i1][i2] = peaks1[i1][i2] + 1;
+		}
+
+		if (showProfiles) {
+			double[] bx = new double[profi3[2].length];
+			for (int i1 = 0; i1 < profi3[2].length; i1++) {
+				bx[i1] = (double) i1;
+			}
+
+			double[] xPoints = new double[peaks1[0].length];
+			double[] yPoints = new double[peaks1[0].length];
+			double[] zPoints = new double[peaks1[0].length];
+			for (int i1 = 0; i1 < peaks1[0].length; i1++) {
+				xPoints[i1] = peaks1[3][i1];
+				yPoints[i1] = peaks1[4][i1];
+				zPoints[i1] = peaks1[5][i1];
+			}
+
+			Plot plot2 = MyPlot.basePlot2(profi3, title, Color.GREEN, vertical);
+			plot2.draw();
+			plot2.setColor(Color.red);
+			if (vertical)
+				plot2.addPoints(yPoints, zPoints, PlotWindow.CIRCLE);
+			else
+				plot2.addPoints(xPoints, zPoints, PlotWindow.CIRCLE);
+			plot2.show();
+
+			Frame lw = WindowManager.getFrame(title);
+			if (lw != null)
+				lw.setLocation(10, 10);
+
+			MyLog.waitHere(listaMessaggi(3), debug, timeout);
+
+		}
+
+		//
+		// Plot plot4 = new Plot("Profile", "X Axis", "Y Axis", bx, profi3[2]);
+		// plot4.setLimits(0, bx.length + 10, 0, 300);
+		// plot4.setSize(400, 200);
+		// plot4.setColor(Color.red);
+		// plot4.setLineWidth(2);
+		// plot4.show();
+
+		if (WindowManager.getFrame("Profile") != null) {
+			IJ.selectWindow("Profile");
+			IJ.run("Close");
+		}
+
+		// verifico di avere trovato un max di 2 picchi
+		if (peaks1[2].length > 2)
+			MyLog.waitHere(
+					"Attenzione trovate troppe intersezioni col cerchio, cioe' " + peaks1[2].length + "  VERIFICARE");
+		if (peaks1[2].length < 2)
+			MyLog.waitHere(
+					"Attenzione trovata una sola intersezione col cerchio, cioe' " + peaks1[2].length + "  VERIFICARE");
+
+		// MyLog.logMatrix(peaks1, "peaks1 " + title);
+
+		return peaks1;
 	}
 
 	/**
