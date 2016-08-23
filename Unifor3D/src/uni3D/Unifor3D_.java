@@ -85,8 +85,8 @@ public class Unifor3D_ implements PlugIn {
 		}
 		String[] sortedList1 = pathSorter(dir1b);
 		ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
-		//----------------------------------------------
-		
+		// ----------------------------------------------
+
 		ImagePlus imp00 = UtilAyv.openImageNoDisplay(sortedList1[0], true);
 		double dimPixel = ReadDicom.readDouble(
 				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_PIXEL_SPACING), 1));
@@ -185,10 +185,6 @@ public class Unifor3D_ implements PlugIn {
 
 		MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp201, roi verde");
 
-		MyLog.waitHere("posizione centro 1 x= " + out202[0] + " z= " + out202[1] + " d= " + out202[2]
-				+ "\nposizione centro 2 y= " + out203[1] + " z= " + out203[0] + " d= " + out203[2]
-				+ "\nposizione centro 3 y= " + out201[0] + " y= " + out201[1] + " d= " + out201[2]);
-
 		String[] dir2a = new File(dir2).list();
 		String[] dir2b = new String[dir2a.length];
 		for (int i1 = 0; i1 < dir2a.length; i1++) {
@@ -196,6 +192,12 @@ public class Unifor3D_ implements PlugIn {
 		}
 		String[] sortedList2 = pathSorter(dir2b);
 		ImagePlus imp20 = MyStackUtils.imagesToStack16(sortedList2);
+		ImagePlus stackDiff = stackDiffCalculation(imp10, imp20);
+		stackDiff.show();
+
+		MyLog.waitHere("posizione centro 1 x= " + out202[0] + " z= " + out202[1] + " d= " + out202[2]
+				+ "\nposizione centro 2 y= " + out203[1] + " z= " + out203[0] + " d= " + out203[2]
+				+ "\nposizione centro 3 y= " + out201[0] + " y= " + out201[1] + " d= " + out201[2]);
 
 		int height = ReadDicom.readInt(ReadDicom.readDicomParameter(imp20, MyConst.DICOM_ROWS));
 		int width = ReadDicom.readInt(ReadDicom.readDicomParameter(imp20, MyConst.DICOM_COLUMNS));
@@ -205,31 +207,32 @@ public class Unifor3D_ implements PlugIn {
 		int yMROI = (int) Math.round(out201[1]);
 		double diamMROI = out201[2] * MyConst.P3_AREA_PERC_80_DIAM;
 
-		int startSlice = centerSlice - (int) Math.round(diamMROI / 2);
-		int endSlice = startSlice + (int) Math.round(diamMROI);
+		int startSlice = centerSlice - (int) (diamMROI / 2);
+		int endSlice = centerSlice + (int) (diamMROI / 2) + 3;
 		imp00 = UtilAyv.openImageNoDisplay(sortedList1[centerSlice], true);
 		double centerPos = ReadDicom.readDouble(
 				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_IMAGE_POSITION), 1));
 
 		ImageStack newStack = new ImageStack(width, height);
-//		ImagePlus impSimulata=null;
-//		ImageProcessor ipSimulata= null;
-		
+		// ImagePlus impSimulata=null;
+		// ImageProcessor ipSimulata= null;
+
 		int count = -1;
 		ImagePlus imp11;
 		ImagePlus imp13;
-		
+
 		for (int i1 = startSlice; i1 < endSlice; i1++) {
 			IJ.showStatus("" + i1 + " / " + endSlice);
 
 			// ===============================================
 			imp11 = MyStackUtils.imageFromStack(imp10, i1);
-//			ImagePlus imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
+			// ImagePlus imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
 			if (imp11 == null)
 				MyLog.waitHere("Non trovato il file " + sortedList1[i1]);
 			imp11.show();
-			imp13 =  MyStackUtils.imageFromStack(imp20, i1);
-	//		ImagePlus imp13 = UtilAyv.openImageNoDisplay(sortedList2[i1], true);
+			imp13 = MyStackUtils.imageFromStack(imp20, i1);
+			// ImagePlus imp13 = UtilAyv.openImageNoDisplay(sortedList2[i1],
+			// true);
 			if (imp13 == null)
 				MyLog.waitHere("Non trovato il file " + sortedList2[i1]);
 			double thisPos = ReadDicom.readDouble(
@@ -248,6 +251,17 @@ public class Unifor3D_ implements PlugIn {
 
 			double radius1 = diamMAX / 2;
 			double diamEXT2 = Math.sqrt(radius1 * radius1 - project * project) * 2;
+			double plotPos = i1 * dimPixel;
+
+			imp202.setRoi(new Line(xMROI - diamEXT2 / 2, plotPos, xMROI + diamEXT2 / 2, plotPos));
+			imp202.getRoi().setStrokeColor(Color.green);
+			over202.addElement(imp202.getRoi());
+			imp202.updateAndDraw();
+
+			imp203.setRoi(new Line(plotPos, yMROI - diamEXT2 / 2, plotPos, yMROI + diamEXT2 / 2));
+			imp203.getRoi().setStrokeColor(Color.green);
+			over203.addElement(imp203.getRoi());
+			imp203.updateAndDraw();
 
 			imp11.setRoi(new OvalRoi(xMROI - diamEXT2 / 2, yMROI - diamEXT2 / 2, diamEXT2, diamEXT2));
 			imp11.getRoi().setStrokeColor(Color.green);
@@ -255,12 +269,22 @@ public class Unifor3D_ implements PlugIn {
 
 			double radius2 = diamMROI / 2;
 			double diamMROI2 = Math.sqrt(radius2 * radius2 - project * project) * 2;
+			imp202.setRoi(new Line(xMROI - diamMROI2 / 2, plotPos, xMROI + diamMROI2 / 2, plotPos));
+			imp202.getRoi().setStrokeColor(Color.red);
+			over202.addElement(imp202.getRoi());
+			imp202.updateAndDraw();
+
+			imp203.setRoi(new Line(plotPos, yMROI - diamMROI2 / 2, plotPos, yMROI + diamMROI2 / 2));
+			imp203.getRoi().setStrokeColor(Color.red);
+			over203.addElement(imp203.getRoi());
+			imp203.updateAndDraw();
+
 			imp11.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 / 2, diamMROI2, diamMROI2));
 			imp11.getRoi().setStrokeColor(Color.red);
 			over111.addElement(imp11.getRoi());
 			imp11.deleteRoi();
 			imp11.updateAndRepaintWindow();
-			IJ.wait(10);
+			IJ.wait(400);
 
 			ImageWindow iw111 = imp11.getWindow();
 			if (iw111 != null)
@@ -289,6 +313,7 @@ public class Unifor3D_ implements PlugIn {
 			if (sliceInfo2 != null)
 				sliceInfo1 += "\n" + sliceInfo2;
 			newStack.addSlice(sliceInfo2, ipSimulata);
+
 			impSimulata.close();
 			impDiff.close();
 			imp11.close();
@@ -311,6 +336,29 @@ public class Unifor3D_ implements PlugIn {
 		IJ.showMessage("FINE LAVORO");
 	} // chiude
 		// run
+
+	public static ImagePlus stackDiffCalculation(ImagePlus stack1, ImagePlus stack2) {
+		ImageStack newStack = new ImageStack(stack1.getWidth(), stack1.getHeight());
+		ImagePlus imp1;
+		ImagePlus imp2;
+		for (int i1 = 1; i1 < stack1.getImageStackSize(); i1++) {
+			imp1 = MyStackUtils.imageFromStack(stack1, i1);
+			imp2 = MyStackUtils.imageFromStack(stack2, i1);
+
+			ImagePlus impDiff = UtilAyv.diffIma(imp1, imp2);
+			ImageProcessor ipDiff = impDiff.getProcessor();
+			if (i1 == 1)
+				newStack.update(ipDiff);
+			String sliceInfo1 = imp1.getTitle();
+			String sliceInfo2 = (String) imp1.getProperty("Info");
+			if (sliceInfo2 != null)
+				sliceInfo1 += "\n" + sliceInfo2;
+			newStack.addSlice(sliceInfo2, ipDiff);
+		}
+		ImagePlus newImpStack = new ImagePlus("STACK_DIFFERENZA", newStack);
+
+		return newImpStack;
+	}
 
 	/**
 	 * Calculation of Integral Uniformity Percentual
