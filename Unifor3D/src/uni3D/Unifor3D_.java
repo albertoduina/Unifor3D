@@ -3,22 +3,14 @@ package uni3D;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Rectangle;
-import java.io.*;
+import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 
-import utils.ArrayUtils;
-import utils.ImageUtils;
-import utils.InputOutput;
-import utils.MyCircleDetector;
-import utils.MyConst;
-import utils.MyLine;
-import utils.MyLog;
-import utils.MyPlot;
-import utils.MyStackUtils;
-import utils.ReadDicom;
-import utils.UtilAyv;
-import ij.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.gui.ImageWindow;
 import ij.gui.Line;
 import ij.gui.OvalRoi;
@@ -27,12 +19,25 @@ import ij.gui.Plot;
 import ij.gui.PlotWindow;
 import ij.gui.PointRoi;
 import ij.gui.Roi;
-import ij.io.*;
-import ij.plugin.*;
+import ij.io.DirectoryChooser;
+import ij.io.Opener;
+import ij.plugin.Duplicator;
+import ij.plugin.Orthogonal_Views;
+import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
-import ij.process.LUT;
-import ij.text.TextWindow;
+import utils.ArrayUtils;
+import utils.ImageUtils;
+import utils.AboutBox;
+import utils.MyCircleDetector;
+import utils.MyConst;
+import utils.MyLine;
+import utils.MyLog;
+import utils.MyPlot;
+import utils.MyStackUtils;
+import utils.MyVersionUtils;
+import utils.ReadDicom;
+import utils.UtilAyv;
 
 //=====================================================
 //     Programma per uniformita' 3D per immagini combined circolari
@@ -47,6 +52,11 @@ public class Unifor3D_ implements PlugIn {
 	static boolean demo1 = false;
 
 	public void run(String arg) {
+
+		// new MyAboutBox().about10("Unifor3D");
+		new AboutBox().about("Scansione automatica cartelle", MyVersionUtils.CURRENT_VERSION);
+		IJ.wait(3000);
+		new AboutBox().close();
 
 		double maxFitError = +20;
 		double maxBubbleGapLimit = 2;
@@ -83,6 +93,7 @@ public class Unifor3D_ implements PlugIn {
 		for (int i1 = 0; i1 < dir1a.length; i1++) {
 			dir1b[i1] = dir1 + "\\" + dir1a[i1];
 		}
+
 		String[] sortedList1 = pathSorter(dir1b);
 		ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
 		// ----------------------------------------------
@@ -348,12 +359,8 @@ public class Unifor3D_ implements PlugIn {
 			imp11.close();
 			imp13.close();
 		}
-		IJ.showStatus("START simulataStack");
-		ImagePlus simulataStack = new ImagePlus("STACK_SIMULATE", newStack);
-		IJ.showStatus("END simulataStack");
-		IJ.showStatus("END cleanup");
+		ImagePlus simulataStack = new ImagePlus("STACK_IMMAGINI_SIMULATE", newStack);
 		simulataStack.show();
-		MyLog.waitHere("SIMULATA");
 
 		int[] pixList = ArrayUtils.arrayListToArrayInt(pixList11);
 		double mean11 = UtilAyv.vetMean(pixList);
@@ -365,7 +372,7 @@ public class Unifor3D_ implements PlugIn {
 		for (int i1 = 0; i1 < classi.length; i1++) {
 			IJ.log("" + i1 + " " + classi[i1]);
 		}
-		IJ.showMessage("SALVATE IL LOG ED ANDATE IN PACE");
+		IJ.showMessage("SAVE THE LOG!!");
 	} // chiude
 		// run
 
@@ -387,7 +394,7 @@ public class Unifor3D_ implements PlugIn {
 				sliceInfo1 += "\n" + sliceInfo2;
 			newStack.addSlice(sliceInfo2, ipDiff);
 		}
-		ImagePlus newImpStack = new ImagePlus("STACK_DIFFERENZA", newStack);
+		ImagePlus newImpStack = new ImagePlus("STACK_IMMAGINI_DIFFERENZA", newStack);
 
 		return newImpStack;
 	}
@@ -471,10 +478,13 @@ public class Unifor3D_ implements PlugIn {
 		Opener opener1 = new Opener();
 		// test disponibilit� files
 		for (int w1 = 0; w1 < path.length; w1++) {
-			ImagePlus imp1 = opener1.openImage(path[w1]);
-			if (imp1 == null) {
-				IJ.log("pathSorter: image file unavailable: " + path[w1] + " ?");
-				return null;
+			int type = (new Opener()).getFileType(path[w1]);
+			if (type == Opener.DICOM) {
+				ImagePlus imp1 = opener1.openImage(path[w1]);
+				if (imp1 == null) {
+					IJ.log("pathSorter: image file unavailable: " + path[w1] + " ?");
+					return null;
+				}
 			}
 		}
 		String[] slicePosition = listSlicePosition(path);
