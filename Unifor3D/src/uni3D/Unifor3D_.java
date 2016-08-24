@@ -251,40 +251,69 @@ public class Unifor3D_ implements PlugIn {
 
 			double radius1 = diamMAX / 2;
 			double diamEXT2 = Math.sqrt(radius1 * radius1 - project * project) * 2;
-			double plotPos = i1 * dimPixel;
-
-			imp202.setRoi(new Line(xMROI - diamEXT2 / 2, plotPos, xMROI + diamEXT2 / 2, plotPos));
-			imp202.getRoi().setStrokeColor(Color.green);
-			over202.addElement(imp202.getRoi());
-			imp202.updateAndDraw();
-
-			imp203.setRoi(new Line(plotPos, yMROI - diamEXT2 / 2, plotPos, yMROI + diamEXT2 / 2));
-			imp203.getRoi().setStrokeColor(Color.green);
-			over203.addElement(imp203.getRoi());
-			imp203.updateAndDraw();
-
-			imp11.setRoi(new OvalRoi(xMROI - diamEXT2 / 2, yMROI - diamEXT2 / 2, diamEXT2, diamEXT2));
-			imp11.getRoi().setStrokeColor(Color.green);
-			over111.addElement(imp11.getRoi());
+			if (UtilAyv.isNaN(diamEXT2))
+				diamEXT2 = 0;
 
 			double radius2 = diamMROI / 2;
 			double diamMROI2 = Math.sqrt(radius2 * radius2 - project * project) * 2;
-			imp202.setRoi(new Line(xMROI - diamMROI2 / 2, plotPos, xMROI + diamMROI2 / 2, plotPos));
-			imp202.getRoi().setStrokeColor(Color.red);
+			if (UtilAyv.isNaN(diamMROI2))
+				diamMROI2 = 0;
+
+			// ==== coloro le SLICES man mano le elaboro ====
+			double plotPos = i1 * dimPixel;
+			Color c1 = new Color(00, 255, 0, 80); // green
+			Color c2 = new Color(255, 0, 0, 80); // red
+
+			// ==
+			double start = xMROI - diamEXT2 / 2;
+			double stop = xMROI - diamMROI2 / 2;
+			imp202.setRoi(new Line(start, plotPos, stop, plotPos));
+			imp202.getRoi().setStrokeColor(c1);
 			over202.addElement(imp202.getRoi());
 			imp202.updateAndDraw();
-
-			imp203.setRoi(new Line(plotPos, yMROI - diamMROI2 / 2, plotPos, yMROI + diamMROI2 / 2));
-			imp203.getRoi().setStrokeColor(Color.red);
+			// --
+			imp202.setRoi(new Line(xMROI - diamMROI2 / 2, plotPos, xMROI + diamMROI2 / 2, plotPos));
+			imp202.getRoi().setStrokeColor(c2);
+			over202.addElement(imp202.getRoi());
+			imp202.updateAndDraw();
+			// --
+			start = xMROI + diamMROI2 / 2;
+			stop = xMROI + diamEXT2 / 2;
+			imp202.setRoi(new Line(start, plotPos, stop, plotPos));
+			imp202.getRoi().setStrokeColor(c1);
+			over202.addElement(imp202.getRoi());
+			imp202.updateAndDraw();
+			// ==
+			start = yMROI - diamEXT2 / 2;
+			stop = yMROI - diamMROI2 / 2;
+			imp203.setRoi(new Line(plotPos, start, plotPos, stop));
+			imp203.getRoi().setStrokeColor(c1);
 			over203.addElement(imp203.getRoi());
 			imp203.updateAndDraw();
+			// --
+			imp203.setRoi(new Line(plotPos, yMROI - diamMROI2 / 2, plotPos, yMROI + diamMROI2 / 2));
+			imp203.getRoi().setStrokeColor(c2);
+			over203.addElement(imp203.getRoi());
+			imp203.updateAndDraw();
+			// --
+			start = yMROI + diamMROI2 / 2;
+			stop = yMROI + diamEXT2 / 2;
+			imp203.setRoi(new Line(plotPos, start, plotPos, stop));
+			imp203.getRoi().setStrokeColor(c1);
+			over203.addElement(imp203.getRoi());
+			imp203.updateAndDraw();
+			// ==
+			imp11.setRoi(new OvalRoi(xMROI - diamEXT2 / 2, yMROI - diamEXT2 / 2, diamEXT2, diamEXT2));
+			imp11.getRoi().setStrokeColor(Color.green);
+			over111.addElement(imp11.getRoi());
 
 			imp11.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 / 2, diamMROI2, diamMROI2));
 			imp11.getRoi().setStrokeColor(Color.red);
 			over111.addElement(imp11.getRoi());
 			imp11.deleteRoi();
 			imp11.updateAndRepaintWindow();
-			IJ.wait(400);
+			IJ.wait(100);
+			// ==== coloro le SLICES man mano le elaboro ====
 
 			ImageWindow iw111 = imp11.getWindow();
 			if (iw111 != null)
@@ -328,12 +357,15 @@ public class Unifor3D_ implements PlugIn {
 
 		int[] pixList = ArrayUtils.arrayListToArrayInt(pixList11);
 		double mean11 = UtilAyv.vetMean(pixList);
-		MyLog.waitHere("mean11= " + mean11);
+		double devst11 = UtilAyv.vetSdKnuth(pixList);
+		MyLog.waitHere("mean11= " + mean11 + " devst11= " + devst11);
+		IJ.log("mean pixels= " + mean11);
+		IJ.log("devSt pixels= " + devst11);
 		int[] classi = pixClassi(pixList);
-		// for (int i1 = 0; i1 < classi.length; i1++) {
-		// IJ.log("" + i1 + " " + classi[i1]);
-		// }
-		IJ.showMessage("FINE LAVORO");
+		for (int i1 = 0; i1 < classi.length; i1++) {
+			IJ.log("" + i1 + " " + classi[i1]);
+		}
+		IJ.showMessage("SALVATE IL LOG ED ANDATE IN PACE");
 	} // chiude
 		// run
 
