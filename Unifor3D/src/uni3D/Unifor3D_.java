@@ -26,6 +26,7 @@ import ij.plugin.Orthogonal_Views;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
+import ij.process.ShortProcessor;
 import utils.ArrayUtils;
 import utils.ImageUtils;
 import utils.AboutBox;
@@ -54,8 +55,8 @@ public class Unifor3D_ implements PlugIn {
 	public void run(String arg) {
 
 		// new MyAboutBox().about10("Unifor3D");
-		new AboutBox().about("Scansione automatica cartelle", MyVersionUtils.CURRENT_VERSION);
-		IJ.wait(3000);
+		new AboutBox().about("Unifor3D", MyVersionUtils.CURRENT_VERSION);
+		IJ.wait(5000);
 		new AboutBox().close();
 
 		double maxFitError = +20;
@@ -93,7 +94,6 @@ public class Unifor3D_ implements PlugIn {
 		for (int i1 = 0; i1 < dir1a.length; i1++) {
 			dir1b[i1] = dir1 + "\\" + dir1a[i1];
 		}
-
 		String[] sortedList1 = pathSorter(dir1b);
 		ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
 		// ----------------------------------------------
@@ -150,7 +150,7 @@ public class Unifor3D_ implements PlugIn {
 		over202.addElement(imp202.getRoi());
 		imp202.deleteRoi();
 		imp202.show();
-		MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp202, roi verde");
+		// MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp202, roi verde");
 
 		double out203[] = positionSniper(imp203, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, demo0, test,
 				fast, timeout);
@@ -166,7 +166,8 @@ public class Unifor3D_ implements PlugIn {
 		over203.addElement(imp203.getRoi());
 		imp203.deleteRoi();
 		imp203.show();
-		MyLog.waitHere("VERIFICA POSIZIONAMENTO SU IMMAGINE imp203, roi verde");
+		// MyLog.waitHere("VERIFICA POSIZIONAMENTO SU IMMAGINE imp203, roi
+		// verde");
 
 		int centerSlice = 0;
 		if ((out202[1] - out203[0]) < 2 || (out202[1] - out203[0]) < 2) {
@@ -194,7 +195,7 @@ public class Unifor3D_ implements PlugIn {
 		imp201.deleteRoi();
 		imp201.show();
 
-		MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp201, roi verde");
+		// MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp201, roi verde");
 
 		String[] dir2a = new File(dir2).list();
 		String[] dir2b = new String[dir2a.length];
@@ -273,7 +274,7 @@ public class Unifor3D_ implements PlugIn {
 			// ==== coloro le SLICES man mano le elaboro ====
 			double plotPos = i1 * dimPixel;
 			Color c1 = new Color(00, 255, 0, 80); // green
-			Color c2 = new Color(255, 0, 0, 80); // red
+			Color c2 = new Color(255, 50, 255, 80); // purple
 
 			// ==
 			double start = xMROI - diamEXT2 / 2;
@@ -359,12 +360,33 @@ public class Unifor3D_ implements PlugIn {
 			imp11.close();
 			imp13.close();
 		}
+
+		imp202.deleteRoi();
+		imp203.deleteRoi();
+
 		ImagePlus simulataStack = new ImagePlus("STACK_IMMAGINI_SIMULATE", newStack);
 		simulataStack.show();
 
 		int[] pixList = ArrayUtils.arrayListToArrayInt(pixList11);
 		double mean11 = UtilAyv.vetMean(pixList);
 		double devst11 = UtilAyv.vetSdKnuth(pixList);
+
+		// creo un imageProcessor col contenuto del vettore
+		int aaa = pixList.length;
+
+		double www11 = Math.sqrt((double) aaa);
+		int www = (int) www11 + 1;
+		MyLog.waitHere("aaa= " + aaa + " www= " + www);
+
+		short[] pixList2 = new short[www*www];
+		for (int i1 = 0; i1 < aaa; i1++) {
+			pixList2[i1] = (short) pixList[i1];
+		}
+		ImageProcessor ipx = new ShortProcessor(www, www, pixList2, null);
+		ImagePlus impx = new ImagePlus("MULTI", ipx);
+		IJ.run(impx, "Histogram", "");
+		MyLog.waitHere("CAUTION PADDED IMAGE FOR HISTOGRAM, pertanto media e ds non sono corrette M.P.C.");
+
 		MyLog.waitHere("mean11= " + mean11 + " devst11= " + devst11);
 		IJ.log("mean pixels= " + mean11);
 		IJ.log("devSt pixels= " + devst11);
@@ -372,7 +394,8 @@ public class Unifor3D_ implements PlugIn {
 		for (int i1 = 0; i1 < classi.length; i1++) {
 			IJ.log("" + i1 + " " + classi[i1]);
 		}
-		IJ.showMessage("SAVE THE LOG!!");
+
+		IJ.showMessage("GOD SAVE THE LOG");
 	} // chiude
 		// run
 
@@ -471,6 +494,8 @@ public class Unifor3D_ implements PlugIn {
 	 * @return
 	 */
 	public static String[] pathSorter(String[] path) {
+		ArrayList<String> list1 = new ArrayList<String>();
+
 		if ((path == null) || (path.length == 0)) {
 			IJ.log("pathSorter: path problems");
 			return null;
@@ -481,15 +506,14 @@ public class Unifor3D_ implements PlugIn {
 			int type = (new Opener()).getFileType(path[w1]);
 			if (type == Opener.DICOM) {
 				ImagePlus imp1 = opener1.openImage(path[w1]);
-				if (imp1 == null) {
-					IJ.log("pathSorter: image file unavailable: " + path[w1] + " ?");
-					return null;
+				if (imp1 != null) {
+					list1.add(path[w1]);
 				}
 			}
 		}
-		String[] slicePosition = listSlicePosition(path);
-		String[] pathSortato = bubbleSortPath(path, slicePosition);
-		// new UtilAyv().logVector(pathSortato, "pathSortato");
+		String[] path1 = ArrayUtils.arrayListToArrayString(list1);
+		String[] slicePosition = listSlicePosition(path1);
+		String[] pathSortato = bubbleSortPath(path1, slicePosition);
 		return pathSortato;
 	}
 
