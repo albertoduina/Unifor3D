@@ -55,7 +55,7 @@ public class Unifor3D_ implements PlugIn {
 	public void run(String arg) {
 
 		// new MyAboutBox().about10("Unifor3D");
-		new AboutBox().about("Unifor3D", MyVersionUtils.CURRENT_VERSION);
+		new AboutBox().aboutIW2AYV("Unifor3D", MyVersionUtils.CURRENT_VERSION);
 		IJ.wait(5000);
 		new AboutBox().close();
 
@@ -206,6 +206,7 @@ public class Unifor3D_ implements PlugIn {
 		ImagePlus imp20 = MyStackUtils.imagesToStack16(sortedList2);
 		ImagePlus stackDiff = stackDiffCalculation(imp10, imp20);
 		stackDiff.show();
+		IJ.run("Tile", "");
 
 		MyLog.waitHere("posizione centro 1 x= " + out202[0] + " z= " + out202[1] + " d= " + out202[2]
 				+ "\nposizione centro 2 y= " + out203[1] + " z= " + out203[0] + " d= " + out203[2]
@@ -382,6 +383,12 @@ public class Unifor3D_ implements PlugIn {
 		for (int i1 = 0; i1 < aaa; i1++) {
 			pixList2[i1] = (short) pixList[i1];
 		}
+		
+		double mean22 = UtilAyv.vetMean(pixList2);
+		double devst22 = UtilAyv.vetSdKnuth(pixList2);
+		MyLog.waitHere("CAUTION PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22);
+		IJ.log("CAUTION PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22);
+		
 		ImageProcessor ipx = new ShortProcessor(www, www, pixList2, null);
 		ImagePlus impx = new ImagePlus("MULTI", ipx);
 		IJ.run(impx, "Histogram", "");
