@@ -21,6 +21,7 @@ import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.io.DirectoryChooser;
 import ij.io.Opener;
+import ij.measure.ResultsTable;
 import ij.plugin.Duplicator;
 import ij.plugin.Orthogonal_Views;
 import ij.plugin.PlugIn;
@@ -55,8 +56,8 @@ public class Unifor3D_ implements PlugIn {
 	public void run(String arg) {
 
 		// new MyAboutBox().about10("Unifor3D");
-		new AboutBox().aboutIW2AYV("Unifor3D", MyVersionUtils.CURRENT_VERSION);
-		IJ.wait(5000);
+		new AboutBox().about("Unifor3D", MyVersionUtils.CURRENT_VERSION);
+		IJ.wait(2000);
 		new AboutBox().close();
 
 		double maxFitError = +20;
@@ -379,16 +380,16 @@ public class Unifor3D_ implements PlugIn {
 		int www = (int) www11 + 1;
 		MyLog.waitHere("aaa= " + aaa + " www= " + www);
 
-		short[] pixList2 = new short[www*www];
+		short[] pixList2 = new short[www * www];
 		for (int i1 = 0; i1 < aaa; i1++) {
 			pixList2[i1] = (short) pixList[i1];
 		}
-		
+
 		double mean22 = UtilAyv.vetMean(pixList2);
 		double devst22 = UtilAyv.vetSdKnuth(pixList2);
 		MyLog.waitHere("CAUTION PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22);
 		IJ.log("CAUTION PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22);
-		
+
 		ImageProcessor ipx = new ShortProcessor(www, www, pixList2, null);
 		ImagePlus impx = new ImagePlus("MULTI", ipx);
 		IJ.run(impx, "Histogram", "");
@@ -397,12 +398,14 @@ public class Unifor3D_ implements PlugIn {
 		MyLog.waitHere("mean11= " + mean11 + " devst11= " + devst11);
 		IJ.log("mean pixels= " + mean11);
 		IJ.log("devSt pixels= " + devst11);
-		int[] classi = pixClassi(pixList);
-		for (int i1 = 0; i1 < classi.length; i1++) {
-			IJ.log("" + i1 + " " + classi[i1]);
-		}
 
-		IJ.showMessage("GOD SAVE THE LOG");
+		int[] classi = pixClassi(pixList);
+		// for (int i1 = 0; i1 < classi.length; i1++) {
+		// IJ.log("" + i1 + " " + classi[i1]);
+		// }
+		vectorResultsTable(classi);
+
+		IJ.showMessage("GOD SAVE THE RESULTS TABLE");
 	} // chiude
 		// run
 
@@ -2277,6 +2280,18 @@ public class Unifor3D_ implements PlugIn {
 
 		String out = lista[select];
 		return out;
+	}
+
+	public static void vectorResultsTable(int[] classi) {
+
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.reset();
+		String t1 = "TESTO";
+		for (int i1 = 0; i1 < classi.length; i1++) {
+			rt1.incrementCounter();
+			rt1.addValue(t1, classi[i1]);
+		}
+		rt1.show("GO_TROAT_CHESTI");
 	}
 
 } // ultima
