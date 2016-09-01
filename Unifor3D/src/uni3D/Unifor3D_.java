@@ -52,6 +52,7 @@ public class Unifor3D_ implements PlugIn {
 	static boolean debug = false;
 	final static int timeout = 100;
 	static boolean demo1 = false;
+	final static boolean step = true;
 
 	public void run(String arg) {
 
@@ -111,6 +112,8 @@ public class Unifor3D_ implements PlugIn {
 		imp10.show();
 		IJ.run(imp10, "Orthogonal Views", "");
 		Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
+		if (step)
+			MyLog.waitHere("output di 'Orthogonal Views'");
 
 		ImagePlus imp102 = ort1.getXZImage();
 		if (imp102 == null)
@@ -118,8 +121,6 @@ public class Unifor3D_ implements PlugIn {
 		// ImagePlus imp202 = imp102.duplicate();
 		ImagePlus imp202 = new Duplicator().run(imp102);
 		IJ.wait(10);
-
-		// MyLog.waitHere("202");
 
 		ImagePlus imp103 = ort1.getYZImage();
 		if (imp103 == null)
@@ -130,14 +131,14 @@ public class Unifor3D_ implements PlugIn {
 
 		// MyLog.waitHere("203");
 
-		String info10 = "info10";
+		String info10 = "position search XZimage";
 		Boolean autoCalled = false;
-		Boolean step = true;
+		Boolean step2 = true;
 		Boolean demo0 = false;
 		Boolean test = false;
 		Boolean fast = true;
 
-		double out202[] = positionSniper(imp202, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, demo0, test,
+		double out202[] = positionSniper(imp202, maxFitError, maxBubbleGapLimit, info10, autoCalled, step2, demo0, test,
 				fast, timeout);
 		if (out202 == null)
 			MyLog.waitHere("null");
@@ -152,8 +153,9 @@ public class Unifor3D_ implements PlugIn {
 		imp202.deleteRoi();
 		imp202.show();
 		// MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp202, roi verde");
+		info10 = "position search YZimage";
 
-		double out203[] = positionSniper(imp203, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, demo0, test,
+		double out203[] = positionSniper(imp203, maxFitError, maxBubbleGapLimit, info10, autoCalled, step2, demo0, test,
 				fast, timeout);
 		if (out203 == null)
 			MyLog.waitHere("out203 null");
@@ -171,16 +173,17 @@ public class Unifor3D_ implements PlugIn {
 		// verde");
 
 		int centerSlice = 0;
-		if ((out202[1] - out203[0]) < 2 || (out202[1] - out203[0]) < 2) {
-			centerSlice = (int) out202[1];
+		if ((out202[1] - out203[0]) < 2 || (out203[0] - out202[1]) < 2) {
+			centerSlice = (int) out202[1]; // max incertezza permessa = 1
+											// immagine
 		} else
-			MyLog.waitHere("non riesco a determinare la posizione Z");
+			MyLog.waitHere("non riesco a determinare la posizione Z, eccessiva incertezza");
 		ImagePlus imp101 = MyStackUtils.imageFromStack(imp10, centerSlice);
 		if (imp101 == null)
 			MyLog.waitHere("imp101=null");
 		ImagePlus imp201 = imp101.duplicate();
 
-		double out201[] = positionSniper(imp201, maxFitError, maxBubbleGapLimit, info10, autoCalled, step, demo0, test,
+		double out201[] = positionSniper(imp201, maxFitError, maxBubbleGapLimit, info10, autoCalled, step2, demo0, test,
 				fast, timeout);
 		if (out201 == null)
 			MyLog.waitHere("out201 null");
@@ -211,7 +214,7 @@ public class Unifor3D_ implements PlugIn {
 
 		MyLog.waitHere("posizione centro 1 x= " + out202[0] + " z= " + out202[1] + " d= " + out202[2]
 				+ "\nposizione centro 2 y= " + out203[1] + " z= " + out203[0] + " d= " + out203[2]
-				+ "\nposizione centro 3 y= " + out201[0] + " y= " + out201[1] + " d= " + out201[2]);
+				+ "\nposizione centro 3 x= " + out201[0] + " y= " + out201[1] + " d= " + out201[2]);
 
 		int height = ReadDicom.readInt(ReadDicom.readDicomParameter(imp20, MyConst.DICOM_ROWS));
 		int width = ReadDicom.readInt(ReadDicom.readDicomParameter(imp20, MyConst.DICOM_COLUMNS));
@@ -235,7 +238,7 @@ public class Unifor3D_ implements PlugIn {
 		ImagePlus imp11;
 		ImagePlus imp13;
 
-		for (int i1 = startSlice; i1 < endSlice; i1++) {
+		for (int i1 = startSlice - 5; i1 < endSlice + 5; i1++) {
 			IJ.showStatus("" + i1 + " / " + endSlice);
 
 			// ===============================================
@@ -345,8 +348,12 @@ public class Unifor3D_ implements PlugIn {
 			double stdDevImaDiff = statImaDiff.stdDev;
 			double noiseImaDiff = stdDevImaDiff / Math.sqrt(2);
 			double snRatio = Math.sqrt(2) * stat11.mean / stdDevImaDiff;
-			ImagePlus impSimulata = ImageUtils.generaSimulata5Classi((int) (xMROI - diamMROI2 / 2),
-					(int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step, demo0, test);
+			// ImagePlus impSimulata = ImageUtils.generaSimulata5Classi((int)
+			// (xMROI - diamMROI2 / 2),
+			// (int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step,
+			// demo0, test);
+			ImagePlus impSimulata = ImageUtils.generaSimulata5Colori((int) (xMROI - diamMROI2 / 2),
+					(int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step2, demo0, test);
 			ImageProcessor ipSimulata = impSimulata.getProcessor();
 			if (count == 0)
 				newStack.update(ipSimulata);
@@ -378,7 +385,6 @@ public class Unifor3D_ implements PlugIn {
 
 		double www11 = Math.sqrt((double) aaa);
 		int www = (int) www11 + 1;
-		MyLog.waitHere("aaa= " + aaa + " www= " + www);
 
 		short[] pixList2 = new short[www * www];
 		for (int i1 = 0; i1 < aaa; i1++) {
@@ -657,6 +663,8 @@ public class Unifor3D_ implements PlugIn {
 		ImagePlus imp12 = mce.process(imp11);
 		imp12.setOverlay(over12);
 		imp12.show();
+		if (step)
+			MyLog.waitHere(info1);
 
 		ImageStatistics stat12 = imp12.getStatistics();
 		if (stat12.max < 255) {
