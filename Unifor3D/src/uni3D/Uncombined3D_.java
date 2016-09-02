@@ -673,7 +673,7 @@ public class Uncombined3D_ implements PlugIn {
 		// test disponibilit� files
 		for (int w1 = 0; w1 < path.length; w1++) {
 			IJ.showProgress(w1, path.length);
-			IJ.showStatus("" + w1 + " / " + path.length);
+			IJ.showStatus("GenerateSequenceTable= " + w1 + " / " + path.length);
 			int type = (new Opener()).getFileType(path[w1]);
 			if (type == Opener.DICOM) {
 				ImagePlus imp1 = opener1.openImage(path[w1]);
