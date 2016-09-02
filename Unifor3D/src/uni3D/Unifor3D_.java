@@ -63,7 +63,8 @@ public class Unifor3D_ implements PlugIn {
 
 		double maxFitError = +20;
 		double maxBubbleGapLimit = 2;
-		ArrayList<Integer> pixList11 = new ArrayList<Integer>();
+		ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
+		ArrayList<Integer> pixListDifference11 = new ArrayList<Integer>();
 
 		try {
 			Class.forName("utils.IW2AYV");
@@ -77,7 +78,10 @@ public class Unifor3D_ implements PlugIn {
 		// hard-disk OPPURE che venga fatto un DicomSorter.
 		// QUINDI: IL PROGRAMMA SI FIDA (sicuramente sbagliando) DELL'OPERATORE
 
-		// ------------------------------
+		// ===============================
+		// PUNTO UNO : APRIRE STACK
+		// ===============================
+
 		String dir10 = Prefs.get("prefer.Unifor3D_dir1", "none");
 		DirectoryChooser.setDefaultDirectory(dir10);
 		DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA PRIMA ACQUISIZIONE");
@@ -106,8 +110,10 @@ public class Unifor3D_ implements PlugIn {
 		double sliceThick = ReadDicom.readDouble(
 				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_SLICE_THICKNESS), 1));
 
+		// =================================================================
 		// Mostro l'immagine ed applico Orthogonal_Views. Recupero le due
 		// immagini delle due direzioni "sintetizzate"
+		// =================================================================
 
 		imp10.show();
 		IJ.run(imp10, "Orthogonal Views", "");
@@ -130,6 +136,10 @@ public class Unifor3D_ implements PlugIn {
 		IJ.wait(10);
 
 		// MyLog.waitHere("203");
+
+		// ===============================
+		// PUNTO DUE A : DEFINIRE ROI 3 DI
+		// ===============================
 
 		String info10 = "position search XZimage";
 		Boolean autoCalled = false;
@@ -172,6 +182,9 @@ public class Unifor3D_ implements PlugIn {
 		// MyLog.waitHere("VERIFICA POSIZIONAMENTO SU IMMAGINE imp203, roi
 		// verde");
 
+		// ===============================
+		// IMMAGINE DI CENTRO DELLA SFERA
+		// ===============================
 		int centerSlice = 0;
 		if ((out202[1] - out203[0]) < 2 || (out203[0] - out202[1]) < 2) {
 			centerSlice = (int) out202[1]; // max incertezza permessa = 1
@@ -208,6 +221,11 @@ public class Unifor3D_ implements PlugIn {
 		}
 		String[] sortedList2 = pathSorter(dir2b);
 		ImagePlus imp20 = MyStackUtils.imagesToStack16(sortedList2);
+
+		// ===============================
+		// PUNTO TRE : VOLUME DIFFERENZA
+		// ===============================
+
 		ImagePlus stackDiff = stackDiffCalculation(imp10, imp20);
 		stackDiff.show();
 		IJ.run("Tile", "");
@@ -238,7 +256,11 @@ public class Unifor3D_ implements PlugIn {
 		ImagePlus imp11;
 		ImagePlus imp13;
 
-		for (int i1 = startSlice - 5; i1 < endSlice + 5; i1++) {
+		// ===============================
+		// CALCOLI RIPETUTO SUI VARI STRATI
+		// ===============================
+
+		for (int i1 = startSlice - 1; i1 < endSlice + 1; i1++) {
 			IJ.showStatus("" + i1 + " / " + endSlice);
 
 			// ===============================================
@@ -259,13 +281,18 @@ public class Unifor3D_ implements PlugIn {
 
 			Overlay over111 = new Overlay();
 			imp11.setOverlay(over111);
+
+			// ====================================================================
+			// CALCOLO CON PITAGORA (QUELLO DE "IL TEOREMA") IL DIAMETRO ESTERNO
+			// E DELLA MROI PER LO STRATO
+			// ====================================================================
+
 			double project = 0;
 			if (thisPos < centerPos) {
 				project = centerPos - thisPos;
 			} else {
 				project = thisPos - centerPos;
 			}
-
 			double radius1 = diamMAX / 2;
 			double diamEXT2 = Math.sqrt(radius1 * radius1 - project * project) * 2;
 			if (UtilAyv.isNaN(diamEXT2))
@@ -335,25 +362,34 @@ public class Unifor3D_ implements PlugIn {
 			ImageWindow iw111 = imp11.getWindow();
 			if (iw111 != null)
 				iw111.dispose();
-			// ======================================================
+			// ==================================================================================
+			// ACCODO I PIXEL DI SEGNALE DELLA ROI AL VETTORE DEI PIXEL DELLO
+			// STACK SEGNALE
+			// ==================================================================================
 
-			pixVectorize(imp11, xMROI, yMROI, diamMROI2, pixList11);
+			pixVectorize(imp11, xMROI, yMROI, diamMROI2, pixListSignal11);
 
-			ImagePlus impDiff = UtilAyv.genImaDifference(imp11, imp13);
+			ImagePlus impDiff = MyStackUtils.imageFromStack(stackDiff, i1);
+			pixVectorize(impDiff, xMROI, yMROI, diamMROI2, pixListDifference11);
+
+			// ImagePlus impDiff = UtilAyv.genImaDifference(imp11, imp13);
 			imp11.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 / 2, diamMROI2, diamMROI2));
-			ImageStatistics stat11 = imp11.getStatistics();
-			double uiPerc11 = uiPercCalculation(stat11.max, stat11.min);
-			impDiff.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 / 2, diamMROI2, diamMROI2));
-			ImageStatistics statImaDiff = impDiff.getStatistics();
-			double stdDevImaDiff = statImaDiff.stdDev;
-			double noiseImaDiff = stdDevImaDiff / Math.sqrt(2);
-			double snRatio = Math.sqrt(2) * stat11.mean / stdDevImaDiff;
+
+			// ImageStatistics stat11 = imp11.getStatistics();
+			// double uiPerc11 = uiPercCalculation(stat11.max, stat11.min);
+			// impDiff.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI -
+			// diamMROI2 / 2, diamMROI2, diamMROI2));
+			// ImageStatistics statImaDiff = impDiff.getStatistics();
+			// double stdDevImaDiff = statImaDiff.stdDev;
+			// double noiseImaDiff = stdDevImaDiff / Math.sqrt(2);
+			// double snRatio = Math.sqrt(2) * stat11.mean / stdDevImaDiff;
 			// ImagePlus impSimulata = ImageUtils.generaSimulata5Classi((int)
 			// (xMROI - diamMROI2 / 2),
 			// (int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step,
 			// demo0, test);
 			ImagePlus impSimulata = ImageUtils.generaSimulata5Colori((int) (xMROI - diamMROI2 / 2),
 					(int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step2, demo0, test);
+			impSimulata.show();
 			ImageProcessor ipSimulata = impSimulata.getProcessor();
 			if (count == 0)
 				newStack.update(ipSimulata);
@@ -363,6 +399,14 @@ public class Unifor3D_ implements PlugIn {
 			if (sliceInfo2 != null)
 				sliceInfo1 += "\n" + sliceInfo2;
 			newStack.addSlice(sliceInfo2, ipSimulata);
+
+			// MyLog.waitHere("thisPos= " + thisPos + " project= " + project +
+			// "\ndiamEXT2= " + diamEXT2 + " diamMROI2= "
+			// + diamMROI2);
+
+			ImageWindow iwSimulata = impSimulata.getWindow();
+			if (iwSimulata != null)
+				iwSimulata.dispose();
 
 			impSimulata.close();
 			impDiff.close();
@@ -376,23 +420,26 @@ public class Unifor3D_ implements PlugIn {
 		ImagePlus simulataStack = new ImagePlus("STACK_IMMAGINI_SIMULATE", newStack);
 		simulataStack.show();
 
-		int[] pixList = ArrayUtils.arrayListToArrayInt(pixList11);
-		double mean11 = UtilAyv.vetMean(pixList);
-		double devst11 = UtilAyv.vetSdKnuth(pixList);
+		int[] pixListSignal = ArrayUtils.arrayListToArrayInt(pixListSignal11);
+		double mean11 = UtilAyv.vetMean(pixListSignal);
 
-		// creo un imageProcessor col contenuto del vettore
-		int aaa = pixList.length;
+		int[] pixListDifference = ArrayUtils.arrayListToArrayInt(pixListDifference11);
+		double devst11 = UtilAyv.vetSdKnuth(pixListDifference);
+
+		// creo un imageProcessor col contenuto del vettore SEGNALE
+		int aaa = pixListSignal.length;
 
 		double www11 = Math.sqrt((double) aaa);
 		int www = (int) www11 + 1;
 
 		short[] pixList2 = new short[www * www];
 		for (int i1 = 0; i1 < aaa; i1++) {
-			pixList2[i1] = (short) pixList[i1];
+			pixList2[i1] = (short) pixListSignal[i1];
 		}
 
 		double mean22 = UtilAyv.vetMean(pixList2);
 		double devst22 = UtilAyv.vetSdKnuth(pixList2);
+		
 		MyLog.waitHere("CAUTION PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22);
 		IJ.log("CAUTION PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22);
 
@@ -401,15 +448,22 @@ public class Unifor3D_ implements PlugIn {
 		IJ.run(impx, "Histogram", "");
 		MyLog.waitHere("CAUTION PADDED IMAGE FOR HISTOGRAM, pertanto media e ds non sono corrette M.P.C.");
 
-		MyLog.waitHere("mean11= " + mean11 + " devst11= " + devst11);
-		IJ.log("mean pixels= " + mean11);
-		IJ.log("devSt pixels= " + devst11);
+		MyLog.waitHere("mean11 pixels SEGNALE= " + mean11 + " devst11 pixels DIFFERENZA= " + devst11);
+		IJ.log("mean pixels SEGNALE= " + mean11);
+		IJ.log("devSt pixels DIFFERENZA= " + devst11);
 
-		int[] classi = pixClassi(pixList);
+		int[] classi = pixClassi(pixListSignal);
 		// for (int i1 = 0; i1 < classi.length; i1++) {
 		// IJ.log("" + i1 + " " + classi[i1]);
 		// }
-		vectorResultsTable(classi);
+		
+
+		ResultsTable rt2 = vectorResultsTable(classi);
+		
+		rt2.addValue("Mean SIGNAL", mean11);
+		rt2.addValue("DevSt DIFFERENCE", devst11);
+
+		rt2.show("Results");
 
 		IJ.showMessage("GOD SAVE THE RESULTS TABLE");
 	} // chiude
@@ -2290,7 +2344,7 @@ public class Unifor3D_ implements PlugIn {
 		return out;
 	}
 
-	public static void vectorResultsTable(int[] classi) {
+	public static ResultsTable vectorResultsTable(int[] classi) {
 
 		ResultsTable rt1 = ResultsTable.getResultsTable();
 		rt1.reset();
@@ -2299,7 +2353,7 @@ public class Unifor3D_ implements PlugIn {
 			rt1.incrementCounter();
 			rt1.addValue(t1, classi[i1]);
 		}
-		rt1.show("GO_TROAT_CHESTI");
+		return rt1;
 	}
 
 } // ultima
