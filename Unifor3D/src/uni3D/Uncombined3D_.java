@@ -92,43 +92,45 @@ public class Uncombined3D_ implements PlugIn {
 		for (int i1 = 0; i1 < dir1a.length; i1++) {
 			dir1b[i1] = dir1 + "\\" + dir1a[i1];
 		}
-		String[] sortedList1 = pathSorterUncombined(dir1b);
+		String[][] sortedList1 = pathSorterUncombined(dir1b);
 
 		MyLog.waitHere();
 
-		ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
-		// ----------------------------------------------
-
-		ImagePlus imp00 = UtilAyv.openImageNoDisplay(sortedList1[0], true);
-		double dimPixel = ReadDicom.readDouble(
-				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_PIXEL_SPACING), 1));
-		double sliceThick = ReadDicom.readDouble(
-				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_SLICE_THICKNESS), 1));
-
-		// =================================================================
-		// Mostro l'immagine ed applico Orthogonal_Views. Recupero le due
-		// immagini delle due direzioni "sintetizzate"
-		// =================================================================
-
-		imp10.show();
-		IJ.run(imp10, "Orthogonal Views", "");
-		Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
-		if (step)
-			MyLog.waitHere("output di 'Orthogonal Views'");
-
-		ImagePlus imp102 = ort1.getXZImage();
-		if (imp102 == null)
-			MyLog.waitHere("imp102=null");
-		// ImagePlus imp202 = imp102.duplicate();
-		ImagePlus imp202 = new Duplicator().run(imp102);
-		IJ.wait(10);
-
-		ImagePlus imp103 = ort1.getYZImage();
-		if (imp103 == null)
-			MyLog.waitHere("imp103=null");
-		// ImagePlus imp203 = imp103.duplicate();
-		ImagePlus imp203 = new Duplicator().run(imp103);
-		IJ.wait(10);
+		// ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
+		// // ----------------------------------------------
+		//
+		// ImagePlus imp00 = UtilAyv.openImageNoDisplay(sortedList1[0], true);
+		// double dimPixel = ReadDicom.readDouble(
+		// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00,
+		// MyConst.DICOM_PIXEL_SPACING), 1));
+		// double sliceThick = ReadDicom.readDouble(
+		// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00,
+		// MyConst.DICOM_SLICE_THICKNESS), 1));
+		//
+		// // =================================================================
+		// // Mostro l'immagine ed applico Orthogonal_Views. Recupero le due
+		// // immagini delle due direzioni "sintetizzate"
+		// // =================================================================
+		//
+		// imp10.show();
+		// IJ.run(imp10, "Orthogonal Views", "");
+		// Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
+		// if (step)
+		// MyLog.waitHere("output di 'Orthogonal Views'");
+		//
+		// ImagePlus imp102 = ort1.getXZImage();
+		// if (imp102 == null)
+		// MyLog.waitHere("imp102=null");
+		// // ImagePlus imp202 = imp102.duplicate();
+		// ImagePlus imp202 = new Duplicator().run(imp102);
+		// IJ.wait(10);
+		//
+		// ImagePlus imp103 = ort1.getYZImage();
+		// if (imp103 == null)
+		// MyLog.waitHere("imp103=null");
+		// // ImagePlus imp203 = imp103.duplicate();
+		// ImagePlus imp203 = new Duplicator().run(imp103);
+		// IJ.wait(10);
 
 		// MyLog.waitHere("203");
 
@@ -659,7 +661,7 @@ public class Uncombined3D_ implements PlugIn {
 	 * @param path
 	 * @return
 	 */
-	public static String[] pathSorterUncombined(String[] path) {
+	public static String[][] pathSorterUncombined(String[] path) {
 		IJ.showStatus("LOAD");
 		ArrayList<String> list1 = new ArrayList<String>();
 		ArrayList<String> list2 = new ArrayList<String>();
@@ -670,12 +672,13 @@ public class Uncombined3D_ implements PlugIn {
 			return null;
 		}
 		Opener opener1 = new Opener();
-		// test disponibilit� files
+		// test disponibilita' files
 		for (int w1 = 0; w1 < path.length; w1++) {
+			IJ.showStatus("SPETA EN MOMENT");
 			IJ.showProgress(w1, path.length);
-			IJ.showStatus("GenerateSequenceTable= " + w1 + " / " + path.length);
-			int type = (new Opener()).getFileType(path[w1]);
-			if (type == Opener.DICOM) {
+			// IJ.showStatus("GenerateSequenceTable= " + w1 + " / " +
+			// path.length);
+			if (opener1.getFileType(path[w1]) == Opener.DICOM) {
 				ImagePlus imp1 = opener1.openImage(path[w1]);
 				if (imp1 != null) {
 					list1.add(path[w1]);
@@ -683,25 +686,33 @@ public class Uncombined3D_ implements PlugIn {
 					list3.add(ReadDicom.readDicomParameter(imp1, MyConst.DICOM_SLICE_LOCATION));
 				}
 				imp1.close();
+				// System.gc();
 			}
 		}
 
-		MyLog.waitHere("bbb");
-
 		String[] path1 = ArrayUtils.arrayListToArrayString(list1);
-		MyLog.waitHere("bbb");
-		String[] slicePosition = ArrayUtils.arrayListToArrayString(list3);
-		MyLog.waitHere("ccc");
 		String[] sliceCoil = ArrayUtils.arrayListToArrayString(list2);
+		String[] slicePosition = ArrayUtils.arrayListToArrayString(list3);
+		// ResultsTable rt3 = vectorResultsTable2(sliceCoil);
+		// rt3.show("Log sliceCoil");
+		String[][] matStr0 = new String[3][path1.length];
+		for (int w1 = 0; w1 < path1.length; w1++) {
+			matStr0[0][w1] = path1[w1];
+			matStr0[1][w1] = "" + sliceCoil[w1];
+			matStr0[2][w1] = "" + slicePosition[w1];
+			// MyLog.waitHere("" + sliceCoil[w1] + " " + slicePosition[w1]);
+		}
+		ResultsTable rt3 = vectorResultsTable2(matStr0);
+		rt3.show("INIZIALE");
+		String[][] matStr1 = minsort2(matStr0, 1);
+		ResultsTable rt4 = vectorResultsTable2(matStr1);
+		rt4.show("Sortato per COIL");
 
-		MyLog.waitHere("ddd");
-		String[] pathSortato1 = bubbleSortPath(path1, sliceCoil);
-		MyLog.waitHere("eee");
-		String[] pathSortato2 = bubbleSortPath(pathSortato1, slicePosition);
-		MyLog.waitHere("fff");
-		MyLog.logVector(pathSortato2, "pathSortato2");
-		MyLog.waitHere();
-		return pathSortato2;
+		String[][] matStr2 = minsort2(matStr1, 2);
+		ResultsTable rt5 = vectorResultsTable2(matStr2);
+		rt5.show("Sortato per POSITION");
+
+		return matStr2;
 	}
 
 	/***
@@ -748,7 +759,7 @@ public class Uncombined3D_ implements PlugIn {
 		int[] vetIndex = new int[tableIn.length];
 
 		for (int i1 = 0; i1 < tableOut.length; i1++) {
-			String strKey = TableSequence.getKey(tableOut, i1, key);
+			String strKey = getKey(tableOut, i1, key);
 			if (strKey == null)
 				strKey = "9999999999999999";
 			if (UtilAyv.isNumeric(strKey))
@@ -782,6 +793,54 @@ public class Uncombined3D_ implements PlugIn {
 		return tableOut;
 	}
 
+	public static String[][] minsort2(String[][] tableIn, int key) {
+
+		String[][] tableOut = duplicateTable(tableIn);
+		String[] vetKey = new String[tableIn[0].length];
+		int[] vetIndex = new int[tableIn[0].length];
+
+		for (int i1 = 0; i1 < tableOut[0].length; i1++) {
+			String strKey = getKey(tableOut, i1, key);
+			vetKey[i1] = strKey;
+			vetIndex[i1] = i1;
+		}
+		// MyLog.logVector(vetKey, "vetKey");
+		// MyLog.waitHere("prima di sort");
+		// effettuo minsort su key, gli altri campi andranno in parallelo
+		String aux1 = "zzzzz";
+		int aux2 = 0;
+		for (int i1 = 0; i1 < vetKey.length; i1++) {
+			for (int i2 = i1 + 1; i2 < vetKey.length; i2++) {
+				// MyLog.waitHere("vetKey[i2].compareToIgnoreCase(vetKey[i1])= "
+				// + vetKey[i2] + " " + vetKey[i1] + " "
+				// + vetKey[i2].compareToIgnoreCase(vetKey[i1]));
+				//
+				if (vetKey[i2].compareToIgnoreCase(vetKey[i1]) < 0) {
+					// if (vetKey[i2] < vetKey[i1]) {
+					aux1 = vetKey[i1];
+					vetKey[i1] = vetKey[i2];
+					vetKey[i2] = aux1;
+					aux2 = vetIndex[i1];
+					vetIndex[i1] = vetIndex[i2];
+					vetIndex[i2] = aux2;
+				}
+			}
+		}
+
+		// MyLog.logVector(vetIndex, "vetIndex");
+		// MyLog.waitHere("tableOut.length= " + tableOut.length + "
+		// tableOut[0].length= " + tableOut[0].length);
+
+		for (int i1 = 1; i1 < tableOut.length; i1++) {
+			for (int i2 = 0; i2 < tableOut[0].length; i2++) {
+				// MyLog.waitHere("i1= " + i1 + " i2= " + i2);
+				tableOut[i1][i2] = tableIn[i1][vetIndex[i2]];
+			}
+		}
+		return tableOut;
+
+	}
+
 	public static String[][] duplicateTable(String[][] inTable) {
 		if (inTable == null)
 			return null;
@@ -794,6 +853,12 @@ public class Uncombined3D_ implements PlugIn {
 			}
 		}
 		return outTable;
+	}
+
+	public static String getKey(String[][] strTabella, int riga, int key) {
+		if (strTabella == null)
+			return null;
+		return strTabella[key][riga];
 	}
 
 	/***
@@ -2533,6 +2598,30 @@ public class Uncombined3D_ implements PlugIn {
 		for (int i1 = 0; i1 < vetClassi.length; i1++) {
 			rt1.incrementCounter();
 			rt1.addValue(t1, vetClassi[i1]);
+		}
+		return rt1;
+	}
+
+	public static ResultsTable vectorResultsTable2(String[] vetVet) {
+
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.reset();
+		for (int i1 = 0; i1 < vetVet.length; i1++) {
+			rt1.incrementCounter();
+			rt1.addValue("Numero", vetVet[i1]);
+		}
+		return rt1;
+	}
+
+	public static ResultsTable vectorResultsTable2(String[][] vetVet) {
+
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.reset();
+		for (int i2 = 0; i2 < vetVet[0].length; i2++) {
+			rt1.incrementCounter();
+			for (int i1 = 0; i1 < vetVet.length; i1++) {
+				rt1.addValue("Numero " + i1, vetVet[i1][i2]);
+			}
 		}
 		return rt1;
 	}
