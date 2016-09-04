@@ -704,13 +704,13 @@ public class Uncombined3D_ implements PlugIn {
 		}
 		ResultsTable rt3 = vectorResultsTable2(matStr0);
 		rt3.show("INIZIALE");
-		String[][] matStr1 = minsort2(matStr0, 1);
+		String[][] matStr1 = minsort2(matStr0, 2);
 		ResultsTable rt4 = vectorResultsTable2(matStr1);
-		rt4.show("Sortato per COIL");
+		rt4.show("PRIMO Sortato per POSITION");
 
-		String[][] matStr2 = minsort2(matStr1, 2);
+		String[][] matStr2 = minsort2(matStr1, 1);
 		ResultsTable rt5 = vectorResultsTable2(matStr2);
-		rt5.show("Sortato per POSITION");
+		rt5.show("SECONDO Sortato per COIL");
 
 		return matStr2;
 	}
@@ -795,46 +795,57 @@ public class Uncombined3D_ implements PlugIn {
 
 	public static String[][] minsort2(String[][] tableIn, int key) {
 
-		String[][] tableOut = duplicateTable(tableIn);
-		String[] vetKey = new String[tableIn[0].length];
-		int[] vetIndex = new int[tableIn[0].length];
+		MyLog.waitHere("tableIn.length= " + tableIn.length);
 
-		for (int i1 = 0; i1 < tableOut[0].length; i1++) {
+		String[][] tableOut = duplicateTable(tableIn);
+		String[] vetKey = new String[tableIn.length];
+		int[] vetIndex = new int[tableIn.length];
+
+		for (int i1 = 0; i1 < tableOut.length; i1++) {
 			String strKey = getKey(tableOut, i1, key);
 			vetKey[i1] = strKey;
 			vetIndex[i1] = i1;
 		}
-		// MyLog.logVector(vetKey, "vetKey");
-		// MyLog.waitHere("prima di sort");
 		// effettuo minsort su key, gli altri campi andranno in parallelo
 		String aux1 = "zzzzz";
 		int aux2 = 0;
+		boolean numeric = false;
+
+		try {
+			Double.parseDouble(vetKey[1]);
+			numeric = true;
+		} catch (NumberFormatException e) {
+			numeric = false;
+		}
+
 		for (int i1 = 0; i1 < vetKey.length; i1++) {
 			for (int i2 = i1 + 1; i2 < vetKey.length; i2++) {
-				// MyLog.waitHere("vetKey[i2].compareToIgnoreCase(vetKey[i1])= "
-				// + vetKey[i2] + " " + vetKey[i1] + " "
-				// + vetKey[i2].compareToIgnoreCase(vetKey[i1]));
-				//
-				if (vetKey[i2].compareToIgnoreCase(vetKey[i1]) < 0) {
-					// if (vetKey[i2] < vetKey[i1]) {
-					aux1 = vetKey[i1];
-					vetKey[i1] = vetKey[i2];
-					vetKey[i2] = aux1;
-					aux2 = vetIndex[i1];
-					vetIndex[i1] = vetIndex[i2];
-					vetIndex[i2] = aux2;
+				if (numeric) {
+					 IJ.log("numeric " + vetKey[i2]+" "+vetKey[i1]);
+					if (Double.parseDouble(vetKey[i2]) < Double.parseDouble(vetKey[i1])) {
+						aux1 = vetKey[i1];
+						vetKey[i1] = vetKey[i2];
+						vetKey[i2] = aux1;
+						aux2 = vetIndex[i1];
+						vetIndex[i1] = vetIndex[i2];
+						vetIndex[i2] = aux2;
+					}
+				} else {
+					if (vetKey[i2].compareToIgnoreCase(vetKey[i1]) < 0) {
+						aux1 = vetKey[i1];
+						vetKey[i1] = vetKey[i2];
+						vetKey[i2] = aux1;
+						aux2 = vetIndex[i1];
+						vetIndex[i1] = vetIndex[i2];
+						vetIndex[i2] = aux2;
+					}
 				}
 			}
 		}
 
-		// MyLog.logVector(vetIndex, "vetIndex");
-		// MyLog.waitHere("tableOut.length= " + tableOut.length + "
-		// tableOut[0].length= " + tableOut[0].length);
-
-		for (int i1 = 1; i1 < tableOut.length; i1++) {
-			for (int i2 = 0; i2 < tableOut[0].length; i2++) {
-				// MyLog.waitHere("i1= " + i1 + " i2= " + i2);
-				tableOut[i1][i2] = tableIn[i1][vetIndex[i2]];
+		for (int i1 = 0; i1 < tableOut[0].length; i1++) {
+			for (int i2 = 0; i2 < tableOut.length; i2++) {
+				tableOut[i2][i1] = tableIn[vetIndex[i2]][i1];
 			}
 		}
 		return tableOut;
@@ -858,7 +869,7 @@ public class Uncombined3D_ implements PlugIn {
 	public static String getKey(String[][] strTabella, int riga, int key) {
 		if (strTabella == null)
 			return null;
-		return strTabella[key][riga];
+		return strTabella[riga][key];
 	}
 
 	/***
@@ -2617,6 +2628,8 @@ public class Uncombined3D_ implements PlugIn {
 
 		ResultsTable rt1 = ResultsTable.getResultsTable();
 		rt1.reset();
+		if (vetVet == null)
+			MyLog.waitHere("vetVet==null");
 		for (int i2 = 0; i2 < vetVet[0].length; i2++) {
 			rt1.incrementCounter();
 			for (int i1 = 0; i1 < vetVet.length; i1++) {
