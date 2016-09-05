@@ -5,6 +5,7 @@ import java.awt.Frame;
 import java.awt.Rectangle;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -94,478 +95,51 @@ public class Uncombined3D_ implements PlugIn {
 		}
 		String[][] sortedList1 = pathSorterUncombined(dir1b);
 
+		String[][] vetConta = contaList(sortedList1);
+
 		MyLog.waitHere();
 
-		// ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
-		// // ----------------------------------------------
-		//
-		// ImagePlus imp00 = UtilAyv.openImageNoDisplay(sortedList1[0], true);
-		// double dimPixel = ReadDicom.readDouble(
-		// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00,
-		// MyConst.DICOM_PIXEL_SPACING), 1));
-		// double sliceThick = ReadDicom.readDouble(
-		// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00,
-		// MyConst.DICOM_SLICE_THICKNESS), 1));
-		//
-		// // =================================================================
-		// // Mostro l'immagine ed applico Orthogonal_Views. Recupero le due
-		// // immagini delle due direzioni "sintetizzate"
-		// // =================================================================
-		//
-		// imp10.show();
-		// IJ.run(imp10, "Orthogonal Views", "");
-		// Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
-		// if (step)
-		// MyLog.waitHere("output di 'Orthogonal Views'");
-		//
-		// ImagePlus imp102 = ort1.getXZImage();
-		// if (imp102 == null)
-		// MyLog.waitHere("imp102=null");
-		// // ImagePlus imp202 = imp102.duplicate();
-		// ImagePlus imp202 = new Duplicator().run(imp102);
-		// IJ.wait(10);
-		//
-		// ImagePlus imp103 = ort1.getYZImage();
-		// if (imp103 == null)
-		// MyLog.waitHere("imp103=null");
-		// // ImagePlus imp203 = imp103.duplicate();
-		// ImagePlus imp203 = new Duplicator().run(imp103);
-		// IJ.wait(10);
-
-		// MyLog.waitHere("203");
-
-		// ===============================
-		// PUNTO DUE A : DEFINIRE ROI 3 DI
-		// ===============================
-
-		String info10 = "position search XZimage";
-		Boolean autoCalled = false;
-		Boolean step2 = true;
-		Boolean demo0 = false;
-		Boolean test = false;
-		Boolean fast = true;
-
-		// double out202[] = positionSniper(imp202, maxFitError,
-		// maxBubbleGapLimit, info10, autoCalled, step2, demo0, test,
-		// fast, timeout);
-		// if (out202 == null)
-		// MyLog.waitHere("null");
-		// Overlay over202 = new Overlay();
-		// imp202.setOverlay(over202);
-		// double xCenterEXT = out202[0];
-		// double yCenterEXT = out202[1];
-		// double diamEXT = out202[2];
-		// imp202.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT -
-		// diamEXT / 2, diamEXT, diamEXT));
-		// imp202.getRoi().setStrokeColor(Color.green);
-		// over202.addElement(imp202.getRoi());
-		// imp202.deleteRoi();
-		// imp202.show();
-		// // MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp202, roi verde");
-		// info10 = "position search YZimage";
-		//
-		// double out203[] = positionSniper(imp203, maxFitError,
-		// maxBubbleGapLimit, info10, autoCalled, step2, demo0, test,
-		// fast, timeout);
-		// if (out203 == null)
-		// MyLog.waitHere("out203 null");
-		// Overlay over203 = new Overlay();
-		// imp203.setOverlay(over203);
-		// xCenterEXT = out203[0];
-		// yCenterEXT = out203[1];
-		// diamEXT = out203[2];
-		// imp203.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT -
-		// diamEXT / 2, diamEXT, diamEXT));
-		// imp203.getRoi().setStrokeColor(Color.green);
-		// over203.addElement(imp203.getRoi());
-		// imp203.deleteRoi();
-		// imp203.show();
-		// // MyLog.waitHere("VERIFICA POSIZIONAMENTO SU IMMAGINE imp203, roi
-		// // verde");
-		//
-		// // ===============================
-		// // IMMAGINE DI CENTRO DELLA SFERA
-		// // ===============================
-		// int centerSlice = 0;
-		// if ((out202[1] - out203[0]) < 2 || (out203[0] - out202[1]) < 2) {
-		// centerSlice = (int) out202[1]; // max incertezza permessa = 1
-		// // immagine
-		// } else
-		// MyLog.waitHere("non riesco a determinare la posizione Z, eccessiva
-		// incertezza");
-		// ImagePlus imp101 = MyStackUtils.imageFromStack(imp10, centerSlice);
-		// if (imp101 == null)
-		// MyLog.waitHere("imp101=null");
-		// ImagePlus imp201 = imp101.duplicate();
-		//
-		// double out201[] = positionSniper(imp201, maxFitError,
-		// maxBubbleGapLimit, info10, autoCalled, step2, demo0, test,
-		// fast, timeout);
-		// if (out201 == null)
-		// MyLog.waitHere("out201 null");
-		// Overlay over201 = new Overlay();
-		// imp201.setOverlay(over201);
-		// xCenterEXT = out201[0];
-		// yCenterEXT = out201[1];
-		// diamEXT = out201[2];
-		// imp201.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT -
-		// diamEXT / 2, diamEXT, diamEXT));
-		//
-		// imp201.getRoi().setStrokeColor(Color.green);
-		// over201.addElement(imp201.getRoi());
-		// imp201.deleteRoi();
-		// imp201.show();
-
-		// MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp201, roi verde");
-
-		// // ===============================
-		// // PUNTO TRE : VOLUME DIFFERENZA
-		// // ===============================
-		//
-		// ImagePlus stackDiff = stackDiffCalculation(imp10, imp20);
-		// stackDiff.show();
-		// IJ.run("Tile", "");
-		//
-		// MyLog.waitHere("posizione centro 1 x= " + out202[0] + " z= " +
-		// out202[1] + " d= " + out202[2]
-		// + "\nposizione centro 2 y= " + out203[1] + " z= " + out203[0] + " d=
-		// " + out203[2]
-		// + "\nposizione centro 3 x= " + out201[0] + " y= " + out201[1] + " d=
-		// " + out201[2]);
-		//
-		// int height = ReadDicom.readInt(ReadDicom.readDicomParameter(imp20,
-		// MyConst.DICOM_ROWS));
-		// int width = ReadDicom.readInt(ReadDicom.readDicomParameter(imp20,
-		// MyConst.DICOM_COLUMNS));
-		// double diamMAX = out201[2];
-		//
-		// int xMROI = (int) Math.round(out201[0]);
-		// int yMROI = (int) Math.round(out201[1]);
-		// double diamMROI = out201[2] * MyConst.P3_AREA_PERC_80_DIAM;
-		//
-		// int startSlice = centerSlice - (int) (diamMROI / 2);
-		// int endSlice = centerSlice + (int) (diamMROI / 2) + 3;
-		// imp00 = UtilAyv.openImageNoDisplay(sortedList1[centerSlice], true);
-		// double centerPos = ReadDicom.readDouble(
-		// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00,
-		// MyConst.DICOM_IMAGE_POSITION), 1));
-		//
-		// ImageStack newStack = new ImageStack(width, height);
-		// // ImagePlus impSimulata=null;
-		// // ImageProcessor ipSimulata= null;
-		//
-		// int count = -1;
-		// ImagePlus imp11S;
-		// ImagePlus imp13;
-		//
-		// //
-		// ==========================================================================
-		// // CALCOLI RIPETUTO SUI VARI STRATI
-		// //
-		// ==========================================================================
-		//
-		// for (int i1 = startSlice - 1; i1 < endSlice + 1; i1++) {
-		// IJ.showStatus("" + i1 + " / " + endSlice);
-		//
-		// // ===============================================
-		// imp11S = MyStackUtils.imageFromStack(imp10, i1);
-		// // ImagePlus imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
-		// if (imp11S == null)
-		// MyLog.waitHere("Non trovato il file " + sortedList1[i1]);
-		// imp11S.show();
-		// imp13 = MyStackUtils.imageFromStack(imp20, i1);
-		// // ImagePlus imp13 = UtilAyv.openImageNoDisplay(sortedList2[i1],
-		// // true);
-		// if (imp13 == null)
-		// MyLog.waitHere("Non trovato il file " + sortedList2[i1]);
-		// double thisPos = ReadDicom.readDouble(
-		// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp11S,
-		// MyConst.DICOM_IMAGE_POSITION), 1));
-		//
-		// count++;
-		//
-		// Overlay over111 = new Overlay();
-		// imp11S.setOverlay(over111);
-		//
-		// //
-		// ====================================================================
-		// // CALCOLO CON PITAGORA (QUELLO DE "IL TEOREMA") IL DIAMETRO ESTERNO
-		// // E DELLA MROI PER LO STRATO
-		// //
-		// ====================================================================
-		//
-		// double project = 0;
-		// if (thisPos < centerPos) {
-		// project = centerPos - thisPos;
-		// } else {
-		// project = thisPos - centerPos;
-		// }
-		// double radius1 = diamMAX / 2;
-		// double diamEXT2 = Math.sqrt(radius1 * radius1 - project * project) *
-		// 2;
-		// if (UtilAyv.isNaN(diamEXT2))
-		// diamEXT2 = 0;
-		//
-		// double radius2 = diamMROI / 2;
-		// double diamMROI2 = Math.sqrt(radius2 * radius2 - project * project) *
-		// 2;
-		// if (UtilAyv.isNaN(diamMROI2))
-		// diamMROI2 = 0;
-		//
-		// // ==== coloro le SLICES man mano le elaboro ====
-		// double plotPos = i1 * dimPixel;
-		// Color c1 = new Color(00, 255, 0, 80); // green
-		// Color c2 = new Color(255, 50, 255, 80); // purple
-		//
-		// // ==
-		// double start = xMROI - diamEXT2 / 2;
-		// double stop = xMROI - diamMROI2 / 2;
-		// imp202.setRoi(new Line(start, plotPos, stop, plotPos));
-		// imp202.getRoi().setStrokeColor(c1);
-		// over202.addElement(imp202.getRoi());
-		// imp202.updateAndDraw();
-		// // --
-		// imp202.setRoi(new Line(xMROI - diamMROI2 / 2, plotPos, xMROI +
-		// diamMROI2 / 2, plotPos));
-		// imp202.getRoi().setStrokeColor(c2);
-		// over202.addElement(imp202.getRoi());
-		// imp202.updateAndDraw();
-		// // --
-		// start = xMROI + diamMROI2 / 2;
-		// stop = xMROI + diamEXT2 / 2;
-		// imp202.setRoi(new Line(start, plotPos, stop, plotPos));
-		// imp202.getRoi().setStrokeColor(c1);
-		// over202.addElement(imp202.getRoi());
-		// imp202.updateAndDraw();
-		// // ==
-		// start = yMROI - diamEXT2 / 2;
-		// stop = yMROI - diamMROI2 / 2;
-		// imp203.setRoi(new Line(plotPos, start, plotPos, stop));
-		// imp203.getRoi().setStrokeColor(c1);
-		// over203.addElement(imp203.getRoi());
-		// imp203.updateAndDraw();
-		// // --
-		// imp203.setRoi(new Line(plotPos, yMROI - diamMROI2 / 2, plotPos, yMROI
-		// + diamMROI2 / 2));
-		// imp203.getRoi().setStrokeColor(c2);
-		// over203.addElement(imp203.getRoi());
-		// imp203.updateAndDraw();
-		// // --
-		// start = yMROI + diamMROI2 / 2;
-		// stop = yMROI + diamEXT2 / 2;
-		// imp203.setRoi(new Line(plotPos, start, plotPos, stop));
-		// imp203.getRoi().setStrokeColor(c1);
-		// over203.addElement(imp203.getRoi());
-		// imp203.updateAndDraw();
-		// // ==
-		// imp11S.setRoi(new OvalRoi(xMROI - diamEXT2 / 2, yMROI - diamEXT2 / 2,
-		// diamEXT2, diamEXT2));
-		// imp11S.getRoi().setStrokeColor(Color.green);
-		// over111.addElement(imp11S.getRoi());
-		//
-		// imp11S.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 /
-		// 2, diamMROI2, diamMROI2));
-		// imp11S.getRoi().setStrokeColor(Color.red);
-		// over111.addElement(imp11S.getRoi());
-		// imp11S.deleteRoi();
-		// imp11S.updateAndRepaintWindow();
-		// IJ.wait(20);
-		// // ==== coloro le SLICES man mano le elaboro ====
-		//
-		// ImageWindow iw111 = imp11S.getWindow();
-		// if (iw111 != null)
-		// iw111.dispose();
-		// //
-		// ==================================================================================
-		// // ACCODO I PIXEL DI SEGNALE DELLA ROI AL VETTORE DEI PIXEL DELLO
-		// // STACK SEGNALE
-		// //
-		// ==================================================================================
-		//
-		// pixVectorize(imp11S, xMROI, yMROI, diamMROI2, pixListSignal11);
-		//
-		// ImagePlus impDiff = MyStackUtils.imageFromStack(stackDiff, i1);
-		// pixVectorize(impDiff, xMROI, yMROI, diamMROI2, pixListDifference11);
-		//
-		// // ImagePlus impDiff = UtilAyv.genImaDifference(imp11, imp13);
-		// imp11S.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 /
-		// 2, diamMROI2, diamMROI2));
-		//
-		// // ImageStatistics stat11 = imp11.getStatistics();
-		// // double uiPerc11 = uiPercCalculation(stat11.max, stat11.min);
-		// // impDiff.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI -
-		// // diamMROI2 / 2, diamMROI2, diamMROI2));
-		// // ImageStatistics statImaDiff = impDiff.getStatistics();
-		// // double stdDevImaDiff = statImaDiff.stdDev;
-		// // double noiseImaDiff = stdDevImaDiff / Math.sqrt(2);
-		// // double snRatio = Math.sqrt(2) * stat11.mean / stdDevImaDiff;
-		// // ImagePlus impSimulata = ImageUtils.generaSimulata5Classi((int)
-		// // (xMROI - diamMROI2 / 2),
-		// // (int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step,
-		// // demo0, test);
-		// // ImagePlus impSimulata = ImageUtils.generaSimulata5Colori((int)
-		// // (xMROI - diamMROI2 / 2),
-		// // (int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step2,
-		// // demo0, test);
-		// // impSimulata.show();
-		// // ImageProcessor ipSimulata = impSimulata.getProcessor();
-		// // if (count == 0)
-		// // newStack.update(ipSimulata);
-		// // String sliceInfo1 = impSimulata.getTitle();
-		// // String sliceInfo2 = (String) impSimulata.getProperty("Info");
-		// // // aggiungo i dati header alle singole immagini dello stack
-		// // if (sliceInfo2 != null)
-		// // sliceInfo1 += "\n" + sliceInfo2;
-		// // newStack.addSlice(sliceInfo2, ipSimulata);
-		// //
-		// // // MyLog.waitHere("thisPos= " + thisPos + " project= " + project
-		// // +
-		// // // "\ndiamEXT2= " + diamEXT2 + " diamMROI2= "
-		// // // + diamMROI2);
-		// //
-		// // ImageWindow iwSimulata = impSimulata.getWindow();
-		// // if (iwSimulata != null)
-		// // iwSimulata.dispose();
-		// //
-		// // impSimulata.close();
-		// impDiff.close();
-		// imp11S.close();
-		// imp13.close();
-		// }
-		//
-		// imp202.deleteRoi();
-		// imp203.deleteRoi();
-		//
-		// int[] pixListSignal =
-		// ArrayUtils.arrayListToArrayInt(pixListSignal11);
-		// double mean11 = UtilAyv.vetMean(pixListSignal);
-		//
-		// int[] pixListDifference =
-		// ArrayUtils.arrayListToArrayInt(pixListDifference11);
-		// double devst11 = UtilAyv.vetSdKnuth(pixListDifference);
-		//
-		// /// IMMAGINI SIMULATE
-		// int countS = 0;
-		//
-		// for (int i1 = startSlice - 1; i1 < endSlice + 1; i1++) {
-		// IJ.showStatus("" + i1 + " / " + endSlice);
-		//
-		// // ===============================================
-		// imp11S = MyStackUtils.imageFromStack(imp10, i1);
-		// // ImagePlus imp11 = UtilAyv.openImageMaximized(sortedList1[i1]);
-		// if (imp11S == null)
-		// MyLog.waitHere("Non trovato il file " + sortedList1[i1]);
-		// imp11S.show();
-		// double thisPosS = ReadDicom.readDouble(
-		// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp11S,
-		// MyConst.DICOM_IMAGE_POSITION), 1));
-		//
-		// countS++;
-		//
-		// Overlay over111S = new Overlay();
-		// imp11S.setOverlay(over111S);
-		//
-		// //
-		// ====================================================================
-		// // CALCOLO CON PITAGORA (QUELLO DE "IL TEOREMA") IL DIAMETRO ESTERNO
-		// // E DELLA MROI PER LO STRATO
-		// //
-		// ====================================================================
-		//
-		// double projectS = 0;
-		// if (thisPosS < centerPos) {
-		// projectS = centerPos - thisPosS;
-		// } else {
-		// projectS = thisPosS - centerPos;
-		// }
-		// double radius1S = diamMAX / 2;
-		// double diamEXT2S = Math.sqrt(radius1S * radius1S - projectS *
-		// projectS) * 2;
-		// if (UtilAyv.isNaN(diamEXT2S))
-		// diamEXT2S = 0;
-		//
-		// double radius2S = diamMROI / 2;
-		// double diamMROI2S = Math.sqrt(radius2S * radius2S - projectS *
-		// projectS) * 2;
-		// if (UtilAyv.isNaN(diamMROI2S))
-		// diamMROI2S = 0;
-		//
-		// // demo0, test);
-		// ImagePlus impSimulata = ImageUtils.generaSimulata5Colori(mean11,
-		// imp11S, step2, demo0, test);
-		// impSimulata.show();
-		// ImageProcessor ipSimulata = impSimulata.getProcessor();
-		// if (count == 0)
-		// newStack.update(ipSimulata);
-		// String sliceInfo1 = impSimulata.getTitle();
-		// String sliceInfo2 = (String) impSimulata.getProperty("Info");
-		// // aggiungo i dati header alle singole immagini dello stack
-		// if (sliceInfo2 != null)
-		// sliceInfo1 += "\n" + sliceInfo2;
-		// newStack.addSlice(sliceInfo2, ipSimulata);
-		//
-		// // MyLog.waitHere("thisPos= " + thisPos + " project= " + project +
-		// // "\ndiamEXT2= " + diamEXT2 + " diamMROI2= "
-		// // + diamMROI2);
-		//
-		// ImageWindow iwSimulata = impSimulata.getWindow();
-		// if (iwSimulata != null)
-		// iwSimulata.dispose();
-		//
-		// impSimulata.close();
-		// imp11S.close();
-		// }
-		//
-		// ImagePlus simulataStack = new ImagePlus("STACK_IMMAGINI_SIMULATE",
-		// newStack);
-		// simulataStack.show();
-		//
-		// // creo un imageProcessor col contenuto del vettore SEGNALE
-		// int aaa = pixListSignal.length;
-		//
-		// double www11 = Math.sqrt((double) aaa);
-		// int www = (int) www11 + 1;
-		//
-		// short[] pixList2 = new short[www * www];
-		// for (int i1 = 0; i1 < aaa; i1++) {
-		// pixList2[i1] = (short) pixListSignal[i1];
-		// }
-		//
-		// double mean22 = UtilAyv.vetMean(pixList2);
-		// double devst22 = UtilAyv.vetSdKnuth(pixList2);
-		// double snr22 = (mean22 * Math.sqrt(2.0)) / devst22;
-		//
-		// IJ.log("PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22 + "
-		// snr22= " + snr22);
-		//
-		// ImageProcessor ipx = new ShortProcessor(www, www, pixList2, null);
-		// ImagePlus impx = new ImagePlus("MULTI", ipx);
-		// IJ.run(impx, "Histogram", "");
-		//
-		// // MyLog.waitHere("mean11 pixels SEGNALE= " + mean11 + " devst11
-		// pixels
-		// // DIFFERENZA= " + devst11);
-		// IJ.log("mean pixels SEGNALE= " + mean11);
-		// IJ.log("devSt pixels DIFFERENZA= " + devst11);
-		//
-		// int[] classi = pixClassi(pixListSignal);
-		// // for (int i1 = 0; i1 < classi.length; i1++) {
-		// // IJ.log("" + i1 + " " + classi[i1]);
-		// // }
-		//
-		// ResultsTable rt1 = ResultsTable.getResultsTable();
-		// rt1.reset();
-		// rt1.incrementCounter();
-		// rt1.addValue("Mean_SIGNAL_3D", mean11);
-		// rt1.addValue("DevSt_DIFFERENCE_3D", devst11);
-		// rt1.addValue("SNR_3D", devst11);
-		//
-		// ResultsTable rt2 = vectorResultsTable(classi);
-		//
-		// rt2.show("Results");
-
 	} // chiude
-		// run
+
+	public static String[][] contaList(String[][] mat1) {
+		List<Integer> list1 = new ArrayList<Integer>();
+		List<String> list2 = new ArrayList<String>();
+		String old = "";
+		int conta = 0;
+		MyLog.waitHere("mat1.length= "+mat1.length);
+		MyLog.waitHere("mat1[0].length= "+mat1[0].length);
+		MyLog.waitHere();
+		for (int i1 = 0; i1 < mat1[0].length; i1++) {
+			String aux1 = mat1[1][i1];
+			if (i1 == 0)
+				old = aux1;
+			if (old.equals(aux1)) {
+				conta++;
+			} else {
+				list1.add(conta);
+				list2.add(aux1);
+				conta = 1;
+				old = aux1;
+			}
+		}
+		String[] vetCoil = ArrayUtils.arrayListToArrayString(list2);
+		int[] vetConta = ArrayUtils.arrayListToArrayInt(list1);
+		String[][] vetOut = new String[2][vetCoil.length];
+
+		MyLog.logVector(vetCoil, "vetCoil");
+		MyLog.waitHere();
+		MyLog.logVector(vetConta, "vetConta");
+		MyLog.waitHere();
+		for (int i1 = 0; i1 < vetCoil.length; i1++) {
+			vetOut[0][i1] = vetCoil[i1];
+			vetOut[1][i1] = "" + vetConta[i1];
+		}
+		MyLog.logMatrixDimensions(vetOut, "vetOut");
+
+		return vetOut;
+	}
+
+	// run
 
 	public static ImagePlus stackDiffCalculation(ImagePlus stack1, ImagePlus stack2) {
 		ImageStack newStack = new ImageStack(stack1.getWidth(), stack1.getHeight());
@@ -704,11 +278,15 @@ public class Uncombined3D_ implements PlugIn {
 		}
 		ResultsTable rt3 = vectorResultsTable2(matStr0);
 		rt3.show("INIZIALE");
+		MyLog.logMatrixDimensions(matStr0, "matStr0");
 		String[][] matStr1 = minsort2(matStr0, 2);
+		MyLog.logMatrixDimensions(matStr1, "matStr1");
 		ResultsTable rt4 = vectorResultsTable2(matStr1);
 		rt4.show("PRIMO Sortato per POSITION");
 
 		String[][] matStr2 = minsort2(matStr1, 1);
+		MyLog.logMatrixDimensions(matStr2, "matStr0");
+
 		ResultsTable rt5 = vectorResultsTable2(matStr2);
 		rt5.show("SECONDO Sortato per COIL");
 
@@ -794,14 +372,17 @@ public class Uncombined3D_ implements PlugIn {
 	}
 
 	public static String[][] minsort2(String[][] tableIn, int key) {
-
-		MyLog.waitHere("tableIn.length= " + tableIn.length);
-
+		
 		String[][] tableOut = duplicateTable(tableIn);
-		String[] vetKey = new String[tableIn.length];
-		int[] vetIndex = new int[tableIn.length];
+//		MyLog.logMatrix(tableOut, "tableOut duplicata");
+//		IJ.log("tableIn.length= "+tableIn.length);
+//		IJ.log("tableIn[0].length= "+tableIn[0].length);
+//		MyLog.here();
+		
+		String[] vetKey = new String[tableIn[0].length];
+		int[] vetIndex = new int[tableIn[0].length];
 
-		for (int i1 = 0; i1 < tableOut.length; i1++) {
+		for (int i1 = 0; i1 < tableOut[0].length; i1++) {
 			String strKey = getKey(tableOut, i1, key);
 			vetKey[i1] = strKey;
 			vetIndex[i1] = i1;
@@ -809,19 +390,19 @@ public class Uncombined3D_ implements PlugIn {
 		// effettuo minsort su key, gli altri campi andranno in parallelo
 		String aux1 = "zzzzz";
 		int aux2 = 0;
-		boolean numeric = false;
+		boolean numeric = true;
 
-		try {
-			Double.parseDouble(vetKey[1]);
-			numeric = true;
-		} catch (NumberFormatException e) {
-			numeric = false;
+		for (int i1 = 0; i1 < vetKey.length; i1++) {
+			try {
+				Double.parseDouble(vetKey[i1]);
+			} catch (NumberFormatException e) {
+				numeric = false;
+			}
 		}
 
 		for (int i1 = 0; i1 < vetKey.length; i1++) {
 			for (int i2 = i1 + 1; i2 < vetKey.length; i2++) {
 				if (numeric) {
-					 IJ.log("numeric " + vetKey[i2]+" "+vetKey[i1]);
 					if (Double.parseDouble(vetKey[i2]) < Double.parseDouble(vetKey[i1])) {
 						aux1 = vetKey[i1];
 						vetKey[i1] = vetKey[i2];
@@ -843,13 +424,20 @@ public class Uncombined3D_ implements PlugIn {
 			}
 		}
 
-		for (int i1 = 0; i1 < tableOut[0].length; i1++) {
-			for (int i2 = 0; i2 < tableOut.length; i2++) {
-				tableOut[i2][i1] = tableIn[vetIndex[i2]][i1];
+//		MyLog.logMatrixDimensions(tableOut, "tableOut duplicata");
+//		MyLog.logVector(vetIndex, "vetIndex");
+
+//		IJ.log("tableOut.length= "+tableOut.length);
+//		IJ.log("tableOut[0].length= "+tableOut[0].length);
+		
+		for (int i1 = 0; i1 < tableOut.length; i1++) {
+			for (int i2 = 0; i2 < tableOut[0].length; i2++) {
+				// IJ.log("i1= "+i1+" i2= "+i2);
+				// MyLog.waitHere();
+				tableOut[i1][i2] = tableIn[i1][vetIndex[i2]];
 			}
 		}
 		return tableOut;
-
 	}
 
 	public static String[][] duplicateTable(String[][] inTable) {
@@ -869,7 +457,7 @@ public class Uncombined3D_ implements PlugIn {
 	public static String getKey(String[][] strTabella, int riga, int key) {
 		if (strTabella == null)
 			return null;
-		return strTabella[riga][key];
+		return strTabella[key][riga];
 	}
 
 	/***
