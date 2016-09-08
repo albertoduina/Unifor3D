@@ -1262,15 +1262,15 @@ public class Uncombined3D_ implements PlugIn {
 			matStr0[2][w1] = "" + slicePosition[w1];
 			// MyLog.waitHere("" + sliceCoil[w1] + " " + slicePosition[w1]);
 		}
-		ResultsTable rt3 = vectorResultsTable2(matStr0);
+		// ResultsTable rt3 = vectorResultsTable2(matStr0);
 		// rt3.show("INIZIALE");
 		// MyLog.logMatrixDimensions(matStr0, "matStr0");
-		String[][] matStr1 = minsort2(matStr0, 2, "aa");
+		String[][] matStr1 = insertionSort(matStr0, 2, "sortPOSIZIONE");
 		// MyLog.logMatrixDimensions(matStr1, "matStr1");
 		// ResultsTable rt4 = vectorResultsTable2(matStr1);
 		// rt4.show("PRIMO Sortato per POSITION");
 
-		String[][] matStr2 = minsort2(matStr1, 1, "bb");
+		String[][] matStr2 = insertionSort(matStr1, 1, "sortBOBINA");
 		// MyLog.logMatrixDimensions(matStr2, "matStr0");
 		//
 		// ResultsTable rt5 = vectorResultsTable2(matStr2);
@@ -1468,7 +1468,7 @@ public class Uncombined3D_ implements PlugIn {
 				String tmp1 = vetKey[i1];
 				int tmp2 = vetIndex[i1];
 				int j1 = i1 - 1;
-				for (j1 = i1 - 1; (j1 >= 0) && (vetKey[j1].compareTo(tmp1)) < 0; j1--) {
+				for (j1 = i1 - 1; (j1 >= 0) && (vetKey[j1].compareTo(tmp1)) > 0; j1--) {
 					vetKey[j1 + 1] = vetKey[j1];
 					vetIndex[j1 + 1] = vetIndex[j1];
 				}
