@@ -1350,20 +1350,16 @@ public class Uncombined3D_ implements PlugIn {
 			}
 
 			for (int i1 = 0; i1 < vetKeyN.length - 1; i1++) {
-				int minIndex1 = i1;
 				for (int i2 = i1 + 1; i2 < vetKeyN.length; i2++) {
-					if (vetKeyN[i2] < vetKeyN[minIndex1]) {
-						minIndex1 = i2;
-					}
-				}
-				if (minIndex1 != i1) {
-					swapNum = vetKeyN[i1];
-					vetKeyN[i1] = vetKeyN[minIndex1];
-					vetKeyN[minIndex1] = swapNum;
+					if (vetKeyN[i2] < vetKeyN[i1]) {
+						swapNum = vetKeyN[i1];
+						vetKeyN[i1] = vetKeyN[i2];
+						vetKeyN[i2] = swapNum;
 
-					swapInt = vetIndex[i1];
-					vetIndex[i1] = vetIndex[minIndex1];
-					vetIndex[minIndex1] = swapInt;
+						swapInt = vetIndex[i1];
+						vetIndex[i1] = vetIndex[i2];
+						vetIndex[i2] = swapInt;
+					}
 				}
 			}
 			ResultsTable rt1 = Uncombined3D_.vectorResultsTable2(vetKeyN, vetIndex);
@@ -1371,19 +1367,15 @@ public class Uncombined3D_ implements PlugIn {
 			MyLog.waitHere();
 		} else {
 			for (int i1 = 0; i1 < vetKey.length - 1; i1++) {
-				int minIndex2 = i1;
 				for (int i2 = i1 + 1; i2 < vetKey.length; i2++) {
-					if (vetKey[i2].compareTo(vetKey[minIndex2]) > 0) {
-						minIndex2 = i2;
-					}
-					if (minIndex2 != i1) {
+					if (vetKey[i2].compareTo(vetKey[i1]) > 0) {
 						swapStr = vetKey[i1];
-						vetKey[i1] = vetKey[minIndex2];
-						vetKey[minIndex2] = swapStr;
+						vetKey[i1] = vetKey[i2];
+						vetKey[i2] = swapStr;
 
 						swapInt = vetIndex[i1];
-						vetIndex[i1] = vetIndex[minIndex2];
-						vetIndex[minIndex2] = swapInt;
+						vetIndex[i1] = vetIndex[i2];
+						vetIndex[i2] = swapInt;
 					}
 				}
 			}
@@ -1406,11 +1398,90 @@ public class Uncombined3D_ implements PlugIn {
 			MyLog.waitHere();
 		}
 
-		for (
+		for (int i2 = 0; i2 < tableOut[0].length; i2++) {
+			tableOut[0][i2] = tableIn[0][vetIndex[i2]];
+			tableOut[1][i2] = tableIn[1][vetIndex[i2]];
+			tableOut[2][i2] = tableIn[2][vetIndex[i2]];
+		}
+		return tableOut;
 
-		int i2 = 0; i2 < tableOut[0].length; i2++)
+	}
 
-		{
+	/***
+	 * Insertion sort è un algoritmo stabile, quindi utilizzabile per sort a
+	 * criteri multipli
+	 * 
+	 * @param tableIn
+	 * @param key
+	 * @param titolo
+	 * @return
+	 */
+
+	public static String[][] insertionSort(String[][] tableIn, int key, String titolo) {
+
+		ResultsTable rtxx = Uncombined3D_.vectorResultsTable2(tableIn);
+		rtxx.show("input a minsort2" + key);
+		MyLog.waitHere();
+
+		String[][] tableOut = duplicateTable(tableIn);
+		String[] vetKey = new String[tableIn[0].length];
+		int[] vetIndex = new int[tableIn[0].length];
+		for (int i1 = 0; i1 < tableOut[0].length; i1++) {
+			String strKey = getKey(tableOut, i1, key);
+			vetKey[i1] = strKey;
+			vetIndex[i1] = i1;
+		}
+		// effettuo insertionSort su key, gli altri campi andranno in parallelo
+		boolean numeric = true;
+		for (int i1 = 0; i1 < vetKey.length; i1++) {
+			try {
+				Double.parseDouble(vetKey[i1]);
+			} catch (NumberFormatException e) {
+				numeric = false;
+			}
+		}
+
+		if (numeric) {
+			double[] vetKeyN = new double[vetKey.length];
+			for (int i1 = 0; i1 < vetKey.length; i1++) {
+				vetKeyN[i1] = Double.parseDouble(vetKey[i1]);
+			}
+
+			for (int i1 = 1; i1 < vetKeyN.length; i1++) {
+				double tmp1 = vetKeyN[i1];
+				int tmp2 = vetIndex[i1];
+				int j1 = i1 - 1;
+				for (j1 = i1 - 1; (j1 >= 0) && (vetKeyN[j1] > tmp1); j1--) {
+					vetKeyN[j1 + 1] = vetKeyN[j1];
+					vetIndex[j1 + 1] = vetIndex[j1];
+				}
+				vetKeyN[j1 + 1] = tmp1;
+				vetIndex[j1 + 1] = tmp2;
+			}
+			ResultsTable rt1 = Uncombined3D_.vectorResultsTable2(vetKeyN, vetIndex);
+			rt1.show("vetKey Double sorted");
+			MyLog.waitHere();
+
+		} else {
+
+			for (int i1 = 1; i1 < vetKey.length; i1++) {
+				String tmp1 = vetKey[i1];
+				int tmp2 = vetIndex[i1];
+				int j1 = i1 - 1;
+				for (j1 = i1 - 1; (j1 >= 0) && (vetKey[j1].compareTo(tmp1)) < 0; j1--) {
+					vetKey[j1 + 1] = vetKey[j1];
+					vetIndex[j1 + 1] = vetIndex[j1];
+				}
+				vetKey[j1 + 1] = tmp1;
+				vetIndex[j1 + 1] = tmp2;
+			}
+
+			ResultsTable rt1 = Uncombined3D_.vectorResultsTable2(vetKey, vetIndex);
+			rt1.show("vetKey String sorted");
+			MyLog.waitHere();
+		}
+
+		for (int i2 = 0; i2 < tableOut[0].length; i2++) {
 			tableOut[0][i2] = tableIn[0][vetIndex[i2]];
 			tableOut[1][i2] = tableIn[1][vetIndex[i2]];
 			tableOut[2][i2] = tableIn[2][vetIndex[i2]];
