@@ -1265,12 +1265,12 @@ public class Uncombined3D_ implements PlugIn {
 		ResultsTable rt3 = vectorResultsTable2(matStr0);
 		// rt3.show("INIZIALE");
 		// MyLog.logMatrixDimensions(matStr0, "matStr0");
-		String[][] matStr1 = minsort2(matStr0, 2);
+		String[][] matStr1 = minsort2(matStr0, 2, "aa");
 		// MyLog.logMatrixDimensions(matStr1, "matStr1");
 		// ResultsTable rt4 = vectorResultsTable2(matStr1);
 		// rt4.show("PRIMO Sortato per POSITION");
 
-		String[][] matStr2 = minsort2(matStr1, 1);
+		String[][] matStr2 = minsort2(matStr1, 1, "bb");
 		// MyLog.logMatrixDimensions(matStr2, "matStr0");
 		//
 		// ResultsTable rt5 = vectorResultsTable2(matStr2);
@@ -1316,7 +1316,7 @@ public class Uncombined3D_ implements PlugIn {
 		return sortedPath;
 	}
 
-	public static String[][] minsort2(String[][] tableIn, int key) {
+	public static String[][] minsort2(String[][] tableIn, int key, String titolo) {
 
 		String[][] tableOut = duplicateTable(tableIn);
 		String[] vetKey = new String[tableIn[0].length];
@@ -1327,8 +1327,9 @@ public class Uncombined3D_ implements PlugIn {
 			vetIndex[i1] = i1;
 		}
 		// effettuo minsort su key, gli altri campi andranno in parallelo
-		String aux1 = "zzzzz";
-		int aux2 = 0;
+		String swapStr = "zzzzz";
+		double swapNum = 0;
+		int swapInt = 0;
 		boolean numeric = true;
 		for (int i1 = 0; i1 < vetKey.length; i1++) {
 			try {
@@ -1337,35 +1338,63 @@ public class Uncombined3D_ implements PlugIn {
 				numeric = false;
 			}
 		}
-		for (int i1 = 0; i1 < vetKey.length; i1++) {
-			for (int i2 = i1 + 1; i2 < vetKey.length; i2++) {
-				if (numeric) {
-					if (Double.parseDouble(vetKey[i2]) < Double.parseDouble(vetKey[i1])) {
-						aux1 = vetKey[i1];
-						vetKey[i1] = vetKey[i2];
-						vetKey[i2] = aux1;
-						aux2 = vetIndex[i1];
-						vetIndex[i1] = vetIndex[i2];
-						vetIndex[i2] = aux2;
-					}
-				} else {
-					if (vetKey[i2].compareToIgnoreCase(vetKey[i1]) < 0) {
-						aux1 = vetKey[i1];
-						vetKey[i1] = vetKey[i2];
-						vetKey[i2] = aux1;
-						aux2 = vetIndex[i1];
-						vetIndex[i1] = vetIndex[i2];
-						vetIndex[i2] = aux2;
+
+		if (numeric) {
+			double[] vetKeyN = new double[vetKey.length];
+			for (int i1 = 0; i1 < vetKey.length; i1++) {
+				vetKeyN[i1] = Double.parseDouble(vetKey[i1]);
+			}
+
+			for (int i1 = 0; i1 < vetKeyN.length-1; i1++) {
+				int min1 = i1;
+				for (int i2 = i1 + 1; i2 < vetKeyN.length; i2++) {
+					if (vetKeyN[i2] < vetKeyN[min1]) {
+						min1 = i2;
 					}
 				}
+				if (min1 != i1) {
+					swapNum = vetKeyN[i1];
+					vetKeyN[i1] = vetKeyN[min1];
+					vetKeyN[min1] = swapNum;
+
+					swapInt = vetIndex[i1];
+					vetIndex[i1] = vetIndex[min1];
+					vetIndex[min1] = swapInt;
+				}
 			}
+			ResultsTable rt1 = Uncombined3D_.vectorResultsTable2(vetKeyN, vetIndex);
+			rt1.show("vetKey Double sorted");
+			MyLog.waitHere();
+		} else {
+			for (int i1 = 0; i1 < vetKey.length-1; i1++) {
+				int min2 = i1;
+				for (int i2 = i1 + 1; i2 < vetKey.length; i2++) {
+					if (vetKey[i2].compareTo(vetKey[min2]) < 0) {
+						min2 = i2;
+					}
+				}
+				if (min2 != i1) {
+					swapStr = vetKey[i1];
+					vetKey[i1] = vetKey[min2];
+					vetKey[min2] = swapStr;
+
+					swapInt = vetIndex[i1];
+					vetIndex[i1] = vetIndex[min2];
+					vetIndex[min2] = swapInt;
+				}
+			}
+			ResultsTable rt10 = Uncombined3D_.vectorResultsTable2(vetKey, vetIndex);
+			rt10.show("vetKey String sorted");
+			MyLog.waitHere();
 		}
-		for (int i1 = 0; i1 < tableOut.length; i1++) {
-			for (int i2 = 0; i2 < tableOut[0].length; i2++) {
-				tableOut[i1][i2] = tableIn[i1][vetIndex[i2]];
-			}
+
+		for (int i2 = 0; i2 < tableOut[0].length; i2++) {
+			tableOut[0][i2] = tableOut[0][vetIndex[i2]];
+			tableOut[1][i2] = tableOut[1][vetIndex[i2]];
+			tableOut[2][i2] = tableOut[2][vetIndex[i2]];
 		}
 		return tableOut;
+
 	}
 
 	public static String[][] duplicateTable(String[][] inTable) {
@@ -3140,6 +3169,64 @@ public class Uncombined3D_ implements PlugIn {
 		return rt1;
 	}
 
+	public static ResultsTable vectorResultsTable2(double[] vetVet) {
+
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.reset();
+		for (int i1 = 0; i1 < vetVet.length; i1++) {
+			rt1.incrementCounter();
+			rt1.addValue("Numero", vetVet[i1]);
+		}
+		return rt1;
+	}
+
+	public static ResultsTable vectorResultsTable2(String[] vetKey, String[] vetVet) {
+
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.reset();
+		for (int i1 = 0; i1 < vetVet.length; i1++) {
+			rt1.incrementCounter();
+			rt1.addValue("Key", vetKey[i1]);
+			rt1.addValue("Numero", vetVet[i1]);
+		}
+		return rt1;
+	}
+
+	public static ResultsTable vectorResultsTable2(double[] vetKey, int[] vetVet) {
+
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.reset();
+		for (int i1 = 0; i1 < vetVet.length; i1++) {
+			rt1.incrementCounter();
+			rt1.addValue("Key", vetKey[i1]);
+			rt1.addValue("Numero", vetVet[i1]);
+		}
+		return rt1;
+	}
+
+	public static ResultsTable vectorResultsTable2(String[] vetKey, int[] vetVet) {
+
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.reset();
+		for (int i1 = 0; i1 < vetVet.length; i1++) {
+			rt1.incrementCounter();
+			rt1.addValue("Key", vetKey[i1]);
+			rt1.addValue("Numero", vetVet[i1]);
+		}
+		return rt1;
+	}
+
+	public static ResultsTable vectorResultsTable2(int[] vetVet) {
+
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.reset();
+		for (int i1 = 0; i1 < vetVet.length; i1++) {
+			rt1.incrementCounter();
+			rt1.addValue("Numero", vetVet[i1]);
+		}
+		return rt1;
+	}
+
 	public static ResultsTable vectorResultsTable2(String[][] vetVet) {
 
 		ResultsTable rt1 = ResultsTable.getResultsTable();
@@ -3399,9 +3486,9 @@ public class Uncombined3D_ implements PlugIn {
 			yPoints3 = null;
 		}
 
-//		MyLog.logVector(xPoints3, "xPoints3");
-//		MyLog.logVector(yPoints3, "yPoints3");
-//		MyLog.waitHere();
+		// MyLog.logVector(xPoints3, "xPoints3");
+		// MyLog.logVector(yPoints3, "yPoints3");
+		// MyLog.waitHere();
 
 		// qui di seguito pulisco l'overlay, dovrò preoccuparmi di ridisegnare i
 		// punti
@@ -3458,7 +3545,6 @@ public class Uncombined3D_ implements PlugIn {
 			// writeStoredRoiData(boundRec);
 
 			MyCircleDetector.drawCenter(imp12, over12, xCenterCircle, yCenterCircle, colore3);
-
 
 			// ----------------------------------------------------------
 			// Misuro l'errore sul fit rispetto ai punti imposti
@@ -3580,13 +3666,12 @@ public class Uncombined3D_ implements PlugIn {
 		double[] out10 = MyFilter.maxPosition11x11_NEW(imp11);
 		xMaxima = out10[0];
 		yMaxima = out10[1];
-		MyCircleDetector.drawCenter(imp11, over12,  xMaxima,  yMaxima, Color.green);
+		MyCircleDetector.drawCenter(imp11, over12, xMaxima, yMaxima, Color.green);
 		MyLog.waitHere();
 		// over12.clear();
 
 		if (demo) {
-			MyCircleDetector.drawCenter(imp11, over12,  xMaxima, yMaxima, Color.green);
-			
+			MyCircleDetector.drawCenter(imp11, over12, xMaxima, yMaxima, Color.green);
 
 			if (demo)
 				MyLog.waitHere(listaMessaggi(20), debug, timeout);
