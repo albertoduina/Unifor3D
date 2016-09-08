@@ -1318,6 +1318,10 @@ public class Uncombined3D_ implements PlugIn {
 
 	public static String[][] minsort2(String[][] tableIn, int key, String titolo) {
 
+		ResultsTable rtxx = Uncombined3D_.vectorResultsTable2(tableIn);
+		rtxx.show("input a minsort2" + key);
+		MyLog.waitHere();
+
 		String[][] tableOut = duplicateTable(tableIn);
 		String[] vetKey = new String[tableIn[0].length];
 		int[] vetIndex = new int[tableIn[0].length];
@@ -1345,53 +1349,71 @@ public class Uncombined3D_ implements PlugIn {
 				vetKeyN[i1] = Double.parseDouble(vetKey[i1]);
 			}
 
-			for (int i1 = 0; i1 < vetKeyN.length-1; i1++) {
-				int min1 = i1;
+			for (int i1 = 0; i1 < vetKeyN.length - 1; i1++) {
+				int minIndex1 = i1;
 				for (int i2 = i1 + 1; i2 < vetKeyN.length; i2++) {
-					if (vetKeyN[i2] < vetKeyN[min1]) {
-						min1 = i2;
+					if (vetKeyN[i2] < vetKeyN[minIndex1]) {
+						minIndex1 = i2;
 					}
 				}
-				if (min1 != i1) {
+				if (minIndex1 != i1) {
 					swapNum = vetKeyN[i1];
-					vetKeyN[i1] = vetKeyN[min1];
-					vetKeyN[min1] = swapNum;
+					vetKeyN[i1] = vetKeyN[minIndex1];
+					vetKeyN[minIndex1] = swapNum;
 
 					swapInt = vetIndex[i1];
-					vetIndex[i1] = vetIndex[min1];
-					vetIndex[min1] = swapInt;
+					vetIndex[i1] = vetIndex[minIndex1];
+					vetIndex[minIndex1] = swapInt;
 				}
 			}
 			ResultsTable rt1 = Uncombined3D_.vectorResultsTable2(vetKeyN, vetIndex);
 			rt1.show("vetKey Double sorted");
 			MyLog.waitHere();
 		} else {
-			for (int i1 = 0; i1 < vetKey.length-1; i1++) {
-				int min2 = i1;
+			for (int i1 = 0; i1 < vetKey.length - 1; i1++) {
+				int minIndex2 = i1;
 				for (int i2 = i1 + 1; i2 < vetKey.length; i2++) {
-					if (vetKey[i2].compareTo(vetKey[min2]) < 0) {
-						min2 = i2;
+					if (vetKey[i2].compareTo(vetKey[minIndex2]) > 0) {
+						minIndex2 = i2;
+					}
+					if (minIndex2 != i1) {
+						swapStr = vetKey[i1];
+						vetKey[i1] = vetKey[minIndex2];
+						vetKey[minIndex2] = swapStr;
+
+						swapInt = vetIndex[i1];
+						vetIndex[i1] = vetIndex[minIndex2];
+						vetIndex[minIndex2] = swapInt;
 					}
 				}
-				if (min2 != i1) {
-					swapStr = vetKey[i1];
-					vetKey[i1] = vetKey[min2];
-					vetKey[min2] = swapStr;
-
-					swapInt = vetIndex[i1];
-					vetIndex[i1] = vetIndex[min2];
-					vetIndex[min2] = swapInt;
-				}
 			}
+
+			// for (int i1 = 0; i1 < vetKey.length-1; i1++) {
+			// for (int i2 = i1 + 1; i2 < vetKey.length; i2++) {
+			// if (vetKey[i2].compareTo(vetKey[i1]) < 0) {
+			// swapStr = vetKey[i1];
+			// vetKey[i1] = vetKey[i2];
+			// vetKey[i2] = swapStr;
+			//
+			// swapInt = vetIndex[i1];
+			// vetIndex[i1] = vetIndex[i2];
+			// vetIndex[i2] = swapInt;
+			// }
+			// }
+			// }
 			ResultsTable rt10 = Uncombined3D_.vectorResultsTable2(vetKey, vetIndex);
 			rt10.show("vetKey String sorted");
 			MyLog.waitHere();
 		}
 
-		for (int i2 = 0; i2 < tableOut[0].length; i2++) {
-			tableOut[0][i2] = tableOut[0][vetIndex[i2]];
-			tableOut[1][i2] = tableOut[1][vetIndex[i2]];
-			tableOut[2][i2] = tableOut[2][vetIndex[i2]];
+		for (
+
+		int i2 = 0; i2 < tableOut[0].length; i2++)
+
+		{
+			tableOut[0][i2] = tableIn[0][vetIndex[i2]];
+			tableOut[1][i2] = tableIn[1][vetIndex[i2]];
+			tableOut[2][i2] = tableIn[2][vetIndex[i2]];
 		}
 		return tableOut;
 
