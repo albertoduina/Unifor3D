@@ -96,7 +96,8 @@
 			<attribute name="Built-By" value="AlbertoDuina" />
 			<attribute name="Built-Date" value="${TODAY}" />
 			<attribute name="Main-Class" value="Unifor3D.Unifor3D_" />
-			<attribute name="Implementation-Version" value="${version.num}-b${build.number}" />
+			<!--attribute name="Implementation-Version" value="${version.num}-b${build.number}" /-->
+			<attribute name="Implementation-Version" value="$b${build.number}" />
 		</manifest>
 		<jar destfile="${output}/Unifor3D_b${build.number}.jar" manifest="MANIFEST.MF">
 			<fileset dir="${output}" />

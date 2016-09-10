@@ -143,7 +143,7 @@ public class Unifor3D_ implements PlugIn {
 
 		String info10 = "position search XZimage";
 		Boolean autoCalled = false;
-		Boolean step2 = true;
+		Boolean step2 = false;
 		Boolean demo0 = false;
 		Boolean test = false;
 		Boolean fast = true;
