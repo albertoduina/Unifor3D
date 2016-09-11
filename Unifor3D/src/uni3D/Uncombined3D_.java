@@ -12,6 +12,8 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.gui.DialogListener;
+import ij.gui.GenericDialog;
 import ij.gui.ImageWindow;
 import ij.gui.Line;
 import ij.gui.OvalRoi;
@@ -50,7 +52,7 @@ import utils.UtilAyv;
 
 //=====================================================
 //     Programma per plot 3D per immagini uncombined circolari
-//     11 agosto 2016 
+//     1 settembre 2016 
 //     By A.Duina - IW2AYV
 //     Linguaggio: Java per ImageJ
 //=====================================================
@@ -64,14 +66,26 @@ public class Uncombined3D_ implements PlugIn {
 
 	public void run(String arg) {
 
-		// new MyAboutBox().about10("Unifor3D");
-
-		new AboutBox().about("Uncombined3D", MyVersionUtils.CURRENT_VERSION);
+	
+		new AboutBox().about("Uncombined3D", MyVersion.CURRENT_VERSION);
 		IJ.wait(20);
 		new AboutBox().close();
 
-		double maxFitError = +20;
-		double maxBubbleGapLimit = 2;
+		GenericDialog gd = new GenericDialog("", IJ.getInstance());
+		String[] items = { "5 livelli", "12 livelli" };
+		gd.addRadioButtonGroup("SIMULATE", items, 2, 2, "5 livelli");
+		gd.showDialog();
+		if (gd.wasCanceled()) {
+			return;
+		}
+
+		String level = gd.getNextRadioButton();
+		boolean twelve;
+		if (level.equals("5 livelli")) {
+			twelve = false;
+		} else {
+			twelve = true;
+		}
 		ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
 
 		IJ.log("-----IW2AYV----");
@@ -205,14 +219,13 @@ public class Uncombined3D_ implements PlugIn {
 			count++;
 			IJ.log("calcolo simulata " + i1 + " / " + imp10.getImageStackSize());
 			ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
-//			ImagePlus impSimulata = ImageUtils.generaSimulata5Colori(mean11, imp20, step2, demo0, test);
-			ImagePlus impSimulata = ImageUtils.generaSimulata12colori(mean11, imp20, step2, demo0, test);
-			
-//			public static ImagePlus generaSimulata12colori(double mean, ImagePlus imp1, boolean step, boolean verbose,
-//					boolean test) {
+			ImagePlus impSimulata = null;
 
-			
-			
+			if (twelve) {
+				impSimulata = ImageUtils.generaSimulata12colori(mean11, imp20, step2, demo0, test);
+			} else {
+				impSimulata = ImageUtils.generaSimulata5Colori(mean11, imp20, step2, demo0, test);
+			}
 			impSimulata.show();
 			ImageProcessor ipSimulata = impSimulata.getProcessor();
 			if (count == 0)
