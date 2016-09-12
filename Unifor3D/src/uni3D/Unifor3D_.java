@@ -87,7 +87,7 @@ public class Unifor3D_ implements PlugIn {
 		DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA PRIMA ACQUISIZIONE");
 		String dir1 = od1.getDirectory();
 		Prefs.set("prefer.Unifor3D_dir1", dir1);
-		DirectoryChooser.setDefaultDirectory(dir10);
+		// DirectoryChooser.setDefaultDirectory(dir10);
 		// ------------------------------
 		String dir20 = Prefs.get("prefer.Unifor3D_dir2", "none");
 		DirectoryChooser.setDefaultDirectory(dir20);
