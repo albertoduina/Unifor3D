@@ -1899,7 +1899,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		int colorM10 = 0;
 		int colorM20 = 0;
 
-		if (coil == 1) {
+		if (coil == 1 || coil == 4 || coil == 7 || coil == 10 || coil == 13 || coil == 16) {
 			if (livello > 0)
 				colorP20 = ((200 & 0xff) << 16) | ((0 & 0xff) << 8) | (0 & 0xff);
 			if (livello > 1)
@@ -1911,7 +1911,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			if (livello > 4)
 				colorM20 = ((255 & 0xff) << 16) | ((90 & 0xff) << 8) | (90 & 0xff);
 		}
-		if (coil == 2) {
+		if (coil == 2 || coil == 5 || coil == 8 || coil == 11 || coil == 14 || coil == 17) {
 			if (livello > 0)
 				colorP20 = ((0 & 0xff) << 16) | ((200 & 0xff) << 8) | (0 & 0xff);
 			if (livello > 1)
@@ -1924,7 +1924,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				colorM20 = ((90 & 0xff) << 16) | ((255 & 0xff) << 8) | (90 & 0xff);
 		}
 
-		if (coil == 3) {
+		if (coil == 3 || coil == 6 || coil == 9 || coil == 12 || coil == 15 || coil == 18) {
 			if (livello > 0)
 				colorP20 = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | (200 & 0xff);
 			if (livello > 1)
