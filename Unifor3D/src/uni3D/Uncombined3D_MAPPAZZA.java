@@ -76,22 +76,18 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		new AboutBox().close();
 
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
-		String[] items = { "5 livelli", "12 livelli" };
-		gd.addRadioButtonGroup("SIMULATE", items, 2, 2, "5 livelli");
+		String[] livelli = { "5", "4", "3", "2", "1" };
+
+		gd.addChoice("SIMULATE", livelli, "3");
 		gd.addCheckbox("auto", true);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return;
 		}
 
-		String level = gd.getNextRadioButton();
+		String level = gd.getNextChoice();
 		boolean auto = gd.getNextBoolean();
-		boolean twelve;
-		if (level.equals("5 livelli")) {
-			twelve = false;
-		} else {
-			twelve = true;
-		}
+		int livello = Integer.parseInt(level);
 		ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
 
 		IJ.log("-----IW2AYV----");
@@ -161,94 +157,98 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				return;
 			}
 
-			IJ.run(imp10, "Orthogonal Views", "");
-			Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
-			if (step)
-				MyLog.waitHere("output di 'Orthogonal Views'");
-
-			ImagePlus imp102 = ort1.getXZImage();
-			if (imp102 == null)
-				MyLog.waitHere("imp102=null");
-			IJ.wait(100);
-			ImagePlus imp202 = new Duplicator().run(imp102);
-			IJ.wait(10);
-
-			ImagePlus imp103 = ort1.getYZImage();
-			if (imp103 == null)
-				MyLog.waitHere("imp103=null");
-			// ImagePlus imp203 = imp103.duplicate();
-			ImagePlus imp203 = new Duplicator().run(imp103);
-			IJ.wait(10);
-			imp202.show();
-			imp203.show();
-
+			// IJ.run(imp10, "Orthogonal Views", "");
+			// Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
+			// if (step)
+			// MyLog.waitHere("output di 'Orthogonal Views'");
+			//
+			// ImagePlus imp102 = ort1.getXZImage();
+			// if (imp102 == null)
+			// MyLog.waitHere("imp102=null");
+			// IJ.wait(100);
+			// ImagePlus imp202 = new Duplicator().run(imp102);
+			// IJ.wait(10);
+			//
+			// ImagePlus imp103 = ort1.getYZImage();
+			// if (imp103 == null)
+			// MyLog.waitHere("imp103=null");
+			// // ImagePlus imp203 = imp103.duplicate();
+			// ImagePlus imp203 = new Duplicator().run(imp103);
+			// IJ.wait(10);
+			// imp202.show();
+			// imp203.show();
+			//
 			int mode = 3;
-			if (auto)
-				mode = 0;
-			double[] out202 = positionSearchPhantom(imp202, mode, timeout);
-			Overlay over202 = new Overlay();
-			imp202.setOverlay(over202);
-			double xCenterEXT = out202[0];
-			double yCenterEXT = out202[1];
-			double diamEXT = out202[2];
-			imp202.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT - diamEXT / 2, diamEXT, diamEXT));
-			imp202.getRoi().setStrokeColor(Color.green);
-			over202.addElement(imp202.getRoi());
-			imp202.deleteRoi();
-			imp202.updateAndDraw();
-
-			double[] out203 = positionSearchPhantom(imp203, mode, timeout);
-			Overlay over203 = new Overlay();
-			imp203.setOverlay(over203);
-			xCenterEXT = out203[0];
-			yCenterEXT = out203[1];
-			diamEXT = out203[2];
-			imp203.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT - diamEXT / 2, diamEXT, diamEXT));
-			imp203.getRoi().setStrokeColor(Color.green);
-			over203.addElement(imp203.getRoi());
-			imp203.deleteRoi();
-			imp203.updateAndDraw();
-
-			// ===============================
-			// IMMAGINE DI CENTRO DELLA SFERA
-			// ===============================
-			int centerSlice = 0;
-			if ((out202[1] - out203[0]) < 2 || (out203[0] - out202[1]) < 2) {
-				centerSlice = (int) out202[1];
-			}
-
-			if (centerSlice == 0)
-				centerSlice = imaStack.getSize() / 2;
-
-			ImagePlus imp101 = MyStackUtils.imageFromStack(imp10, centerSlice);
-			if (imp101 == null)
-				MyLog.waitHere("imp101=null");
-			ImagePlus imp201 = imp101.duplicate();
-			double[] out201 = positionSearchPhantom(imp201, mode, timeout);
-			imp201.show();
-			Overlay over201 = new Overlay();
-			imp201.setOverlay(over201);
-			xCenterEXT = out201[0];
-			yCenterEXT = out201[1];
-			diamEXT = out201[2];
-			imp201.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT - diamEXT / 2, diamEXT, diamEXT));
-			imp201.getRoi().setStrokeColor(Color.red);
-			over201.addElement(imp201.getRoi());
-			imp201.deleteRoi();
-			imp201.updateAndDraw();
-			IJ.run("Tile", "");
-
-			// MyLog.waitHere("endPositionSearchPhantom");
-
-			// al contrario dell'uniformita' non mi baso su una
-			// ricostruzione
-			// geometrica dela sfera ma effettuo la ricerca dello spot11x11
-			// su
-			// tutte
-			// le sezioni
+			// if (auto)
+			// mode = 0;
+			// double[] out202 = positionSearchPhantom(imp202, mode, timeout);
+			// Overlay over202 = new Overlay();
+			// imp202.setOverlay(over202);
+			// double xCenterEXT = out202[0];
+			// double yCenterEXT = out202[1];
+			// double diamEXT = out202[2];
+			// imp202.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT -
+			// diamEXT / 2, diamEXT, diamEXT));
+			// imp202.getRoi().setStrokeColor(Color.green);
+			// over202.addElement(imp202.getRoi());
+			// imp202.deleteRoi();
+			// imp202.updateAndDraw();
+			//
+			// double[] out203 = positionSearchPhantom(imp203, mode, timeout);
+			// Overlay over203 = new Overlay();
+			// imp203.setOverlay(over203);
+			// xCenterEXT = out203[0];
+			// yCenterEXT = out203[1];
+			// diamEXT = out203[2];
+			// imp203.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT -
+			// diamEXT / 2, diamEXT, diamEXT));
+			// imp203.getRoi().setStrokeColor(Color.green);
+			// over203.addElement(imp203.getRoi());
+			// imp203.deleteRoi();
+			// imp203.updateAndDraw();
+			//
+			// // ===============================
+			// // IMMAGINE DI CENTRO DELLA SFERA
+			// // ===============================
+			// int centerSlice = 0;
+			// if ((out202[1] - out203[0]) < 2 || (out203[0] - out202[1]) < 2) {
+			// centerSlice = (int) out202[1];
+			// }
+			//
+			// if (centerSlice == 0)
+			// centerSlice = imaStack.getSize() / 2;
+			//
+			// ImagePlus imp101 = MyStackUtils.imageFromStack(imp10,
+			// centerSlice);
+			// if (imp101 == null)
+			// MyLog.waitHere("imp101=null");
+			// ImagePlus imp201 = imp101.duplicate();
+			// double[] out201 = positionSearchPhantom(imp201, mode, timeout);
+			// imp201.show();
+			// Overlay over201 = new Overlay();
+			// imp201.setOverlay(over201);
+			// xCenterEXT = out201[0];
+			// yCenterEXT = out201[1];
+			// diamEXT = out201[2];
+			// imp201.setRoi(new OvalRoi(xCenterEXT - diamEXT / 2, yCenterEXT -
+			// diamEXT / 2, diamEXT, diamEXT));
+			// imp201.getRoi().setStrokeColor(Color.red);
+			// over201.addElement(imp201.getRoi());
+			// imp201.deleteRoi();
+			// imp201.updateAndDraw();
+			// IJ.run("Tile", "");
+			//
+			// // MyLog.waitHere("endPositionSearchPhantom");
+			//
+			// // al contrario dell'uniformita' non mi baso su una
+			// // ricostruzione
+			// // geometrica dela sfera ma effettuo la ricerca dello spot11x11
+			// // su
+			// // tutte
+			// // le sezioni
 			double profond = 30;
 			mode = 0;
-			ImageStack newStack = new ImageStack(width, height);
+			// ImageStack newStack = new ImageStack(width, height);
 
 			for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
 				if (!auto)
@@ -274,7 +274,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				if (!auto)
 					IJ.log("calcolo mappazza " + i1 + " / " + imp10.getImageStackSize());
 				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
-				mappazza5Colori(mean11, imp20, impMappazza, i1 + 1, count0, debug1);
+				mappazzaColori(mean11, imp20, impMappazza, i1 + 1, livello, count0, debug1);
 			}
 
 			impMappazza.show();
@@ -1866,8 +1866,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		return;
 	}
 
-	public static void mappazza5Colori(double mean11, ImagePlus imp1, ImagePlus impMappazza, int slice, int coil,
-			boolean debug) {
+	public static void mappazzaColori(double mean11, ImagePlus imp1, ImagePlus impMappazza, int slice, int livello,
+			int coil, boolean debug) {
 
 		if (imp1 == null) {
 			MyLog.waitHere("imp1==null");
@@ -1881,7 +1881,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		int width = imp1.getWidth();
 		int height = imp1.getHeight();
 		short[] pixels1 = UtilAyv.truePixels(imp1);
-		double mean = mean11 * 0.6;
+		double mean = mean11;
 		double minus20 = mean * MyConst.MINUS_20_PERC;
 		double minus10 = mean * MyConst.MINUS_10_PERC;
 		double plus10 = mean * MyConst.PLUS_10_PERC;
@@ -1900,29 +1900,41 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		int colorM20 = 0;
 
 		if (coil == 1) {
-			colorP20 = ((200 & 0xff) << 16) | ((0 & 0xff) << 8) | (0 & 0xff);
-			colorP10 = ((255 & 0xff) << 16) | ((30 & 0xff) << 8) | (30 & 0xff);
-			colorMED = ((255 & 0xff) << 16) | ((50 & 0xff) << 8) | (50 & 0xff);
-			colorM10 = ((255 & 0xff) << 16) | ((70 & 0xff) << 8) | (70 & 0xff);
-			// colorM20 = ((255 & 0xff) << 16) | ((90 & 0xff) << 8) | (90 &
-			// 0xff);
+			if (livello > 0)
+				colorP20 = ((200 & 0xff) << 16) | ((0 & 0xff) << 8) | (0 & 0xff);
+			if (livello > 1)
+				colorP10 = ((255 & 0xff) << 16) | ((30 & 0xff) << 8) | (30 & 0xff);
+			if (livello > 2)
+				colorMED = ((255 & 0xff) << 16) | ((50 & 0xff) << 8) | (50 & 0xff);
+			if (livello > 3)
+				colorM10 = ((255 & 0xff) << 16) | ((70 & 0xff) << 8) | (70 & 0xff);
+			if (livello > 4)
+				colorM20 = ((255 & 0xff) << 16) | ((90 & 0xff) << 8) | (90 & 0xff);
 		}
 		if (coil == 2) {
-			colorP20 = ((0 & 0xff) << 16) | ((200 & 0xff) << 8) | (0 & 0xff);
-			colorP10 = ((30 & 0xff) << 16) | ((255 & 0xff) << 8) | (30 & 0xff);
-			colorMED = ((50 & 0xff) << 16) | ((255 & 0xff) << 8) | (50 & 0xff);
-			colorM10 = ((70 & 0xff) << 16) | ((255 & 0xff) << 8) | (70 & 0xff);
-			// colorM20 = ((90 & 0xff) << 16) | ((255 & 0xff) << 8) | (90 &
-			// 0xff);
+			if (livello > 0)
+				colorP20 = ((0 & 0xff) << 16) | ((200 & 0xff) << 8) | (0 & 0xff);
+			if (livello > 1)
+				colorP10 = ((30 & 0xff) << 16) | ((255 & 0xff) << 8) | (30 & 0xff);
+			if (livello > 2)
+				colorMED = ((50 & 0xff) << 16) | ((255 & 0xff) << 8) | (50 & 0xff);
+			if (livello > 3)
+				colorM10 = ((70 & 0xff) << 16) | ((255 & 0xff) << 8) | (70 & 0xff);
+			if (livello > 4)
+				colorM20 = ((90 & 0xff) << 16) | ((255 & 0xff) << 8) | (90 & 0xff);
 		}
 
 		if (coil == 3) {
-			colorP20 = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | (200 & 0xff);
-			colorP10 = ((30 & 0xff) << 16) | ((30 & 0xff) << 8) | (255 & 0xff);
-			colorMED = ((50 & 0xff) << 16) | ((50 & 0xff) << 8) | (255 & 0xff);
-			colorM10 = ((70 & 0xff) << 16) | ((70 & 0xff) << 8) | (255 & 0xff);
-			// colorM20 = ((90 & 0xff) << 16) | ((90 & 0xff) << 8) | (255 &
-			// 0xff);
+			if (livello > 0)
+				colorP20 = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | (200 & 0xff);
+			if (livello > 1)
+				colorP10 = ((30 & 0xff) << 16) | ((30 & 0xff) << 8) | (255 & 0xff);
+			if (livello > 2)
+				colorMED = ((50 & 0xff) << 16) | ((50 & 0xff) << 8) | (255 & 0xff);
+			if (livello > 3)
+				colorM10 = ((70 & 0xff) << 16) | ((70 & 0xff) << 8) | (255 & 0xff);
+			if (livello > 4)
+				colorM20 = ((90 & 0xff) << 16) | ((90 & 0xff) << 8) | (255 & 0xff);
 		}
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
