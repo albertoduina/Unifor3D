@@ -74,25 +74,20 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		new AboutBox().about("Uncombined3D", MyVersion.CURRENT_VERSION);
 		IJ.wait(20);
 		new AboutBox().close();
-
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
 		String[] livelli = { "5", "4", "3", "2", "1" };
-
 		gd.addChoice("SIMULATE", livelli, "3");
-		gd.addCheckbox("auto", true);
+		// gd.addCheckbox("auto", true);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return;
 		}
-
 		String level = gd.getNextChoice();
-		boolean auto = gd.getNextBoolean();
+		// boolean auto = gd.getNextBoolean();
 		int livello = Integer.parseInt(level);
 		ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
-
 		IJ.log("-----IW2AYV----");
 		UtilAyv.logResizer(200, 200, 400, 400);
-
 		try {
 			Class.forName("utils.IW2AYV");
 		} catch (ClassNotFoundException e) {
@@ -107,13 +102,11 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		boolean debug1 = false;
 
 		while (loop1) {
-
 			path10 = UtilAyv.imageSelection("SELEZIONARE LO STACK DA ELABORARE");
 			if (path10 == null) {
 				loop1 = false;
 				continue;
 			}
-
 			color0++;
 			if (color0 > 3)
 				color0 = 1;
@@ -140,8 +133,9 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			mode = 0;
 
 			for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
-				if (!auto)
-					IJ.log("localizzo hotspot " + i1 + " / " + imp10.getImageStackSize());
+				// if (!auto)
+				// IJ.log("localizzo hotspot " + i1 + " / " +
+				// imp10.getImageStackSize());
 				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
 				double[] pos20 = hotspotSearch(imp20, profond, "", mode, timeout);
 				if (pos20 == null) {
@@ -160,12 +154,14 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			double mean11 = UtilAyv.vetMean(pixListSignal);
 
 			for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
-				if (!auto)
-					IJ.log("calcolo mappazza " + i1 + " / " + imp10.getImageStackSize());
+				// if (!auto)
+				// IJ.log("calcolo mappazza " + i1 + " / " +
+				// imp10.getImageStackSize());
 				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
 				mappazzaColori(mean11, imp20, impMappazza, i1 + 1, livello, color0, debug1);
 			}
 			impMappazza.show();
+			
 			impMappazza.updateAndRepaintWindow();
 			debug1 = true;
 			MyLog.waitHere();
