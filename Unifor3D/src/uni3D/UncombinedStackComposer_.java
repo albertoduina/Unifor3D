@@ -10,6 +10,7 @@ import ij.Prefs;
 import ij.io.DirectoryChooser;
 import ij.io.FileSaver;
 import ij.io.Opener;
+import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import utils.AboutBox;
 import utils.ArrayUtils;
@@ -40,8 +41,8 @@ public class UncombinedStackComposer_ implements PlugIn {
 		IJ.wait(2000);
 		new AboutBox().close();
 
-		double maxFitError = +20;
-		double maxBubbleGapLimit = 2;
+		// double maxFitError = +20;
+		// double maxBubbleGapLimit = 2;
 		IJ.log("IW2AYV the best");
 		UtilAyv.logResizer();
 
@@ -68,25 +69,25 @@ public class UncombinedStackComposer_ implements PlugIn {
 		Prefs.set("prefer.Uncombine3D_dir1", dir1);
 		DirectoryChooser.setDefaultDirectory(dir10);
 		// ------------------------------
-		// ------------------------------
 		String[] dir1a = new File(dir1).list();
 		String[] dir1b = new String[dir1a.length];
 		for (int i1 = 0; i1 < dir1a.length; i1++) {
 			dir1b[i1] = dir1 + "\\" + dir1a[i1];
 		}
 		String[][] sortedList1 = pathSorterUncombined(dir1b);
-
+		// ------------------------------
 		// ResultsTable rt3 = vectorResultsTable2(sortedList1);
 		// rt3.show("sortedList1");
-		// MyLog.waitHere();
+		// MyLog.waitHere("verificare sortedlist");
+		// ------------------------------
 
 		String[][] vetConta = contaList(sortedList1);
-		// prima bobina
-		// ResultsTable rt4 = vectorResultsTable2(vetConta);
-		// rt4.show("VetConta");
-		// MyLog.waitHere();
 
-		boolean ok1 = createDirectory(dir1 + "\\stack\\");
+		// ResultsTable rt14 = vectorResultsTable2(vetConta);
+		// rt14.show("VetConta");
+		// MyLog.waitHere("verificare vetConta dopo contaList");
+
+		createDirectory(dir1 + "\\stack\\");
 
 		for (int k1 = 0; k1 < vetConta[0].length; k1++) {
 			IJ.log("salvo stack " + (k1 + 1) + " / " + vetConta[0].length);
@@ -94,6 +95,9 @@ public class UncombinedStackComposer_ implements PlugIn {
 			String coil2 = vetConta[0][k1];
 			int num1 = Integer.valueOf(vetConta[1][k1]);
 			String[] dir1c = estrai(sortedList1, coil1, num1);
+			// ResultsTable rt4 = vectorResultsTable(dir1c);
+			// rt4.show("dir1c");
+			// MyLog.waitHere("coil2= " + coil2);
 			ImagePlus imp10 = MyStackUtils.imagesToStack16(dir1c);
 			new FileSaver(imp10).saveAsTiff(dir1 + "\\stack\\" + coil2);
 			imp10.close();
@@ -121,7 +125,6 @@ public class UncombinedStackComposer_ implements PlugIn {
 		return (exists);
 	}
 
-
 	public static String[] estrai(String[][] list1, int coil1, int num1) {
 
 		String[] list2 = new String[num1];
@@ -132,7 +135,6 @@ public class UncombinedStackComposer_ implements PlugIn {
 		return list2;
 	}
 
-
 	public static String[][] contaList(String[][] mat1) {
 		List<Integer> list1 = new ArrayList<Integer>();
 		List<String> list2 = new ArrayList<String>();
@@ -141,22 +143,30 @@ public class UncombinedStackComposer_ implements PlugIn {
 
 		// ResultsTable rt4 = vectorResultsTable2(mat1);
 		// rt4.show("input contaList");
-		// MyLog.waitHere();
+		// MyLog.waitHere("input a contaList");
 
+		String aux1 = null;
 		for (int i1 = 0; i1 < mat1[0].length; i1++) {
-			String aux1 = mat1[1][i1];
+			aux1 = mat1[1][i1];
 			if (i1 == 0)
 				old = aux1;
 			if (old.equals(aux1)) {
 				conta++;
 			} else {
 				list1.add(conta);
-				list2.add(aux1);
+				list2.add(old);
 				conta = 1;
 				old = aux1;
 			}
 		}
+		list1.add(conta);
+		list2.add(aux1);
+
 		String[] vetCoil = ArrayUtils.arrayListToArrayString(list2);
+		// ResultsTable rt44 = vectorResultsTable(vetCoil);
+		// rt44.show("vetCoil");
+		// MyLog.waitHere("verificare vetCoil dentro contaList");
+
 		int[] vetConta = ArrayUtils.arrayListToArrayInt(list1);
 		String[][] vetOut = new String[2][vetCoil.length];
 
@@ -171,7 +181,6 @@ public class UncombinedStackComposer_ implements PlugIn {
 
 		return vetOut;
 	}
-
 
 	/***
 	 * sort del vettore path in base a BOBINA e posizione immagine
@@ -325,7 +334,6 @@ public class UncombinedStackComposer_ implements PlugIn {
 
 	}
 
-
 	public static String[][] duplicateTable(String[][] inTable) {
 		if (inTable == null)
 			return null;
@@ -372,9 +380,30 @@ public class UncombinedStackComposer_ implements PlugIn {
 		return sliceCoil;
 	}
 
+	public static ResultsTable vectorResultsTable2(String[][] vetVet) {
 
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.reset();
+		if (vetVet == null)
+			MyLog.waitHere("vetVet==null");
+		for (int i2 = 0; i2 < vetVet[0].length; i2++) {
+			rt1.incrementCounter();
+			for (int i1 = 0; i1 < vetVet.length; i1++) {
+				rt1.addValue("Numero " + i1, vetVet[i1][i2]);
+			}
+		}
+		return rt1;
+	}
 
+	public static ResultsTable vectorResultsTable(String[] vetClassi) {
 
-
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		String t1 = "Numerosita' Classi";
+		for (int i1 = 0; i1 < vetClassi.length; i1++) {
+			rt1.incrementCounter();
+			rt1.addValue(t1, vetClassi[i1]);
+		}
+		return rt1;
+	}
 
 } // ultima

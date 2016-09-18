@@ -111,7 +111,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			if (color0 > 3)
 				color0 = 1;
 
-			imp10 = UtilAyv.openImageNormal(path10);
+			// imp10 = UtilAyv.openImageNormal(path10);
+			imp10 = UtilAyv.openImageNoDisplay(path10, false);
 			int width = imp10.getWidth();
 			int height = imp10.getHeight();
 			if (impMappazza == null) {
@@ -161,7 +162,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				mappazzaColori(mean11, imp20, impMappazza, i1 + 1, livello, color0, debug1);
 			}
 			impMappazza.show();
-			
+
 			impMappazza.updateAndRepaintWindow();
 			debug1 = true;
 			MyLog.waitHere();
@@ -276,40 +277,40 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 		if (color == 1) {
 			if (livello > 0)
-				colorP20 = ((180 & 0xff) << 16) | ((0 & 0xff) << 8) | (0 & 0xff);
+				colorP20 = ((160 & 0xff) << 16) | ((0 & 0xff) << 8) | (0 & 0xff);
 			if (livello > 1)
-				colorP10 = ((180 & 0xff) << 16) | ((30 & 0xff) << 8) | (30 & 0xff);
+				colorP10 = ((160 & 0xff) << 16) | ((40 & 0xff) << 8) | (40 & 0xff);
 			if (livello > 2)
-				colorMED = ((180 & 0xff) << 16) | ((50 & 0xff) << 8) | (50 & 0xff);
+				colorMED = ((160 & 0xff) << 16) | ((60 & 0xff) << 8) | (60 & 0xff);
 			if (livello > 3)
-				colorM10 = ((180 & 0xff) << 16) | ((70 & 0xff) << 8) | (70 & 0xff);
+				colorM10 = ((160 & 0xff) << 16) | ((80 & 0xff) << 8) | (80 & 0xff);
 			if (livello > 4)
-				colorM20 = ((180 & 0xff) << 16) | ((90 & 0xff) << 8) | (90 & 0xff);
+				colorM20 = ((160 & 0xff) << 16) | ((100 & 0xff) << 8) | (100 & 0xff);
 		}
 		if (color == 2) {
 			if (livello > 0)
-				colorP20 = ((0 & 0xff) << 16) | ((180 & 0xff) << 8) | (0 & 0xff);
+				colorP20 = ((0 & 0xff) << 16) | ((160 & 0xff) << 8) | (0 & 0xff);
 			if (livello > 1)
-				colorP10 = ((30 & 0xff) << 16) | ((180 & 0xff) << 8) | (30 & 0xff);
+				colorP10 = ((40 & 0xff) << 16) | ((160 & 0xff) << 8) | (40 & 0xff);
 			if (livello > 2)
-				colorMED = ((50 & 0xff) << 16) | ((180 & 0xff) << 8) | (50 & 0xff);
+				colorMED = ((60 & 0xff) << 16) | ((160 & 0xff) << 8) | (60 & 0xff);
 			if (livello > 3)
-				colorM10 = ((70 & 0xff) << 16) | ((180 & 0xff) << 8) | (70 & 0xff);
+				colorM10 = ((80 & 0xff) << 16) | ((160 & 0xff) << 8) | (80 & 0xff);
 			if (livello > 4)
-				colorM20 = ((90 & 0xff) << 16) | ((180 & 0xff) << 8) | (90 & 0xff);
+				colorM20 = ((100 & 0xff) << 16) | ((160 & 0xff) << 8) | (100 & 0xff);
 		}
 
 		if (color == 3) {
 			if (livello > 0)
-				colorP20 = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | (180 & 0xff);
+				colorP20 = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | (160 & 0xff);
 			if (livello > 1)
-				colorP10 = ((30 & 0xff) << 16) | ((30 & 0xff) << 8) | (180 & 0xff);
+				colorP10 = ((40 & 0xff) << 16) | ((40 & 0xff) << 8) | (160 & 0xff);
 			if (livello > 2)
-				colorMED = ((50 & 0xff) << 16) | ((50 & 0xff) << 8) | (180 & 0xff);
+				colorMED = ((60 & 0xff) << 16) | ((60 & 0xff) << 8) | (160 & 0xff);
 			if (livello > 3)
-				colorM10 = ((70 & 0xff) << 16) | ((70 & 0xff) << 8) | (180 & 0xff);
+				colorM10 = ((80 & 0xff) << 16) | ((80 & 0xff) << 8) | (160 & 0xff);
 			if (livello > 4)
-				colorM20 = ((90 & 0xff) << 16) | ((90 & 0xff) << 8) | (180 & 0xff);
+				colorM20 = ((100 & 0xff) << 16) | ((100 & 0xff) << 8) | (160 & 0xff);
 		}
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
