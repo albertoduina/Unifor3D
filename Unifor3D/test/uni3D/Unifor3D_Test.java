@@ -31,7 +31,7 @@ public class Unifor3D_Test {
 		public final void testPositionSearch11single() {
 
 
-			String path1 = "./Dati/uno/002A";
+			String path1 = "./Data/uno/002A";
 
 
 			ImagePlus imp11 = UtilAyv.openImageNoDisplay(path1, true);

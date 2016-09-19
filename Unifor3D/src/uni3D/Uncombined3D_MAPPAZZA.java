@@ -85,7 +85,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		String level = gd.getNextChoice();
 		boolean tutte = gd.getNextBoolean();
 		int livello = Integer.parseInt(level);
-		ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
 		IJ.log("-----IW2AYV----");
 		UtilAyv.logResizer(200, 200, 400, 400);
 		try {
@@ -116,7 +115,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		int conta2 = -1;
 
 		while (loop1) {
-
 			if (tutte) {
 				conta2++;
 				if (conta2 >= dir1b.length) {
@@ -130,9 +128,10 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					MyLog.waitHere("imp10==null");
 					continue;
 				}
-
+				if (imp10.getBytesPerPixel() != 2) {
+					continue;
+				}
 			} else {
-
 				path10 = UtilAyv.imageSelection("SELEZIONARE LO STACK DA ELABORARE");
 				if (path10 == null) {
 					loop1 = false;
@@ -142,7 +141,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			color0++;
 			if (color0 > 3)
 				color0 = 1;
-
 			// imp10 = UtilAyv.openImageNormal(path10);
 			imp10 = UtilAyv.openImageNoDisplay(path10, false);
 			int width = imp10.getWidth();
@@ -161,38 +159,128 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				MyLog.waitHere("Per le elaborazioni 3D ci vuole uno stack di più immagini!");
 				return;
 			}
-			int mode = 3;
-			double profond = 30;
-			mode = 0;
+			int mode = 0;
+			boolean pitturaPixel = false;
+			boolean uno = false;
+			ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
 
-			for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
-				// if (!auto)
-				// IJ.log("localizzo hotspot " + i1 + " / " +
-				// imp10.getImageStackSize());
-				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
-				if (imp20 == null)
-					MyLog.waitHere("imp20==null");
-				double[] pos20 = hotspotSearch(imp20, profond, "", mode, timeout);
-				if (pos20 == null) {
-					continue;
+			// ===========================================================
+			// ===========================================================
+			// ---- SOLUZIONE NUMERO UNO
+			// ===========================================================
+			// ===========================================================
+
+			if (uno) {
+				for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
+					ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
+					if (imp20 == null)
+						MyLog.waitHere("imp20==null");
+					double[] pos20 = hotspotSearch(imp20, mode, timeout);
+					if (pos20 == null) {
+						continue;
+					}
+					double diamMROI = 11;
+					double xCenterRoi = pos20[0];
+					double yCenterRoi = pos20[1];
+					ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1 + 1);
+					pixVectorize(imp21, xCenterRoi, yCenterRoi, diamMROI, pixListSignal11, pitturaPixel);
+					imp20.close();
+					imp21.close();
 				}
-				double diamMROI = 11;
-				double xCenterRoi = pos20[0];
-				double yCenterRoi = pos20[1];
-				ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1 + 1);
-				pixVectorize(imp21, xCenterRoi, yCenterRoi, diamMROI, pixListSignal11);
-				// IJ.wait(timeout);
-				imp20.close();
-				imp21.close();
+
+			} else {
+
+				// ===========================================================
+				// ===========================================================
+				// ---- SOLUZIONE NUMERO DUE
+				// ---- ricerca posizione x,y,z del massimo hotspot 11x11x11
+				// ===========================================================
+				// ===========================================================
+				double[] mediaHotspot = new double[imp10.getImageStackSize()];
+				int[] indiceHotspot = new int[imp10.getImageStackSize()];
+				double maxHotspot = -99999;
+				int xCenter = 0;
+				int yCenter = 0;
+				int indice = 0;
+
+				for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
+					ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
+					if (imp20 == null)
+						continue;
+					double[] pos20 = hotspotSearch(imp20, mode, timeout);
+					if (pos20 == null) {
+						continue;
+					}
+					int latoMROI = 11;
+					int xRoi = (int) (pos20[0] - latoMROI / 2);
+					int yRoi = (int) (pos20[1] - latoMROI / 2);
+					ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1 + 1);
+					imp21.setRoi(xRoi, yRoi, latoMROI, latoMROI);
+					ImageStatistics stat21 = imp21.getStatistics();
+					indiceHotspot[i1] = i1;
+					mediaHotspot[i1] = stat21.mean;
+					if (mediaHotspot[i1] > maxHotspot) {
+						maxHotspot = mediaHotspot[i1];
+						indice = i1 + 1;
+						xCenter = xRoi + latoMROI / 2;
+						yCenter = yRoi + latoMROI / 2;
+					}
+					imp20.close();
+					imp21.close();
+				}
+
+				if (pitturaPixel) {
+					MyLog.resultsLog(indiceHotspot, "indiceHotspot");
+					MyLog.resultsLog(mediaHotspot, "mediaHotspot");
+
+					MyLog.waitHere("Posizione dell'hotspot piu' alto: indice slice = " + indice + " xCenter= " + xCenter
+							+ " yCenter= " + yCenter);
+				}
+				// --------------------------------------------
+				// vettorizazione pixels degli hotspot 11x11x11
+				// ---------------------------------------------
+				for (int i1 = indice - 5; i1 < indice + 5; i1++) {
+					double diamMROI = 11;
+					double xCenterRoi = xCenter;
+					double yCenterRoi = yCenter;
+					ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1);
+
+					pixVectorize(imp21, xCenterRoi, yCenterRoi, diamMROI, pixListSignal11, pitturaPixel);
+					imp21.close();
+				}
 			}
+			// ===========================================================
+			// ===========================================================
+			// ===========================================================
+			// =============================================================
+
 			int[] pixListSignal = ArrayUtils.arrayListToArrayInt(pixListSignal11);
 			double mean11 = UtilAyv.vetMean(pixListSignal);
+			// MyLog.waitHere("pixListSignal11 length= " +
+			// pixListSignal11.size() + "\npixListSignal length= "
+			// + pixListSignal.length + "\nmean11= " + mean11);
 
 			for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
+
 				// if (!auto)
 				// IJ.log("calcolo mappazza " + i1 + " / " +
 				// imp10.getImageStackSize());
 				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
+
+				// // =========================================================
+				// // TEST, DA RIMUOVERE
+				// // ==========================================================
+				// double[] pos200 = hotspotSearch(imp20, "", mode, timeout);
+				// if (pos200 == null)
+				// continue;
+				// int latoMROI200 = 11;
+				// int xRoi200 = (int) (pos200[0] - latoMROI200 / 2);
+				// int yRoi200 = (int) (pos200[1] - latoMROI200 / 2);
+				// imp20.setRoi(xRoi200, yRoi200, latoMROI200, latoMROI200);
+				// ImageStatistics stat200 = imp20.getStatistics();
+				// mean11 = stat200.mean;
+				// // ==========================================================
+
 				mappazzaColori(mean11, imp20, impMappazza, i1 + 1, livello, color0, debug1);
 			}
 			impMappazza.show();
@@ -205,16 +293,18 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 	} // chiude
 
-	public static void pixVectorize(ImagePlus imp11, double xCenterMROI, double yCenterMROI, double diamMROI,
-			ArrayList<Integer> pixList11) {
+	public static void pixVectorize(ImagePlus imp11, double xCenterMROI, double yCenterMROI, double latoMROI,
+			ArrayList<Integer> pixList11, boolean verify) {
 
 		if (imp11 == null)
 			MyLog.waitHere("imp11==null");
 		if (pixList11 == null)
 			MyLog.waitHere("pixList1==null");
 
-		imp11.setRoi((int) Math.round((xCenterMROI - 5.5)), (int) Math.round(yCenterMROI - 5.5), 11, 11);
+		imp11.setRoi((int) Math.round((xCenterMROI - latoMROI / 2)), (int) Math.round(yCenterMROI - latoMROI / 2), 11,
+				11);
 		Roi roi11 = imp11.getRoi();
+
 		ImageProcessor ip11 = imp11.getProcessor();
 		if (ip11 == null)
 			MyLog.waitHere("ip11==null");
@@ -224,21 +314,64 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			for (int x = 0; x < r11.width; x++) {
 				if (mask11 == null || mask11.getPixel(x, y) != 0) {
 					pixList11.add((int) ip11.getPixelValue(x + r11.x, y + r11.y));
+					if (verify)
+						ip11.putPixelValue(x + r11.x, y + r11.y, 1000);
 				}
 			}
 		}
+		if (verify) {
+			ip11.drawRoi(roi11);
+			roi11.setFillColor(Color.green);
+			imp11.show();
+			MyLog.waitHere();
+		}
 	}
 
-	public static double[] hotspotSearch(ImagePlus imp11, double profond, String info1, int mode, int timeout) {
+	// public static void pixVectorize(ImagePlus imp11, double xCenterMROI,
+	// double yCenterMROI, double diamMROI,
+	// ArrayList<Integer> pixList11) {
+	//
+	// if (imp11 == null)
+	// MyLog.waitHere("imp11==null");
+	// if (pixList11 == null)
+	// MyLog.waitHere("pixList1==null");
+	//
+	// imp11.setRoi((int) Math.round((xCenterMROI - 5.5)), (int)
+	// Math.round(yCenterMROI - 5.5), 11, 11);
+	// Roi roi11 = imp11.getRoi();
+	// ImageProcessor ip11 = imp11.getProcessor();
+	// if (ip11 == null)
+	// MyLog.waitHere("ip11==null");
+	// ImageProcessor mask11 = roi11 != null ? roi11.getMask() : null;
+	// Rectangle r11 = roi11 != null ? roi11.getBounds() : new Rectangle(0, 0,
+	// ip11.getWidth(), ip11.getHeight());
+	// for (int y = 0; y < r11.height; y++) {
+	// for (int x = 0; x < r11.width; x++) {
+	// if (mask11 == null || mask11.getPixel(x, y) != 0) {
+	// pixList11.add((int) ip11.getPixelValue(x + r11.x, y + r11.y));
+	// }
+	// }
+	// }
+	// }
+
+	/***
+	 * Ricerca delle coordinate centro area 11x11 con la media max
+	 * 
+	 * @param imp11
+	 * @param info1
+	 * @param mode
+	 * @param timeout
+	 * @return coordinate centro
+	 */
+
+	public static double[] hotspotSearch(ImagePlus imp11, int mode, int timeout) {
 
 		boolean demo = false;
 		if (mode == 10 || mode == 3) {
 			demo = true;
 		}
-
 		if (imp11 == null)
 			MyLog.waitHere("imp11==null");
-
 		if (demo)
 			imp11.show();
 		ImageWindow iw11 = null;
@@ -298,6 +431,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		double minus10 = mean * MyConst.MINUS_10_PERC;
 		double plus10 = mean * MyConst.PLUS_10_PERC;
 		double plus20 = mean * MyConst.PLUS_20_PERC;
+		double minus90 = mean * 0.05;
 		int colorOUT = 0;
 		ImageStack stack1 = impMappazza.getStack();
 		ImageProcessor ipMappa = stack1.getProcessor(slice);
@@ -360,7 +494,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					aux1 = colorMED;
 				} else if (pixSorgente > minus20) {
 					aux1 = colorM10;
-				} else if (pixSorgente > 100) {
+				} else if (pixSorgente > minus90) {
 					aux1 = colorM20;
 				} else {
 					aux1 = colorOUT;
