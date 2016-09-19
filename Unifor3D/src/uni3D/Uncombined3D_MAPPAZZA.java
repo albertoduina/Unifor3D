@@ -77,13 +77,13 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
 		String[] livelli = { "5", "4", "3", "2", "1" };
 		gd.addChoice("SIMULATE", livelli, "3");
-		// gd.addCheckbox("auto", true);
+		gd.addCheckbox("ALL COILS", false);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return;
 		}
 		String level = gd.getNextChoice();
-		// boolean auto = gd.getNextBoolean();
+		boolean tutte = gd.getNextBoolean();
 		int livello = Integer.parseInt(level);
 		ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
 		IJ.log("-----IW2AYV----");
@@ -100,12 +100,44 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		boolean loop1 = true;
 		ImagePlus impMappazza = null;
 		boolean debug1 = false;
+		String[] dir1a = null;
+		String[] dir1b = null;
+
+		if (tutte) {
+			DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA STACK");
+			String dir1 = od1.getDirectory();
+			dir1a = new File(dir1).list();
+			dir1b = new String[dir1a.length];
+			for (int i1 = 0; i1 < dir1a.length; i1++) {
+				dir1b[i1] = dir1 + "\\" + dir1a[i1];
+			}
+		}
+
+		int conta2 = -1;
 
 		while (loop1) {
-			path10 = UtilAyv.imageSelection("SELEZIONARE LO STACK DA ELABORARE");
-			if (path10 == null) {
-				loop1 = false;
-				continue;
+
+			if (tutte) {
+				conta2++;
+				if (conta2 >= dir1b.length) {
+					loop1 = false;
+					continue;
+				}
+				path10 = dir1b[conta2];
+				IJ.log("carico stack " + (conta2 + 1) + " / " + dir1b.length);
+				imp10 = UtilAyv.openImageNoDisplay(path10, false);
+				if (imp10 == null) {
+					MyLog.waitHere("imp10==null");
+					continue;
+				}
+
+			} else {
+
+				path10 = UtilAyv.imageSelection("SELEZIONARE LO STACK DA ELABORARE");
+				if (path10 == null) {
+					loop1 = false;
+					continue;
+				}
 			}
 			color0++;
 			if (color0 > 3)
@@ -138,6 +170,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				// IJ.log("localizzo hotspot " + i1 + " / " +
 				// imp10.getImageStackSize());
 				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
+				if (imp20 == null)
+					MyLog.waitHere("imp20==null");
 				double[] pos20 = hotspotSearch(imp20, profond, "", mode, timeout);
 				if (pos20 == null) {
 					continue;
@@ -165,8 +199,10 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 			impMappazza.updateAndRepaintWindow();
 			debug1 = true;
-			MyLog.waitHere();
+			if (!tutte)
+				MyLog.waitHere();
 		}
+
 	} // chiude
 
 	public static void pixVectorize(ImagePlus imp11, double xCenterMROI, double yCenterMROI, double diamMROI,
