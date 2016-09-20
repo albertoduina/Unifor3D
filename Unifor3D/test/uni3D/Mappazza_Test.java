@@ -52,7 +52,7 @@ public class Mappazza_Test {
 				
 
 		ImagePlus imp20 = UtilAyv.openImageMaximized(path1);
-		double[] pos20 =  Uncombined3D_MAPPAZZA.hotspotSearch(imp20, mode, timeout);
+		double[] pos20 =  Uncombined3D_MAPPAZZA.hotspotSearch(imp20, 11,  mode, timeout);
 		
 
 
