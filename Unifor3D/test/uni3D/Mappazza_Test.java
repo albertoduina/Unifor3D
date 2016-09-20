@@ -44,12 +44,10 @@ public class Mappazza_Test {
 	public final void testHotSpotSearch() {
 
 		String path1 = "./Data/1490";
-		double profond = 30;
-		int mode = 3;
 		int timeout = 20000;
 
 		ImagePlus imp20 = UtilAyv.openImageMaximized(path1);
-		double[] pos20 = Uncombined3D_MAPPAZZA.hotspotSearch(imp20, 11, mode, timeout);
+		double[] pos20 = Uncombined3D_MAPPAZZA.hotspotSearch(imp20, 11, timeout);
 
 		MyLog.waitHere();
 

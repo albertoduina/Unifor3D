@@ -80,22 +80,30 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		IJ.wait(20);
 		new AboutBox().close();
 		String def1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_def1", "5");
+		String def2 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_def2", "5");
 		boolean all1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_all1", true);
 
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
 		String[] livelli = { "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1" };
 		gd.addChoice("SIMULATE", livelli, def1);
+		String[] lati = { "15", "13", "11", "9", "7", "5", "3" };
+		gd.addChoice("LATO HOTCUBE", lati, def2);
 
 		gd.addCheckbox("ALL COILS", all1);
+		gd.addCheckbox("debug", false);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return;
 		}
 
 		String level = gd.getNextChoice();
+		String lato1 = gd.getNextChoice();
 		boolean tutte = gd.getNextBoolean();
+		debug = gd.getNextBoolean();
 		int livello = Integer.parseInt(level);
+		int latoHotCube = Integer.parseInt(lato1);
 		Prefs.set("prefer.Uncombined3D_MAPPAZZA_def1", level);
+		Prefs.set("prefer.Uncombined3D_MAPPAZZA_def2", lato1);
 		Prefs.set("prefer.Uncombined3D_MAPPAZZA_all1", tutte);
 
 		int gridWidth = 2;
@@ -110,13 +118,11 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				"min% classe 12", "max% classe 12" };
 		double[] value2 = new double[gridSize];
 
-
 		MyGenericDialogGrid mgdg = new MyGenericDialogGrid();
-		
+
 		for (int i1 = 0; i1 < value2.length; i1++) {
 			value2[i1] = mgdg.getValue2(Prefs.get("prefer.Uncombined3D_MAPPAZZA_classi_" + i1, "0"));
 		}
-		
 
 		int decimals = 0;
 		String title2 = "LIMITI CLASSI PIXELS";
@@ -155,7 +161,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		int color0 = 0;
 		boolean loop1 = true;
 		ImagePlus impMappazza = null;
-		boolean debug1 = false;
 		String[] dir1a = null;
 		String[] dir1b = null;
 
@@ -216,10 +221,9 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				MyLog.waitHere("Per le elaborazioni 3D ci vuole uno stack di più immagini!");
 				return;
 			}
-			int mode = 0;
-			boolean pitturaPixel = false;
-			boolean stampa = true;
-			int latoHotspot = 0;
+			// int mode = 0;
+			// boolean pitturaPixel = false;
+			// boolean stampa = true;
 			ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
 
 			// ===========================================================
@@ -234,50 +238,52 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			int xCenter = 0;
 			int yCenter = 0;
 			int indice = 0;
-			latoHotspot = 11;
 
 			for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
 				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
 				if (imp20 == null)
 					continue;
-				double[] pos20 = hotspotSearch(imp20, latoHotspot, mode, timeout);
+				double[] pos20 = hotspotSearch(imp20, latoHotCube, timeout);
 				if (pos20 == null) {
 					continue;
 				}
-				int xRoi = (int) (pos20[0] - latoHotspot / 2);
-				int yRoi = (int) (pos20[1] - latoHotspot / 2);
+				int xRoi = (int) (pos20[0] - latoHotCube / 2);
+				int yRoi = (int) (pos20[1] - latoHotCube / 2);
 				ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1 + 1);
-				imp21.setRoi(xRoi, yRoi, latoHotspot, latoHotspot);
+				imp21.setRoi(xRoi, yRoi, latoHotCube, latoHotCube);
 				ImageStatistics stat21 = imp21.getStatistics();
 				indiceHotspot[i1] = i1;
 				mediaHotspot[i1] = stat21.mean;
 				if (mediaHotspot[i1] > maxHotspot) {
 					maxHotspot = mediaHotspot[i1];
 					indice = i1 + 1;
-					xCenter = xRoi + latoHotspot / 2;
-					yCenter = yRoi + latoHotspot / 2;
+					xCenter = xRoi + latoHotCube / 2;
+					yCenter = yRoi + latoHotCube / 2;
 				}
 				imp20.close();
 				imp21.close();
 			}
 
-			if (debug) {
-				MyLog.resultsLog(indiceHotspot, "indiceHotspot");
-				MyLog.resultsLog(mediaHotspot, "mediaHotspot");
+			MyLog.waitHere("indice= " + indice);
 
-				MyLog.waitHere("Posizione dell'hotspot piu' alto: indice slice = " + indice + " xCenter= " + xCenter
-						+ " yCenter= " + yCenter);
-			}
+			// if (debug) {
+			// MyLog.resultsLog(indiceHotspot, "indiceHotspot");
+			// MyLog.resultsLog(mediaHotspot, "mediaHotspot");
+			//
+			// MyLog.waitHere("Posizione dell'hotspot piu' alto: indice slice =
+			// " + indice + " xCenter= " + xCenter
+			// + " yCenter= " + yCenter);
+			// }
 			// --------------------------------------------
-			// vettorizazione pixels degli hotspot 11x11x11
+			// vettorizazione pixels degli hotspot NxNxN
 			// ---------------------------------------------
-			int pip = (latoHotspot - 1) / 2;
+			int pip = (latoHotCube - 1) / 2;
 			for (int i1 = indice - pip; i1 < indice + pip; i1++) {
 				double xCenterRoi = xCenter;
 				double yCenterRoi = yCenter;
 				ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1);
 
-				pixVectorize(imp21, xCenterRoi, yCenterRoi, latoHotspot, pixListSignal11, pitturaPixel);
+				pixVectorize(imp21, xCenterRoi, yCenterRoi, latoHotCube, pixListSignal11);
 				imp21.close();
 			}
 			// }
@@ -298,7 +304,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			impMappazza.show();
 
 			impMappazza.updateAndRepaintWindow();
-			debug1 = true;
 			if (!tutte)
 				MyLog.waitHere();
 		}
@@ -318,7 +323,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 	 * @param verify
 	 */
 	public static void pixVectorize(ImagePlus imp11, double xCenterMROI, double yCenterMROI, double latoMROI,
-			ArrayList<Integer> pixList11, boolean verify) {
+			ArrayList<Integer> pixList11) {
 
 		if (imp11 == null)
 			MyLog.waitHere("imp11==null");
@@ -338,15 +343,18 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			for (int x = 0; x < r11.width; x++) {
 				if (mask11 == null || mask11.getPixel(x, y) != 0) {
 					pixList11.add((int) ip11.getPixelValue(x + r11.x, y + r11.y));
+					if (debug)
+						ip11.putPixel(x, y, 0);
 				}
+
 			}
 		}
-		if (verify) {
-			ip11.drawRoi(roi11);
-			roi11.setFillColor(Color.green);
-			imp11.show();
-			MyLog.waitHere();
-		}
+		// if (verify) {
+		// ip11.drawRoi(roi11);
+		// roi11.setFillColor(Color.green);
+		// imp11.show();
+		// MyLog.waitHere();
+		// }
 	}
 
 	/***
@@ -359,21 +367,17 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 	 * @return coordinate centro
 	 */
 
-	public static double[] hotspotSearch(ImagePlus imp11, int lato, int mode, int timeout) {
+	public static double[] hotspotSearch(ImagePlus imp11, int lato, int timeout) {
 
-		boolean demo = false;
-		if (mode == 10 || mode == 3) {
-			demo = true;
-		}
 		if (imp11 == null)
 			MyLog.waitHere("imp11==null");
-		if (demo)
-			imp11.show();
+		// if (debug)
+		// imp11.show();
 		ImageWindow iw11 = null;
-		if (demo)
-			iw11 = imp11.getWindow();
+		// if (debug)
+		// iw11 = imp11.getWindow();
 
-		double[] out10 = MyFilter.maxPositionGeneric(imp11, lato);
+		double[] out10 = MyFilter.maxPositionGeneric(imp11, lato, debug);
 		if (out10 == null) {
 			if (iw11 == null) {
 			} else
@@ -388,11 +392,11 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		imp11.setRoi(xMaxima, yMaxima, latoMaxima, latoMaxima);
 
 		imp11.updateAndDraw();
-		if (demo)
-			IJ.wait(timeout);
-		if (iw11 == null) {
-		} else
-			iw11.close();
+		// if (debug)
+		// IJ.wait(timeout);
+		// if (iw11 == null) {
+		// } else
+		// iw11.close();
 		imp11.close();
 
 		return out10;
@@ -475,22 +479,22 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			colorUP = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | ((200 & 0xff));
 			myColor = myColor3;
 		}
-		if (debug) {
-			MyLog.resultsLog(myColor, "myColor");
-		}
+		// if (debug) {
+		// MyLog.resultsLog(myColor, "myColor");
+		// }
 		double[] myMinimi = new double[livello];
 		double[] myMassimi = new double[livello];
 		for (int i1 = 0; i1 < livello; i1++) {
 			myMinimi[i1] = ((100.0 + (double) minimi[i1]) / 100) * mean;
 			myMassimi[i1] = ((100.0 + (double) massimi[i1]) / 100) * mean;
 		}
-		if (debug) {
-			MyLog.resultsLog(minimi, "minimi");
-			MyLog.resultsLog(myMinimi, "myMinimi");
-			MyLog.resultsLog(massimi, "massimi");
-			MyLog.resultsLog(myMassimi, "myMassimi");
-			MyLog.waitHere("livello= " + livello + " mean= " + mean);
-		}
+		// if (debug) {
+		// MyLog.resultsLog(minimi, "minimi");
+		// MyLog.resultsLog(myMinimi, "myMinimi");
+		// MyLog.resultsLog(massimi, "massimi");
+		// MyLog.resultsLog(myMassimi, "myMassimi");
+		// MyLog.waitHere("livello= " + livello + " mean= " + mean);
+		// }
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
 				boolean cerca = true;
@@ -558,6 +562,5 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		int color = ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
 		return color;
 	}
-
 
 } // ultima
