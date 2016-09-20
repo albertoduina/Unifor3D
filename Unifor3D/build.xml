@@ -36,6 +36,7 @@
 	<property name="output" location="build" />
 	<property name="source" location="src" />
 	<property name="eclipse-home" value="${basedir}\..\.." />
+	<property name="dist" location="dist" />
 
 	
 	
@@ -54,6 +55,9 @@
 	<target name="init" description="Initialize">
 		<delete dir="${output}" />
 		<mkdir dir="${output}" />
+		<delete dir="${dist}" />
+		<mkdir dir="${dist}" />
+
 		<buildnumber />
 		<tstamp />
 

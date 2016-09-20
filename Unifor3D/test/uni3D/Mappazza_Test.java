@@ -31,34 +31,28 @@ public class Mappazza_Test {
 
 	}
 
-
 	@Test
 	public final void testGeneraMappazzaVuota() {
 		int width = 256;
 		int height = 256;
 		int size = 176;
-		ImagePlus impMappazza = Uncombined3D_MAPPAZZA.generaMappazzaVuota(width, height, size);
+		int livello = 8;
+		ImagePlus impMappazza = Uncombined3D_MAPPAZZA.generaMappazzaVuota(width, height, size, livello);
 	}
-	
-	
+
 	@Test
 	public final void testHotSpotSearch() {
 
-
 		String path1 = "./Data/1490";
-		double profond=30;
-		int mode=3;
-		int timeout=20000;
-				
+		double profond = 30;
+		int mode = 3;
+		int timeout = 20000;
 
 		ImagePlus imp20 = UtilAyv.openImageMaximized(path1);
-		double[] pos20 =  Uncombined3D_MAPPAZZA.hotspotSearch(imp20, 11,  mode, timeout);
-		
-
+		double[] pos20 = Uncombined3D_MAPPAZZA.hotspotSearch(imp20, 11, mode, timeout);
 
 		MyLog.waitHere();
 
 	}
-
 
 }

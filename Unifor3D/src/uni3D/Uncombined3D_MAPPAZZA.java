@@ -49,6 +49,7 @@ import utils.AboutBox;
 import utils.MyCircleDetector;
 import utils.MyConst;
 import utils.MyFilter;
+import utils.MyGenericDialogGrid;
 import utils.MyLine;
 import utils.MyLog;
 import utils.MyPlot;
@@ -79,12 +80,13 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		IJ.wait(20);
 		new AboutBox().close();
 		String def1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_def1", "5");
+		boolean all1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_all1", true);
 
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
 		String[] livelli = { "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1" };
 		gd.addChoice("SIMULATE", livelli, def1);
 
-		gd.addCheckbox("ALL COILS", false);
+		gd.addCheckbox("ALL COILS", all1);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return;
@@ -94,6 +96,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		boolean tutte = gd.getNextBoolean();
 		int livello = Integer.parseInt(level);
 		Prefs.set("prefer.Uncombined3D_MAPPAZZA_def1", level);
+		Prefs.set("prefer.Uncombined3D_MAPPAZZA_all1", tutte);
 
 		int gridWidth = 2;
 		int gridHeight = livello;
@@ -107,11 +110,17 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				"min% classe 12", "max% classe 12" };
 		double[] value2 = new double[gridSize];
 
-		for (int i1 = 0; i1 < value2.length; i1++) {
-			value2[i1] = getValue2(Prefs.get("prefer.Uncombined3D_MAPPAZZA_classi_" + i1, "0"));
-		}
 
-		if (showDialog2(gridWidth, gridHeight, tf2, lab2, value2)) {
+		MyGenericDialogGrid mgdg = new MyGenericDialogGrid();
+		
+		for (int i1 = 0; i1 < value2.length; i1++) {
+			value2[i1] = mgdg.getValue2(Prefs.get("prefer.Uncombined3D_MAPPAZZA_classi_" + i1, "0"));
+		}
+		
+
+		int decimals = 0;
+		String title2 = "LIMITI CLASSI PIXELS";
+		if (mgdg.showDialog2(gridWidth, gridHeight, tf2, lab2, value2, title2, decimals)) {
 			// displayValues2(gridSize, value2);
 		}
 
@@ -194,7 +203,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			int width = imp10.getWidth();
 			int height = imp10.getHeight();
 			if (impMappazza == null) {
-				impMappazza = generaMappazzaVuota(width, height, imp10.getImageStackSize());
+				impMappazza = generaMappazzaVuota(width, height, imp10.getImageStackSize(), livello);
 			}
 
 			ImageStack imaStack = imp10.getImageStack();
@@ -293,10 +302,21 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			if (!tutte)
 				MyLog.waitHere();
 		}
-		MyLog.waitHere("trabalho concluido, Arbeit abgeshlossen");
+
+		MyLog.waitHere("FINE LAVORO");
 
 	} // chiude
 
+	/***
+	 * Aggiunge i pixel appartenenti alla ROI all'ArrayList pixList11
+	 * 
+	 * @param imp11
+	 * @param xCenterMROI
+	 * @param yCenterMROI
+	 * @param latoMROI
+	 * @param pixList11
+	 * @param verify
+	 */
 	public static void pixVectorize(ImagePlus imp11, double xCenterMROI, double yCenterMROI, double latoMROI,
 			ArrayList<Integer> pixList11, boolean verify) {
 
@@ -318,8 +338,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			for (int x = 0; x < r11.width; x++) {
 				if (mask11 == null || mask11.getPixel(x, y) != 0) {
 					pixList11.add((int) ip11.getPixelValue(x + r11.x, y + r11.y));
-					if (verify)
-						ip11.putPixelValue(x + r11.x, y + r11.y, 1000);
 				}
 			}
 		}
@@ -380,14 +398,36 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		return out10;
 	}
 
-	public static ImagePlus generaMappazzaVuota(int width, int height, int depth) {
+	/***
+	 * Genera immagine di output vuota
+	 * 
+	 * @param width
+	 * @param height
+	 * @param depth
+	 * @param livello
+	 * @return
+	 */
+	public static ImagePlus generaMappazzaVuota(int width, int height, int depth, int livello) {
 
 		int bitdepth = 24;
 		ImageStack newStack = ImageStack.create(width, height, depth, bitdepth);
-		ImagePlus impMappazza = new ImagePlus("MAPPAZZA", newStack);
+		ImagePlus impMappazza = new ImagePlus("MAPPAZZA_" + livello, newStack);
 		return impMappazza;
 	}
 
+	/***
+	 * Colora i pixel dell'immagine, utilizzando i livelli definiti
+	 * dall'operatore
+	 * 
+	 * @param mean11
+	 * @param imp1
+	 * @param impMappazza
+	 * @param slice
+	 * @param livello
+	 * @param minimi
+	 * @param massimi
+	 * @param color
+	 */
 	public static void mappazzaColori(double mean11, ImagePlus imp1, ImagePlus impMappazza, int slice, int livello,
 			int[] minimi, int[] massimi, int color) {
 
@@ -405,6 +445,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		short[] pixels1 = UtilAyv.truePixels(imp1);
 		double mean = mean11;
 		int colorOUT = 0;
+		int colorUP = 0;
+
 		ImageStack stack1 = impMappazza.getStack();
 		ImageProcessor ipMappa = stack1.getProcessor(slice);
 		int[] pixelsMappa = (int[]) ipMappa.getPixels();
@@ -421,39 +463,44 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			myColor3[i1] = (((i1 * 20) & 0xff) << 16) | (((i1 * 20) & 0xff) << 8) | (255 & 0xff);
 		}
 		int[] myColor = new int[12];
-		if (color == 1)
+		if (color == 1) {
+			colorUP = ((200 & 0xff) << 16) | ((0 & 0xff) << 8) | ((0 & 0xff));
 			myColor = myColor1;
-		if (color == 2)
+		}
+		if (color == 2) {
+			colorUP = ((0 & 0xff) << 16) | ((200 & 0xff) << 8) | ((0 & 0xff));
 			myColor = myColor2;
-		if (color == 3)
+		}
+		if (color == 3) {
+			colorUP = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | ((200 & 0xff));
 			myColor = myColor3;
-
+		}
 		if (debug) {
 			MyLog.resultsLog(myColor, "myColor");
 		}
-
 		double[] myMinimi = new double[livello];
 		double[] myMassimi = new double[livello];
 		for (int i1 = 0; i1 < livello; i1++) {
 			myMinimi[i1] = ((100.0 + (double) minimi[i1]) / 100) * mean;
 			myMassimi[i1] = ((100.0 + (double) massimi[i1]) / 100) * mean;
 		}
-
 		if (debug) {
-
 			MyLog.resultsLog(minimi, "minimi");
 			MyLog.resultsLog(myMinimi, "myMinimi");
 			MyLog.resultsLog(massimi, "massimi");
 			MyLog.resultsLog(myMassimi, "myMassimi");
 			MyLog.waitHere("livello= " + livello + " mean= " + mean);
 		}
-
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
 				boolean cerca = true;
 				posizioneArrayImmagine = y * width + x;
 				pixSorgente = pixels1[posizioneArrayImmagine];
 				for (int i1 = 0; i1 < livello; i1++) {
+					if (cerca && (pixSorgente > myMassimi[i1])) {
+						aux1 = colorUP;
+						cerca = false;
+					}
 					if (cerca && (pixSorgente > myMinimi[i1]) && (pixSorgente <= myMassimi[i1])) {
 						aux1 = myColor[i1];
 						cerca = false;
@@ -462,9 +509,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				if (cerca)
 					aux1 = colorOUT;
 				int[] color1 = getColor(pixelsMappa[posizioneArrayImmagine]);
-
 				int[] color2 = getColor(aux1);
-
 				int color3 = mixColor(color1, color2);
 				pixelsMappa[posizioneArrayImmagine] = color3;
 			}
@@ -475,6 +520,12 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 	}
 
+	/**
+	 * Estrae dal pixel le tre componenti dei colori primari
+	 * 
+	 * @param pixel
+	 * @return
+	 */
 	public static int[] getColor(int pixel) {
 		int[] c1 = new int[3];
 		int r1, g1, b1;
@@ -487,65 +538,26 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		return c1;
 	}
 
+	/**
+	 * Gestisce la miscelazione dei colori nei pixel
+	 * 
+	 * @param rgb1
+	 * @param rgb2
+	 * @return
+	 */
 	public static int mixColor(int[] rgb1, int[] rgb2) {
-		int red = rgb1[0] + rgb2[0] / 2;
+		int red = rgb1[0] + rgb2[0];
 		if (red > 255)
 			red = 255;
-		int green = rgb1[1] + rgb2[1] / 2;
+		int green = rgb1[1] + rgb2[1];
 		if (green > 255)
 			green = 255;
-		int blue = rgb1[2] + rgb2[2] / 2;
+		int blue = rgb1[2] + rgb2[2];
 		if (blue > 255)
 			blue = 255;
 		int color = ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
 		return color;
 	}
 
-	boolean showDialog2(int gridWidth, int gridHeight, TextField[] tf2, String[] lab2, double[] value2) {
-		GenericDialog gd2 = new GenericDialog("LIMITI CLASSI PIXELS");
-		gd2.addPanel(makePanel2(gd2, gridWidth, gridHeight, tf2, lab2, value2));
-		gd2.showDialog();
-		if (gd2.wasCanceled())
-			return false;
-		getValues2(gridWidth * gridHeight, tf2, value2);
-		return true;
-	}
-
-	Panel makePanel2(GenericDialog gd2, int gridWidth, int gridHeight, TextField[] tf2, String[] lab2,
-			double[] value2) {
-		Panel panel = new Panel();
-		panel.setLayout(new GridLayout(gridHeight, gridWidth));
-		int gridSize = gridWidth * gridHeight;
-		for (int i1 = 0; i1 < gridSize; i1++) {
-			tf2[i1] = new TextField("  " + IJ.d2s(value2[i1], 0));
-			panel.add(new Label(lab2[i1]));
-			panel.add(tf2[i1]);
-		}
-		return panel;
-	}
-
-	void getValues2(int gridSize, TextField[] tf2, double[] value2) {
-		for (int i1 = 0; i1 < gridSize; i1++) {
-			String s2 = tf2[i1].getText();
-			value2[i1] = getValue2(s2);
-		}
-	}
-
-	void displayValues2(int gridSize, double[] value2) {
-		for (int i1 = 0; i1 < gridSize; i1++)
-			IJ.log(i1 + " " + IJ.d2s(value2[i1], 0));
-	}
-
-	double getValue2(String theText) {
-		Double d;
-		String str = theText;
-		try {
-			str = str.replaceAll("\\s+", "");
-			d = new Double(str);
-		} catch (NumberFormatException e) {
-			d = null;
-		}
-		return d == null ? Double.NaN : d.doubleValue();
-	}
 
 } // ultima
