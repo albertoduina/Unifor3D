@@ -86,7 +86,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
 		String[] livelli = { "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1" };
 		gd.addChoice("SIMULATE", livelli, def1);
-		String[] lati = { "15", "13", "11", "9", "7", "5", "3" };
+		String[] lati = { "19", "17", "15", "13", "11", "9", "7", "5", "3" };
 		gd.addChoice("LATO HOTCUBE", lati, def2);
 
 		gd.addCheckbox("ALL COILS", all1);
@@ -294,7 +294,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					imp66.setOverlay(over66);
 
 					imp66.setRoi((int) Math.round((xCenterRoi - latoHotCube / 2)),
-							(int) Math.round(yCenterRoi - latoHotCube / 2), 11, 11);
+							(int) Math.round(yCenterRoi - latoHotCube / 2), latoHotCube, latoHotCube);
 
 					Roi roi66 = imp66.getRoi();
 					roi66.setFillColor(Color.green);
@@ -488,21 +488,21 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		int[] myColor2 = new int[12];
 		int[] myColor3 = new int[12];
 		for (int i1 = 0; i1 < 12; i1++) {
-			myColor1[i1] = ((255 & 0xff) << 16) | (((i1 * 20) & 0xff) << 8) | ((i1 * 20) & 0xff);
-			myColor2[i1] = (((i1 * 20) & 0xff) << 16) | ((255 & 0xff) << 8) | ((i1 * 20) & 0xff);
-			myColor3[i1] = (((i1 * 20) & 0xff) << 16) | (((i1 * 20) & 0xff) << 8) | (255 & 0xff);
+			myColor1[i1] = ((240-i1*20 & 0xff) << 16) | ((0 & 0xff) << 8) | (0 & 0xff);
+			myColor2[i1] = ((0 & 0xff) << 16) | ((240 & 0xff) << 8) | (0 & 0xff);
+			myColor3[i1] = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | (240 & 0xff);
 		}
 		int[] myColor = new int[12];
 		if (color == 1) {
-			colorUP = ((200 & 0xff) << 16) | ((0 & 0xff) << 8) | ((0 & 0xff));
+			colorUP = ((255 & 0xff) << 16) | ((0 & 0xff) << 8) | ((0 & 0xff));
 			myColor = myColor1;
 		}
 		if (color == 2) {
-			colorUP = ((0 & 0xff) << 16) | ((200 & 0xff) << 8) | ((0 & 0xff));
+			colorUP = ((0 & 0xff) << 16) | ((255 & 0xff) << 8) | ((0 & 0xff));
 			myColor = myColor2;
 		}
 		if (color == 3) {
-			colorUP = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | ((200 & 0xff));
+			colorUP = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | ((255 & 0xff));
 			myColor = myColor3;
 		}
 		// if (debug) {
