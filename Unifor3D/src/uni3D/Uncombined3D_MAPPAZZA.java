@@ -161,6 +161,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		int color0 = 0;
 		boolean loop1 = true;
 		ImagePlus impMappazza = null;
+		ImagePlus impBombazza = null;
 		String[] dir1a = null;
 		String[] dir1b = null;
 
@@ -209,6 +210,11 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			int height = imp10.getHeight();
 			if (impMappazza == null) {
 				impMappazza = generaMappazzaVuota(width, height, imp10.getImageStackSize(), livello);
+				if (debug) {
+					impBombazza = imp10.duplicate();
+					IJ.run(impBombazza, "RGB Color", "");
+				}
+
 			}
 
 			ImageStack imaStack = imp10.getImageStack();
@@ -247,6 +253,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				if (pos20 == null) {
 					continue;
 				}
+
 				int xRoi = (int) (pos20[0] - latoHotCube / 2);
 				int yRoi = (int) (pos20[1] - latoHotCube / 2);
 				ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1 + 1);
@@ -264,8 +271,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				imp21.close();
 			}
 
-			MyLog.waitHere("indice= " + indice);
-
 			// if (debug) {
 			// MyLog.resultsLog(indiceHotspot, "indiceHotspot");
 			// MyLog.resultsLog(mediaHotspot, "mediaHotspot");
@@ -278,10 +283,30 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			// vettorizazione pixels degli hotspot NxNxN
 			// ---------------------------------------------
 			int pip = (latoHotCube - 1) / 2;
+			Overlay over66;
 			for (int i1 = indice - pip; i1 < indice + pip; i1++) {
 				double xCenterRoi = xCenter;
 				double yCenterRoi = yCenter;
 				ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1);
+				if (debug) {
+					ImagePlus imp66 = MyStackUtils.imageFromStack(impBombazza, i1);
+					over66 = new Overlay();
+					imp66.setOverlay(over66);
+
+					imp66.setRoi((int) Math.round((xCenterRoi - latoHotCube / 2)),
+							(int) Math.round(yCenterRoi - latoHotCube / 2), 11, 11);
+
+					Roi roi66 = imp66.getRoi();
+					roi66.setFillColor(Color.green);
+					imp66.getRoi().setStrokeColor(Color.red);
+
+					over66.add(imp66.getRoi());
+					// imp66.flatten();
+					ImageProcessor ip66 = imp66.getProcessor();
+					ip66.fill(roi66);
+					ip66.drawOverlay(over66);
+					roi66.drawPixels(ip66);
+				}
 
 				pixVectorize(imp21, xCenterRoi, yCenterRoi, latoHotCube, pixListSignal11);
 				imp21.close();
@@ -302,6 +327,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				mappazzaColori(mean11, imp20, impMappazza, i1 + 1, livello, minimi, massimi, color0);
 			}
 			impMappazza.show();
+			if (debug)
+				impBombazza.show();
 
 			impMappazza.updateAndRepaintWindow();
 			if (!tutte)
@@ -330,8 +357,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		if (pixList11 == null)
 			MyLog.waitHere("pixList1==null");
 
-		imp11.setRoi((int) Math.round((xCenterMROI - latoMROI / 2)), (int) Math.round(yCenterMROI - latoMROI / 2), 11,
-				11);
+		imp11.setRoi((int) Math.round((xCenterMROI - latoMROI / 2)), (int) Math.round(yCenterMROI - latoMROI / 2),
+				(int) latoMROI, (int) latoMROI);
 		Roi roi11 = imp11.getRoi();
 
 		ImageProcessor ip11 = imp11.getProcessor();
@@ -368,16 +395,15 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 	 */
 
 	public static double[] hotspotSearch(ImagePlus imp11, int lato, int timeout) {
-
+		ImageWindow iw11 = null;
 		if (imp11 == null)
 			MyLog.waitHere("imp11==null");
-		// if (debug)
-		// imp11.show();
-		ImageWindow iw11 = null;
-		// if (debug)
-		// iw11 = imp11.getWindow();
+		if (debug) {
+			// imp11.show();
+			// iw11 = imp11.getWindow();
+		}
 
-		double[] out10 = MyFilter.maxPositionGeneric(imp11, lato, debug);
+		double[] out10 = MyFilter.maxPositionGeneric(imp11, lato);
 		if (out10 == null) {
 			if (iw11 == null) {
 			} else
