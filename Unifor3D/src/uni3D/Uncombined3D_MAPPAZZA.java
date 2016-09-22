@@ -42,6 +42,7 @@ import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 import ij.process.ShortProcessor;
+import ij.util.Tools;
 import utils.ArrayUtils;
 import utils.ImageUtils;
 import utils.InputOutput;
@@ -69,6 +70,12 @@ import utils.UtilAyv;
 
 public class Uncombined3D_MAPPAZZA implements PlugIn {
 	static boolean debug = false;
+	static boolean stampa = true;
+	static int debugXX = 120;
+	static int debugYY = 90;
+	static int debugZZ = 80;
+	static int puntatore = 0;
+
 	final static int timeout = 100;
 	static boolean demo1 = false;
 	final static boolean step = false;
@@ -76,6 +83,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 	public void run(String arg) {
 
+		int width = 0;
+		int height = 0;
 		new AboutBox().about("Uncombined3D", MyVersion.CURRENT_VERSION);
 		IJ.wait(20);
 		new AboutBox().close();
@@ -158,12 +167,17 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		}
 		ImagePlus imp10 = null;
 		String path10 = null;
-		int color0 = 0;
+		int colorCoil = 0;
 		boolean loop1 = true;
-		ImagePlus impMappazza = null;
+		ImagePlus impMappazzaR = null;
+		ImagePlus impMappazzaG = null;
+		ImagePlus impMappazzaB = null;
 		ImagePlus impBombazza = null;
+		ImagePlus impMappazzaOUT = null;
+		ImageStack newStackOUT = null;
 		String[] dir1a = null;
 		String[] dir1b = null;
+		boolean generate = true;
 
 		if (tutte) {
 			DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA STACK");
@@ -176,6 +190,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		}
 
 		int conta2 = -1;
+		boolean vedo = false;
 
 		while (loop1) {
 			if (tutte) {
@@ -201,22 +216,26 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					continue;
 				}
 			}
-			color0++;
-			if (color0 > 3)
-				color0 = 1;
+
+			colorCoil++;
+			if (colorCoil > 3)
+				colorCoil = 1;
+
+			// MyLog.waitHere("colorCoil= " + colorCoil);
 			// imp10 = UtilAyv.openImageNormal(path10);
 			imp10 = UtilAyv.openImageNoDisplay(path10, false);
-			int width = imp10.getWidth();
-			int height = imp10.getHeight();
-			if (impMappazza == null) {
-				impMappazza = generaMappazzaVuota(width, height, imp10.getImageStackSize(), livello);
-				if (debug) {
-					impBombazza = imp10.duplicate();
-					IJ.run(impBombazza, "RGB Color", "");
-				}
+			width = imp10.getWidth();
+			height = imp10.getHeight();
+			if (generate) {
+				impMappazzaR = generaMappazzaVuota16(width, height, imp10.getImageStackSize(), livello, "impMappazzaR");
+				impMappazzaG = generaMappazzaVuota16(width, height, imp10.getImageStackSize(), livello, "impMappazzaG");
+				impMappazzaB = generaMappazzaVuota16(width, height, imp10.getImageStackSize(), livello, "impMappazzaB");
+				int bitdepth = 24;
+				newStackOUT = ImageStack.create(width, height, imp10.getImageStackSize(), bitdepth);
+				impMappazzaOUT = new ImagePlus("MAPPAZZA_" + livello, newStackOUT);
 
+				generate = false;
 			}
-
 			ImageStack imaStack = imp10.getImageStack();
 			if (imaStack == null) {
 				IJ.log("imageFromStack.imaStack== null");
@@ -271,14 +290,10 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				imp21.close();
 			}
 
-			// if (debug) {
-			// MyLog.resultsLog(indiceHotspot, "indiceHotspot");
-			// MyLog.resultsLog(mediaHotspot, "mediaHotspot");
-			//
-			// MyLog.waitHere("Posizione dell'hotspot piu' alto: indice slice =
-			// " + indice + " xCenter= " + xCenter
-			// + " yCenter= " + yCenter);
-			// }
+			if (debug) {
+				IJ.log("Posizione dell'hotspot piu' alto:  X= " + xCenter + " Y= " + yCenter + " Z= " + indice
+						+ "media= " + mediaHotspot[indice]);
+			}
 			// --------------------------------------------
 			// vettorizazione pixels degli hotspot NxNxN
 			// ---------------------------------------------
@@ -288,28 +303,20 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				double xCenterRoi = xCenter;
 				double yCenterRoi = yCenter;
 				ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1);
-				if (debug) {
-					ImagePlus imp66 = MyStackUtils.imageFromStack(impBombazza, i1);
-					over66 = new Overlay();
-					imp66.setOverlay(over66);
-
-					imp66.setRoi((int) Math.round((xCenterRoi - latoHotCube / 2)),
-							(int) Math.round(yCenterRoi - latoHotCube / 2), latoHotCube, latoHotCube);
-
-					Roi roi66 = imp66.getRoi();
-					roi66.setFillColor(Color.green);
-					imp66.getRoi().setStrokeColor(Color.red);
-
-					over66.add(imp66.getRoi());
-					// imp66.flatten();
-					ImageProcessor ip66 = imp66.getProcessor();
-					ip66.fill(roi66);
-					ip66.drawOverlay(over66);
-					roi66.drawPixels(ip66);
-				}
-
 				pixVectorize(imp21, xCenterRoi, yCenterRoi, latoHotCube, pixListSignal11);
 				imp21.close();
+			}
+			if (debug) {
+				IJ.log("----------- segnali di hotSpotCube  [ " + pixListSignal11.size() + " ] -----------");
+				String logRiga = "";
+				for (int j1 = 0; j1 < pixListSignal11.size() / 25; j1++) {
+					logRiga = "";
+					for (int i2 = 0; i2 < 25; i2++) {
+						logRiga += pixListSignal11.get(j1 + i2) + ",  ";
+					}
+					IJ.log(logRiga);
+				}
+
 			}
 			// }
 			// ===========================================================
@@ -319,20 +326,45 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 			int[] pixListSignal = ArrayUtils.arrayListToArrayInt(pixListSignal11);
 			double mean11 = UtilAyv.vetMean(pixListSignal);
+			IJ.log("media di hotSpotCube= " + mean11);
 
 			for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
 
 				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
 
-				mappazzaColori(mean11, imp20, impMappazza, i1 + 1, livello, minimi, massimi, color0);
-			}
-			impMappazza.show();
-			if (debug)
-				impBombazza.show();
+				if (debug) {
+					if (i1 == debugZZ) {
+						puntatore = debugYY * width + debugXX;
 
-			impMappazza.updateAndRepaintWindow();
+						short[] pixelsDebug = (short[]) imp20.getProcessor().getPixels();
+						IJ.log("debug XX= " + debugXX + " YY= " + debugYY + " ZZ = " + debugZZ + "\npuntatore= "
+								+ puntatore + " mean11= " + mean11 + " valorePixel= " + pixelsDebug[puntatore]);
+
+					}
+
+				}
+
+				mappazzaGrigio16(mean11, imp20, impMappazzaR, impMappazzaG, impMappazzaB, i1 + 1, livello, minimi,
+						massimi, colorCoil);
+
+				if (!impMappazzaR.isVisible())
+					impMappazzaR.show();
+				if (!impMappazzaG.isVisible())
+					impMappazzaG.show();
+				if (!impMappazzaB.isVisible())
+					impMappazzaB.show();
+			}
+			generaMappazzaCombinata(width, height, 1, livello, impMappazzaR, impMappazzaG, impMappazzaB,
+					impMappazzaOUT);
+			if (!vedo) {
+				impMappazzaOUT.show();
+				vedo = true;
+			} else
+				impMappazzaOUT.updateAndRepaintWindow();
+
 			if (!tutte)
 				MyLog.waitHere();
+
 		}
 
 		MyLog.waitHere("FINE LAVORO");
@@ -445,28 +477,25 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		return impMappazza;
 	}
 
-	/***
-	 * Colora i pixel dell'immagine, utilizzando i livelli definiti
-	 * dall'operatore
-	 * 
-	 * @param mean11
-	 * @param imp1
-	 * @param impMappazza
-	 * @param slice
-	 * @param livello
-	 * @param minimi
-	 * @param massimi
-	 * @param color
-	 */
-	public static void mappazzaColori(double mean11, ImagePlus imp1, ImagePlus impMappazza, int slice, int livello,
-			int[] minimi, int[] massimi, int color) {
+	public static ImagePlus generaMappazzaVuota16(int width, int height, int depth, int livello, String titolo) {
+
+		int bitdepth = 16;
+		ImageStack newStack = ImageStack.create(width, height, depth, bitdepth);
+		ImagePlus impMappazza = new ImagePlus(titolo + "_" + livello, newStack);
+		// MyLog.waitHere("immaggine generata a " + impMappazza.getBitDepth() +
+		// " bit");
+		return impMappazza;
+	}
+
+	public static void mappazzaGrigio16(double mean11, ImagePlus imp1, ImagePlus impMappazzaR, ImagePlus impMappazzaG,
+			ImagePlus impMappazzaB, int slice, int livello, int[] minimi, int[] massimi, int colorCoil) {
 
 		if (imp1 == null) {
 			MyLog.waitHere("imp1==null");
 			return;
 		}
-		if (impMappazza == null) {
-			MyLog.waitHere("impMappazza==null");
+		if (impMappazzaR == null || impMappazzaG == null || impMappazzaB == null) {
+			MyLog.waitHere("impMappazza R,G,B==null");
 			return;
 		}
 
@@ -474,119 +503,172 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		int height = imp1.getHeight();
 		short[] pixels1 = UtilAyv.truePixels(imp1);
 		double mean = mean11;
-		int colorOUT = 0;
-		int colorUP = 0;
 
-		ImageStack stack1 = impMappazza.getStack();
-		ImageProcessor ipMappa = stack1.getProcessor(slice);
-		int[] pixelsMappa = (int[]) ipMappa.getPixels();
+		short[] pixelsMappaR = (short[]) impMappazzaR.getStack().getProcessor(slice).getPixels();
+		short[] pixelsMappaG = (short[]) impMappazzaG.getStack().getProcessor(slice).getPixels();
+		short[] pixelsMappaB = (short[]) impMappazzaB.getStack().getProcessor(slice).getPixels();
+
 		short pixSorgente = 0;
-		int aux1 = 0;
+		int appoggioColore = 0;
 		int posizioneArrayImmagine = 0;
 
-		int[] myColor1 = new int[12];
-		int[] myColor2 = new int[12];
-		int[] myColor3 = new int[12];
-		for (int i1 = 0; i1 < 12; i1++) {
-			myColor1[i1] = ((240-i1*20 & 0xff) << 16) | ((0 & 0xff) << 8) | (0 & 0xff);
-			myColor2[i1] = ((0 & 0xff) << 16) | ((240 & 0xff) << 8) | (0 & 0xff);
-			myColor3[i1] = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | (240 & 0xff);
-		}
+		// stabilisco i livelli di colore per 12 livelli
 		int[] myColor = new int[12];
-		if (color == 1) {
-			colorUP = ((255 & 0xff) << 16) | ((0 & 0xff) << 8) | ((0 & 0xff));
-			myColor = myColor1;
+		for (int i1 = 0; i1 < 12; i1++) {
+			// myColor[i1] = 240 - i1 * 20;
+			myColor[i1] = i1 + 1;
 		}
-		if (color == 2) {
-			colorUP = ((0 & 0xff) << 16) | ((255 & 0xff) << 8) | ((0 & 0xff));
-			myColor = myColor2;
+
+		// colore per pixel piu' alti
+		int colorUP = 13;
+		// colore fuori dal fantoccio
+		int colorOUT = 0;
+
+		if (debug && stampa) {
+			IJ.log("--- livelli di colore possibili --");
+			IJ.log("colorUP= " + colorUP);
+			for (int i1 = 0; i1 < 12; i1++) {
+				IJ.log("classe " + i1 + "  " + myColor[i1]);
+			}
+			IJ.log("colorOUT= " + colorOUT);
+			IJ.log("-------------------");
 		}
-		if (color == 3) {
-			colorUP = ((0 & 0xff) << 16) | ((0 & 0xff) << 8) | ((255 & 0xff));
-			myColor = myColor3;
-		}
-		// if (debug) {
-		// MyLog.resultsLog(myColor, "myColor");
-		// }
+
+		// i limiti delle classi stabilite da UTENT combinatoi con media hotCube
 		double[] myMinimi = new double[livello];
 		double[] myMassimi = new double[livello];
 		for (int i1 = 0; i1 < livello; i1++) {
 			myMinimi[i1] = ((100.0 + (double) minimi[i1]) / 100) * mean;
 			myMassimi[i1] = ((100.0 + (double) massimi[i1]) / 100) * mean;
 		}
-		// if (debug) {
-		// MyLog.resultsLog(minimi, "minimi");
-		// MyLog.resultsLog(myMinimi, "myMinimi");
-		// MyLog.resultsLog(massimi, "massimi");
-		// MyLog.resultsLog(myMassimi, "myMassimi");
-		// MyLog.waitHere("livello= " + livello + " mean= " + mean);
-		// }
-		for (int y = 0; y < height; y++) {
-			for (int x = 0; x < width; x++) {
+
+		if (debug && stampa) {
+			IJ.log("classi percentuali");
+			for (int i1 = 0; i1 < livello; i1++) {
+				IJ.log("classe " + i1 + " minimo= " + minimi[i1] + "%   massimo= " + massimi[i1] + "%");
+			}
+			IJ.log("classi limiti reali pixel");
+			for (int i1 = 0; i1 < livello; i1++) {
+				IJ.log("classe " + i1 + " minimo= " + myMinimi[i1] + " massimo= " + myMassimi[i1]);
+			}
+		}
+
+		for (int y1 = 0; y1 < height; y1++) {
+			for (int x1 = 0; x1 < width; x1++) {
 				boolean cerca = true;
-				posizioneArrayImmagine = y * width + x;
+				posizioneArrayImmagine = y1 * width + x1;
 				pixSorgente = pixels1[posizioneArrayImmagine];
+
 				for (int i1 = 0; i1 < livello; i1++) {
 					if (cerca && (pixSorgente > myMassimi[i1])) {
-						aux1 = colorUP;
+						appoggioColore = colorUP;
 						cerca = false;
 					}
 					if (cerca && (pixSorgente > myMinimi[i1]) && (pixSorgente <= myMassimi[i1])) {
-						aux1 = myColor[i1];
+						appoggioColore = myColor[i1];
 						cerca = false;
 					}
 				}
-				if (cerca)
-					aux1 = colorOUT;
-				int[] color1 = getColor(pixelsMappa[posizioneArrayImmagine]);
-				int[] color2 = getColor(aux1);
-				int color3 = mixColor(color1, color2);
-				pixelsMappa[posizioneArrayImmagine] = color3;
+				if (cerca) {
+					appoggioColore = colorOUT;
+					cerca = false;
+				}
+
+				switch (colorCoil) {
+				case 1:
+
+					pixelsMappaR[posizioneArrayImmagine] += (short) appoggioColore;
+					if (stampa) {
+						if (debug && (puntatore == posizioneArrayImmagine))
+							IJ.log("inMappazzaGrigio16 pixSorgente= " + pixSorgente + " mappaR= "
+									+ pixelsMappaR[posizioneArrayImmagine]);
+					}
+					break;
+				case 2:
+					pixelsMappaG[posizioneArrayImmagine] += (short) appoggioColore;
+					break;
+				case 3:
+					pixelsMappaB[posizioneArrayImmagine] += (short) appoggioColore;
+					break;
+				default:
+					MyLog.waitHere("GULP");
+					break;
+
+				}
 			}
 		}
-		ipMappa.resetMinAndMax();
-
+		stampa = false;
 		return;
 
 	}
 
-	/**
-	 * Estrae dal pixel le tre componenti dei colori primari
-	 * 
-	 * @param pixel
-	 * @return
-	 */
-	public static int[] getColor(int pixel) {
-		int[] c1 = new int[3];
-		int r1, g1, b1;
-		r1 = (pixel & 0xff0000) >> 16;
-		g1 = (pixel & 0xff00) >> 8;
-		b1 = (pixel & 0xff);
-		c1[0] = r1;
-		c1[1] = g1;
-		c1[2] = b1;
-		return c1;
-	}
+	public static void generaMappazzaCombinata(int width, int height, int slice, int livello, ImagePlus impMappazzaR,
+			ImagePlus impMappazzaG, ImagePlus impMappazzaB, ImagePlus impMappazzaOUT) {
 
-	/**
-	 * Gestisce la miscelazione dei colori nei pixel
-	 * 
-	 * @param rgb1
-	 * @param rgb2
-	 * @return
-	 */
-	public static int mixColor(int[] rgb1, int[] rgb2) {
-		int red = rgb1[0] + rgb2[0];
-		if (red > 255)
-			red = 255;
-		int green = rgb1[1] + rgb2[1];
-		if (green > 255)
-			green = 255;
-		int blue = rgb1[2] + rgb2[2];
-		if (blue > 255)
-			blue = 255;
-		int color = ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
-		return color;
+		double auxR = 0;
+		double auxG = 0;
+		double auxB = 0;
+
+		int[] pixelsMappazzaOUT = null;
+		short[] pixelsMappaR = null;
+		short[] pixelsMappaG = null;
+		short[] pixelsMappaB = null;
+		short largestValue = Short.MIN_VALUE;
+		short largestR = Short.MIN_VALUE;
+		short largestG = Short.MIN_VALUE;
+		short largestB = Short.MIN_VALUE;
+		short[] searchMax = new short[4];
+
+		for (int i10 = 0; i10 < impMappazzaR.getNSlices(); i10++) {
+			pixelsMappazzaOUT = (int[]) impMappazzaOUT.getStack().getPixels(i10 + 1);
+			pixelsMappaR = (short[]) impMappazzaR.getStack().getPixels(i10 + 1);
+			pixelsMappaG = (short[]) impMappazzaG.getStack().getPixels(i10 + 1);
+			pixelsMappaB = (short[]) impMappazzaB.getStack().getPixels(i10 + 1);
+			largestR = UtilAyv.vetMax(pixelsMappaR);
+			largestG = UtilAyv.vetMax(pixelsMappaG);
+			largestB = UtilAyv.vetMax(pixelsMappaB);
+			searchMax[0] = largestR;
+			searchMax[1] = largestG;
+			searchMax[2] = largestB;
+			searchMax[3] = largestValue;
+			largestValue = UtilAyv.vetMax(searchMax);
+		}
+		double kappa = 255 / largestValue;
+
+		for (int i10 = 0; i10 < impMappazzaR.getNSlices(); i10++) {
+			pixelsMappazzaOUT = (int[]) impMappazzaOUT.getStack().getPixels(i10 + 1);
+			pixelsMappaR = (short[]) impMappazzaR.getStack().getPixels(i10 + 1);
+			pixelsMappaG = (short[]) impMappazzaG.getStack().getPixels(i10 + 1);
+			pixelsMappaB = (short[]) impMappazzaB.getStack().getPixels(i10 + 1);
+
+			int colorRGB = 0;
+			int red = 0;
+			int green = 0;
+			int blue = 0;
+
+			for (int i1 = 0; i1 < pixelsMappaR.length; i1++) {
+
+				auxR = (double) pixelsMappaR[i1] * kappa;
+				red = (int) auxR;
+				auxG = (double) pixelsMappaG[i1] * kappa;
+				green = (int) auxG;
+				auxB = (double) pixelsMappaB[i1] * kappa;
+				blue = (int) auxB;
+
+				colorRGB = ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
+				pixelsMappazzaOUT[i1] = colorRGB;
+
+				// if (i1 == 29300 && i10 == 57) {
+				// MyLog.waitHere("largest= " + largestValue + " kappa= " +
+				// kappa + "\npixelMappaR= "
+				// + pixelsMappaR[i1] + " auxR= " + auxR + "colorRGB= " +
+				// colorRGB);
+				// }
+
+			}
+			impMappazzaOUT.updateAndRepaintWindow();
+		}
+		return;
 	}
 
 } // ultima
