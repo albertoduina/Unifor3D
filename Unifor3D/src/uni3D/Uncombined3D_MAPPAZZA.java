@@ -72,6 +72,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 	static boolean debug = false;
 	static boolean stampa = true;
 	static boolean stampa2 = true;
+	static boolean myTest = true;
 	static int debugXX = 120;
 	static int debugYY = 90;
 	static int debugZZ = 80;
@@ -93,6 +94,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		String def2 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_def2", "5");
 		boolean sat1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_sat1", true);
 		boolean all1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_all1", true);
+		boolean myTest1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_MyTest", true);
 
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
 		String[] livelli = { "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1" };
@@ -102,6 +104,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 		gd.addCheckbox("ALL COILS", all1);
 		gd.addCheckbox("SATURATED COLORS", sat1);
+		gd.addCheckbox("MyTest", myTest1);
 		gd.addCheckbox("debug", false);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
@@ -112,6 +115,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		String lato1 = gd.getNextChoice();
 		boolean tutte = gd.getNextBoolean();
 		boolean satur = gd.getNextBoolean();
+		myTest = gd.getNextBoolean();
 		debug = gd.getNextBoolean();
 		int livello = Integer.parseInt(level);
 		int latoHotCube = Integer.parseInt(lato1);
@@ -579,28 +583,54 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					cerca = false;
 				}
 
-				switch (colorCoil) {
-				case 1:
+				if (myTest) {
 
-					pixelsMappaR[posizioneArrayImmagine] += (short) appoggioColore;
-					// if (stampa2) {
-					if (debug && (puntatore == posizioneArrayImmagine)) {
-						IJ.log("inMappazzaGrigio16 pixSorgente= " + pixSorgente + " mappaR= "
-								+ pixelsMappaR[posizioneArrayImmagine]);
+	
+					switch (colorCoil) {
+					case 1:
+
+						if (appoggioColore > pixelsMappaR[posizioneArrayImmagine])
+							pixelsMappaR[posizioneArrayImmagine] = (short) appoggioColore;
+						break;
+					case 2:
+						if (appoggioColore > pixelsMappaG[posizioneArrayImmagine])
+							pixelsMappaG[posizioneArrayImmagine] = (short) appoggioColore;
+						break;
+					case 3:
+						if (appoggioColore > pixelsMappaB[posizioneArrayImmagine])
+							pixelsMappaB[posizioneArrayImmagine] = (short) appoggioColore;
+						break;
+					default:
+						MyLog.waitHere("GULP");
+						break;
 
 					}
-					// }
-					break;
-				case 2:
-					pixelsMappaG[posizioneArrayImmagine] += (short) appoggioColore;
-					break;
-				case 3:
-					pixelsMappaB[posizioneArrayImmagine] += (short) appoggioColore;
-					break;
-				default:
-					MyLog.waitHere("GULP");
-					break;
 
+				} else {
+
+					switch (colorCoil) {
+					case 1:
+
+						pixelsMappaR[posizioneArrayImmagine] += (short) appoggioColore;
+						// if (stampa2) {
+						if (debug && (puntatore == posizioneArrayImmagine)) {
+							IJ.log("inMappazzaGrigio16 pixSorgente= " + pixSorgente + " mappaR= "
+									+ pixelsMappaR[posizioneArrayImmagine]);
+
+						}
+						// }
+						break;
+					case 2:
+						pixelsMappaG[posizioneArrayImmagine] += (short) appoggioColore;
+						break;
+					case 3:
+						pixelsMappaB[posizioneArrayImmagine] += (short) appoggioColore;
+						break;
+					default:
+						MyLog.waitHere("GULP");
+						break;
+
+					}
 				}
 			}
 		}
