@@ -42,7 +42,7 @@ import utils.ReadDicom;
 import utils.UtilAyv;
 
 //=====================================================
-//     Programma per uniformita' 3D per immagini combined circolari
+//     Programma per uniformita' 3D per immagini COMBINED circolari
 //     11 agosto 2016 
 //     By A.Duina - IW2AYV
 //     Linguaggio: Java per ImageJ
@@ -75,7 +75,8 @@ public class Unifor3D_ implements PlugIn {
 
 		// chiede di selezionare manualmente le cartelle con le
 		// immagini Si suppone che le immagini siano trasferite utilizzando un
-		// hard-disk OPPURE che venga fatto un DicomSorter.
+		// hard-disk OPPURE che venga fatto un DicomSorter, in modo che le
+		// immagini siano
 		// QUINDI: IL PROGRAMMA SI FIDA (sicuramente sbagliando) DELL'OPERATORE
 
 		// ===============================
@@ -100,19 +101,22 @@ public class Unifor3D_ implements PlugIn {
 		for (int i1 = 0; i1 < dir1a.length; i1++) {
 			dir1b[i1] = dir1 + "\\" + dir1a[i1];
 		}
+		// sort dell'array immagini secondo la posizione dello strato
 		String[] sortedList1 = pathSorter(dir1b);
+		// creazione di uno stack contenente le immagini
 		ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
 		// ----------------------------------------------
-
+		// lettura dei parametri dall'header della prima immagine
 		ImagePlus imp00 = UtilAyv.openImageNoDisplay(sortedList1[0], true);
 		double dimPixel = ReadDicom.readDouble(
 				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_PIXEL_SPACING), 1));
-		double sliceThick = ReadDicom.readDouble(
-				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_SLICE_THICKNESS), 1));
+				// double sliceThick = ReadDicom.readDouble(
+				// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00,
+				// MyConst.DICOM_SLICE_THICKNESS), 1));
 
 		// =================================================================
-		// Mostro l'immagine ed applico Orthogonal_Views. Recupero le due
-		// immagini delle due direzioni "sintetizzate"
+		// Utilizzo di ORTHOGONAL VIEWS per ricostruire le proiezioni nelle due
+		// direzioni mancanti.
 		// =================================================================
 
 		imp10.show();
@@ -124,21 +128,19 @@ public class Unifor3D_ implements PlugIn {
 		ImagePlus imp102 = ort1.getXZImage();
 		if (imp102 == null)
 			MyLog.waitHere("imp102=null");
-		// ImagePlus imp202 = imp102.duplicate();
 		ImagePlus imp202 = new Duplicator().run(imp102);
 		IJ.wait(10);
 
 		ImagePlus imp103 = ort1.getYZImage();
 		if (imp103 == null)
 			MyLog.waitHere("imp103=null");
-		// ImagePlus imp203 = imp103.duplicate();
 		ImagePlus imp203 = new Duplicator().run(imp103);
 		IJ.wait(10);
 
 		// MyLog.waitHere("203");
 
 		// ===============================
-		// PUNTO DUE A : DEFINIRE ROI 3 DI
+		// PUNTO DUE A : DEFINIRE ROI 3D
 		// ===============================
 
 		String info10 = "position search XZimage";
@@ -148,6 +150,10 @@ public class Unifor3D_ implements PlugIn {
 		Boolean test = false;
 		Boolean fast = true;
 
+		// Ricerca posizione ROI per calcolo uniformita'. Versione con Canny
+		// Edge Detector, da utilizzare per il fantoccio sferico. La coordinata
+		// del centro della sfera verrà utilizzata per determinare quale è la
+		// slice centrale dello stack
 		double out202[] = positionSniper(imp202, maxFitError, maxBubbleGapLimit, info10, autoCalled, step2, demo0, test,
 				fast, timeout);
 		if (out202 == null)
@@ -162,9 +168,12 @@ public class Unifor3D_ implements PlugIn {
 		over202.addElement(imp202.getRoi());
 		imp202.deleteRoi();
 		imp202.show();
-		// MyLog.waitHere("POSIZIONAMENTO SU IMMAGINE imp202, roi verde");
 		info10 = "position search YZimage";
 
+		// Ricerca posizione ROI per calcolo uniformita'. Versione con Canny
+		// Edge Detector, da utilizzare per il fantoccio sferico. La coordinata
+		// del centro della sfera verrà utilizzata per determinare quale è la
+		// slice centrale dello stack
 		double out203[] = positionSniper(imp203, maxFitError, maxBubbleGapLimit, info10, autoCalled, step2, demo0, test,
 				fast, timeout);
 		if (out203 == null)
@@ -179,23 +188,29 @@ public class Unifor3D_ implements PlugIn {
 		over203.addElement(imp203.getRoi());
 		imp203.deleteRoi();
 		imp203.show();
-		// MyLog.waitHere("VERIFICA POSIZIONAMENTO SU IMMAGINE imp203, roi
-		// verde");
 
 		// ===============================
 		// IMMAGINE DI CENTRO DELLA SFERA
 		// ===============================
+		// Determinazione della centerSlice, utilizzando le coordinate del
+		// centro sfera determinate in precedenza.
 		int centerSlice = 0;
 		if ((out202[1] - out203[0]) < 2 || (out203[0] - out202[1]) < 2) {
 			centerSlice = (int) out202[1]; // max incertezza permessa = 1
 											// immagine
 		} else
 			MyLog.waitHere("non riesco a determinare la posizione Z, eccessiva incertezza");
+
+		// Selezione della reale immagine centrale dello stack
 		ImagePlus imp101 = MyStackUtils.imageFromStack(imp10, centerSlice);
 		if (imp101 == null)
 			MyLog.waitHere("imp101=null");
 		ImagePlus imp201 = imp101.duplicate();
 
+		// Ricerca posizione ROI per calcolo uniformita'. Versione con Canny
+		// Edge Detector, da utilizzare per il fantoccio sferico. In base alle
+		// coordinate del centro e del raggio qui determinati, viene di seguito
+		// costruita la sfera.
 		double out201[] = positionSniper(imp201, maxFitError, maxBubbleGapLimit, info10, autoCalled, step2, demo0, test,
 				fast, timeout);
 		if (out201 == null)
@@ -223,7 +238,7 @@ public class Unifor3D_ implements PlugIn {
 		ImagePlus imp20 = MyStackUtils.imagesToStack16(sortedList2);
 
 		// ===============================
-		// PUNTO TRE : VOLUME DIFFERENZA
+		// PUNTO TRE : CALCOLO DEL VOLUME DIFFERENZA
 		// ===============================
 
 		ImagePlus stackDiff = stackDiffCalculation(imp10, imp20);
@@ -629,26 +644,28 @@ public class Unifor3D_ implements PlugIn {
 	// ############################################################################
 
 	/***
-	 * sort del vettore path in base a posizione immagine
+	 * Esegue il sort dell'array contenente i path delle immagini, utilizzando
+	 * come criterio la posizione dello strato. Restituisce un array col path
+	 * sortato
 	 * 
-	 * @param path
+	 * @param pathList
 	 * @return
 	 */
-	public static String[] pathSorter(String[] path) {
+	public static String[] pathSorter(String[] pathList) {
 		ArrayList<String> list1 = new ArrayList<String>();
 
-		if ((path == null) || (path.length == 0)) {
+		if ((pathList == null) || (pathList.length == 0)) {
 			IJ.log("pathSorter: path problems");
 			return null;
 		}
 		Opener opener1 = new Opener();
-		// test disponibilit� files
-		for (int w1 = 0; w1 < path.length; w1++) {
-			int type = (new Opener()).getFileType(path[w1]);
+		// test disponibilita' files
+		for (int w1 = 0; w1 < pathList.length; w1++) {
+			int type = (new Opener()).getFileType(pathList[w1]);
 			if (type == Opener.DICOM) {
-				ImagePlus imp1 = opener1.openImage(path[w1]);
+				ImagePlus imp1 = opener1.openImage(pathList[w1]);
 				if (imp1 != null) {
-					list1.add(path[w1]);
+					list1.add(pathList[w1]);
 				}
 			}
 		}

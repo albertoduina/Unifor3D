@@ -72,7 +72,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 	static boolean debug = false;
 	static boolean stampa = true;
 	static boolean stampa2 = true;
-	static boolean myTest = true;
 	static int debugXX = 120;
 	static int debugYY = 90;
 	static int debugZZ = 80;
@@ -92,9 +91,11 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		new AboutBox().close();
 		String def1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_def1", "5");
 		String def2 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_def2", "5");
-		boolean sat1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_sat1", true);
+		String def3 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_def3", "3");
+		// boolean sat1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_sat1", true);
 		boolean all1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_all1", true);
-		boolean myTest1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_MyTest", true);
+		// boolean myTest1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_MyTest",
+		// true);
 
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
 		String[] livelli = { "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1" };
@@ -103,8 +104,11 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		gd.addChoice("LATO HOTCUBE", lati, def2);
 
 		gd.addCheckbox("ALL COILS", all1);
-		gd.addCheckbox("SATURATED COLORS", sat1);
-		gd.addCheckbox("MyTest", myTest1);
+		String[] colors = { "1", "2", "3" };
+		gd.addChoice("RESA COLORI", colors, def3);
+
+		// gd.addCheckbox("SATURATED COLORS", sat1);
+		// gd.addCheckbox("MyTest", myTest1);
 		gd.addCheckbox("debug", false);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
@@ -113,15 +117,18 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 		String level = gd.getNextChoice();
 		String lato1 = gd.getNextChoice();
+		String colors1 = gd.getNextChoice();
 		boolean tutte = gd.getNextBoolean();
-		boolean satur = gd.getNextBoolean();
-		myTest = gd.getNextBoolean();
+		// myTest = gd.getNextBoolean();
 		debug = gd.getNextBoolean();
 		int livello = Integer.parseInt(level);
 		int latoHotCube = Integer.parseInt(lato1);
+		int myColors = Integer.parseInt(colors1);
+
 		Prefs.set("prefer.Uncombined3D_MAPPAZZA_def1", level);
 		Prefs.set("prefer.Uncombined3D_MAPPAZZA_def2", lato1);
-		Prefs.set("prefer.Uncombined3D_MAPPAZZA_sat1", satur);
+		Prefs.set("prefer.Uncombined3D_MAPPAZZA_def3", colors1);
+		// Prefs.set("prefer.Uncombined3D_MAPPAZZA_sat1", colors1);
 		Prefs.set("prefer.Uncombined3D_MAPPAZZA_all1", tutte);
 
 		int gridWidth = 2;
@@ -240,7 +247,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				impMappazzaB = generaMappazzaVuota16(width, height, imp10.getImageStackSize(), livello, "impMappazzaB");
 				int bitdepth = 24;
 				newStackOUT = ImageStack.create(width, height, imp10.getImageStackSize(), bitdepth);
-				impMappazzaOUT = new ImagePlus("MAPPAZZA_" + livello, newStackOUT);
+				impMappazzaOUT = new ImagePlus("MAPPAZZA_" + livello + "_" + myColors, newStackOUT);
 
 				generate = false;
 			}
@@ -353,7 +360,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				}
 
 				mappazzaGrigio16(mean11, imp20, impMappazzaR, impMappazzaG, impMappazzaB, i1 + 1, livello, minimi,
-						massimi, colorCoil);
+						massimi, colorCoil, myColors);
 
 				if (!impMappazzaR.isVisible())
 					impMappazzaR.show();
@@ -363,7 +370,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					impMappazzaB.show();
 			}
 			generaMappazzaCombinata(width, height, 1, livello, impMappazzaR, impMappazzaG, impMappazzaB, impMappazzaOUT,
-					satur);
+					myColors);
 			if (!vedo) {
 				impMappazzaOUT.show();
 				vedo = true;
@@ -496,7 +503,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 	}
 
 	public static void mappazzaGrigio16(double mean11, ImagePlus imp1, ImagePlus impMappazzaR, ImagePlus impMappazzaG,
-			ImagePlus impMappazzaB, int slice, int livello, int[] minimi, int[] massimi, int colorCoil) {
+			ImagePlus impMappazzaB, int slice, int livello, int[] minimi, int[] massimi, int colorCoil, int myColors) {
 
 		if (imp1 == null) {
 			MyLog.waitHere("imp1==null");
@@ -583,9 +590,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					cerca = false;
 				}
 
-				if (myTest) {
+				if (myColors == 3) {
 
-	
 					switch (colorCoil) {
 					case 1:
 
@@ -640,7 +646,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 	}
 
 	public static void generaMappazzaCombinata(int width, int height, int slice, int livello, ImagePlus impMappazzaR,
-			ImagePlus impMappazzaG, ImagePlus impMappazzaB, ImagePlus impMappazzaOUT, boolean satur) {
+			ImagePlus impMappazzaG, ImagePlus impMappazzaB, ImagePlus impMappazzaOUT, int myColors) {
 
 		double auxR = 0;
 		double auxG = 0;
@@ -672,16 +678,23 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		}
 
 		double kappa = 255 / largestValue;
-		if (largestR == 0)
-			largestR = 1;
-		double kappaR = 255 / largestR;
-		if (largestG == 0)
-			largestG = 1;
-		double kappaG = 255 / largestG;
-		if (largestB == 0)
-			largestB = 1;
-		double kappaB = 255 / largestB;
-		if (!satur) {
+		double kappaR = 0;
+		double kappaG = 0;
+		double kappaB = 0;
+
+		if (myColors == 1 || myColors == 3) {
+			if (largestR == 0)
+				largestR = 1;
+			kappaR = 255 / largestR;
+			if (largestG == 0)
+				largestG = 1;
+			kappaG = 255 / largestG;
+			if (largestB == 0)
+				largestB = 1;
+			kappaB = 255 / largestB;
+		}
+
+		if (myColors == 2) {
 			kappaR = kappa;
 			kappaG = kappa;
 			kappaB = kappa;
