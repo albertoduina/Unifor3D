@@ -97,6 +97,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 		// boolean myTest1 = Prefs.get("prefer.Uncombined3D_MAPPAZZA_MyTest",
 		// true);
 
+		boolean buco = false;
+
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
 		String[] livelli = { "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1" };
 		gd.addChoice("LIVELLI SIMULATE", livelli, def1);
@@ -169,6 +171,13 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			minimi[i1] = (int) value2[conta++];
 			massimi[i1] = (int) value2[conta++];
 		}
+
+		for (int i1 = 0; i1 < livello - 1; i1++) {
+			if (minimi[i1] != massimi[i1 + 1])
+				buco = true;
+		}
+		if (buco) MyLog.waitHere("LO SAI CHE LE CLASSI IMPOSTATE HANNO UN BUCO ?");
+
 		// MyLog.resultsLog(minimi, "minimi");
 		// MyLog.resultsLog(massimi, "massimi");
 		// MyLog.waitHere();
@@ -236,8 +245,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			if (colorCoil > 3)
 				colorCoil = 1;
 
-			// MyLog.waitHere("colorCoil= " + colorCoil);
-			// imp10 = UtilAyv.openImageNormal(path10);
 			imp10 = UtilAyv.openImageNoDisplay(path10, false);
 			width = imp10.getWidth();
 			height = imp10.getHeight();
@@ -307,7 +314,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 			if (debug) {
 				IJ.log("Posizione dell'hotspot piu' alto:  X= " + xCenter + " Y= " + yCenter + " Z= " + indice
-						+ "media= " + mediaHotspot[indice]);
+						+ " media= " + mediaHotspot[indice]);
 			}
 			// --------------------------------------------
 			// vettorizazione pixels degli hotspot NxNxN
@@ -320,6 +327,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				pixVectorize(imp21, xCenterRoi, yCenterRoi, latoHotCube, pixListSignal11);
 				imp21.close();
 			}
+
+			// ================================================================
 			if (debug) {
 				IJ.log("----------- segnali di hotSpotCube  [ " + pixListSignal11.size() + " ] -----------");
 				String logRiga = "";
@@ -330,7 +339,6 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					}
 					IJ.log(logRiga);
 				}
-
 			}
 			// }
 			// ===========================================================
@@ -352,7 +360,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 						puntatore = debugYY * width + debugXX;
 
 						short[] pixelsDebug = (short[]) imp20.getProcessor().getPixels();
-						IJ.log("debug XX= " + debugXX + " YY= " + debugYY + " ZZ = " + debugZZ + "\npuntatore= "
+						IJ.log("debug XX= " + debugXX + " YY= " + debugYY + " ZZ = " + debugZZ + "puntatore= "
 								+ puntatore + " mean11= " + mean11 + " valorePixel= " + pixelsDebug[puntatore]);
 
 					}
@@ -369,6 +377,9 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				if (!impMappazzaB.isVisible())
 					impMappazzaB.show();
 			}
+
+			// IJ.log("#########################################################");
+
 			generaMappazzaCombinata(width, height, 1, livello, impMappazzaR, impMappazzaG, impMappazzaB, impMappazzaOUT,
 					myColors);
 			if (!vedo) {
@@ -596,7 +607,13 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					case 1:
 
 						if (appoggioColore > pixelsMappaR[posizioneArrayImmagine])
+
 							pixelsMappaR[posizioneArrayImmagine] = (short) appoggioColore;
+
+						if (debug && (puntatore == posizioneArrayImmagine)) {
+							IJ.log("inMappazzaGrigio16 pixSorgente= " + pixSorgente + " mappaR= "
+									+ pixelsMappaR[posizioneArrayImmagine]);
+						}
 						break;
 					case 2:
 						if (appoggioColore > pixelsMappaG[posizioneArrayImmagine])
@@ -618,13 +635,10 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					case 1:
 
 						pixelsMappaR[posizioneArrayImmagine] += (short) appoggioColore;
-						// if (stampa2) {
 						if (debug && (puntatore == posizioneArrayImmagine)) {
 							IJ.log("inMappazzaGrigio16 pixSorgente= " + pixSorgente + " mappaR= "
 									+ pixelsMappaR[posizioneArrayImmagine]);
-
 						}
-						// }
 						break;
 					case 2:
 						pixelsMappaG[posizioneArrayImmagine] += (short) appoggioColore;
@@ -670,19 +684,29 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			largestR = UtilAyv.vetMax(pixelsMappaR);
 			largestG = UtilAyv.vetMax(pixelsMappaG);
 			largestB = UtilAyv.vetMax(pixelsMappaB);
-			searchMax[0] = largestR;
-			searchMax[1] = largestG;
-			searchMax[2] = largestB;
-			searchMax[3] = largestValue;
+			if (largestR > searchMax[0])
+				searchMax[0] = largestR;
+			if (largestG > searchMax[1])
+				searchMax[1] = largestG;
+			if (largestB > searchMax[2])
+				searchMax[2] = largestB;
+			if (largestValue > searchMax[3])
+				searchMax[3] = largestValue;
 			largestValue = UtilAyv.vetMax(searchMax);
 		}
+
+		largestR = searchMax[0];
+		largestG = searchMax[1];
+		largestB = searchMax[2];
+		largestValue = searchMax[3];
 
 		double kappa = 255 / largestValue;
 		double kappaR = 0;
 		double kappaG = 0;
 		double kappaB = 0;
 
-		if (myColors == 1 || myColors == 3) {
+		switch (myColors) {
+		case 1:
 			if (largestR == 0)
 				largestR = 1;
 			kappaR = 255 / largestR;
@@ -692,12 +716,23 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			if (largestB == 0)
 				largestB = 1;
 			kappaB = 255 / largestB;
-		}
-
-		if (myColors == 2) {
+			break;
+		case 2:
 			kappaR = kappa;
 			kappaG = kappa;
 			kappaB = kappa;
+			break;
+		case 3:
+			if (largestR == 0)
+				largestR = 1;
+			kappaR = 255 / largestR;
+			if (largestG == 0)
+				largestG = 1;
+			kappaG = 255 / largestG;
+			if (largestB == 0)
+				largestB = 1;
+			kappaB = 255 / largestB;
+			break;
 		}
 
 		if (debug) {
