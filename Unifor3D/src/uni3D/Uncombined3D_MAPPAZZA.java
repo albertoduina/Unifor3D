@@ -99,13 +99,13 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
 		String[] livelli = { "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1" };
-		gd.addChoice("SIMULATE", livelli, def1);
+		gd.addChoice("LIVELLI SIMULATE", livelli, def1);
 		String[] lati = { "19", "17", "15", "13", "11", "9", "7", "5", "3" };
 		gd.addChoice("LATO HOTCUBE", lati, def2);
 
 		gd.addCheckbox("ALL COILS", all1);
 		String[] colors = { "1", "2", "3" };
-		gd.addChoice("RESA COLORI", colors, def3);
+		gd.addChoice("ALGO. COLORI", colors, def3);
 
 		// gd.addCheckbox("SATURATED COLORS", sat1);
 		// gd.addCheckbox("MyTest", myTest1);
