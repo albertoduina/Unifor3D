@@ -3,6 +3,7 @@ package uni3D;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Rectangle;
+import java.awt.TextField;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -25,14 +26,17 @@ import ij.measure.ResultsTable;
 import ij.plugin.Duplicator;
 import ij.plugin.Orthogonal_Views;
 import ij.plugin.PlugIn;
+import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 import ij.process.ShortProcessor;
 import utils.ArrayUtils;
+import utils.ButtonMessages;
 import utils.ImageUtils;
 import utils.AboutBox;
 import utils.MyCircleDetector;
 import utils.MyConst;
+import utils.MyGenericDialogGrid;
 import utils.MyLine;
 import utils.MyLog;
 import utils.MyPlot;
@@ -64,7 +68,7 @@ public class Unifor3D_ implements PlugIn {
 		double maxFitError = +20;
 		double maxBubbleGapLimit = 2;
 		ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
-		ArrayList<Integer> pixListDifference11 = new ArrayList<Integer>();
+		ArrayList<Float> pixListDifference11 = new ArrayList<Float>();
 
 		try {
 			Class.forName("utils.IW2AYV");
@@ -72,6 +76,9 @@ public class Unifor3D_ implements PlugIn {
 			IJ.error("ATTENZIONE, manca il file iw2ayv_xxx.jar");
 			return;
 		}
+
+		IJ.log("----------IW2AYV----------");
+		UtilAyv.logResizer(500, 500, 100, 400);
 
 		// chiede di selezionare manualmente le cartelle con le
 		// immagini Si suppone che le immagini siano trasferite utilizzando un
@@ -110,9 +117,56 @@ public class Unifor3D_ implements PlugIn {
 		ImagePlus imp00 = UtilAyv.openImageNoDisplay(sortedList1[0], true);
 		double dimPixel = ReadDicom.readDouble(
 				ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00, MyConst.DICOM_PIXEL_SPACING), 1));
-				// double sliceThick = ReadDicom.readDouble(
-				// ReadDicom.readSubstring(ReadDicom.readDicomParameter(imp00,
-				// MyConst.DICOM_SLICE_THICKNESS), 1));
+
+		// =================================================================
+		// CLASSI ELEMENTARI
+		// =================================================================
+		int gridWidth = 2;
+		int livello = 5;
+		int gridHeight = livello;
+		int gridSize = gridWidth * gridHeight;
+		boolean buco = false;
+
+		TextField[] tf2 = new TextField[gridSize];
+
+		String[] lab2 = { "min% classe 1 (20)", "max% classe 1 (100)", "min% classe 2 (10)", "max% classe 2 (20)",
+				"min% classe 3 (-10)", "max% classe 3 (10) ", "min% classe 4 (-20)", "max% classe 4 (-10)",
+				"min% classe 5 (-90)", "max% classe 5 (-20)" };
+		double[] value2 = new double[gridSize];
+
+		MyGenericDialogGrid mgdg = new MyGenericDialogGrid();
+
+		for (int i1 = 0; i1 < value2.length; i1++) {
+			value2[i1] = mgdg.getValue2(Prefs.get("prefer.Unifor3D_classi_" + i1, "0"));
+		}
+
+		int decimals = 0;
+		String title2 = "LIMITI CLASSI PIXELS";
+		if (mgdg.showDialog2(gridWidth, gridHeight, tf2, lab2, value2, title2, decimals)) {
+			// displayValues2(gridSize, value2);
+		}
+
+		for (int i1 = 0; i1 < value2.length; i1++) {
+			Prefs.set("prefer.Unifor3D_classi_" + i1, value2[i1]);
+		}
+
+		// MyLog.resultsLog(value2, "value2");
+		// MyLog.waitHere();
+
+		int[] minimi = new int[livello];
+		int[] massimi = new int[livello];
+		int conta = 0;
+		for (int i1 = 0; i1 < livello; i1++) {
+			minimi[i1] = (int) value2[conta++];
+			massimi[i1] = (int) value2[conta++];
+		}
+
+		for (int i1 = 0; i1 < livello - 1; i1++) {
+			if (minimi[i1] != massimi[i1 + 1])
+				buco = true;
+		}
+		if (buco)
+			MyLog.waitHere("LO SAI CHE LE CLASSI IMPOSTATE HANNO UN BUCO ?");
 
 		// =================================================================
 		// Utilizzo di ORTHOGONAL VIEWS per ricostruire le proiezioni nelle due
@@ -384,49 +438,17 @@ public class Unifor3D_ implements PlugIn {
 
 			pixVectorize(imp11S, xMROI, yMROI, diamMROI2, pixListSignal11);
 
+			// ==================================================================================
+			// ACCODO I PIXEL DI SEGNALE DELLA ROI AL VETTORE DEI PIXEL DELLO
+			// STACK DIFFERENZA
+			// ==================================================================================
+
 			ImagePlus impDiff = MyStackUtils.imageFromStack(stackDiff, i1);
-			pixVectorize(impDiff, xMROI, yMROI, diamMROI2, pixListDifference11);
+			pixVectorize2(impDiff, xMROI, yMROI, diamMROI2, pixListDifference11);
 
 			// ImagePlus impDiff = UtilAyv.genImaDifference(imp11, imp13);
 			imp11S.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI - diamMROI2 / 2, diamMROI2, diamMROI2));
 
-			// ImageStatistics stat11 = imp11.getStatistics();
-			// double uiPerc11 = uiPercCalculation(stat11.max, stat11.min);
-			// impDiff.setRoi(new OvalRoi(xMROI - diamMROI2 / 2, yMROI -
-			// diamMROI2 / 2, diamMROI2, diamMROI2));
-			// ImageStatistics statImaDiff = impDiff.getStatistics();
-			// double stdDevImaDiff = statImaDiff.stdDev;
-			// double noiseImaDiff = stdDevImaDiff / Math.sqrt(2);
-			// double snRatio = Math.sqrt(2) * stat11.mean / stdDevImaDiff;
-			// ImagePlus impSimulata = ImageUtils.generaSimulata5Classi((int)
-			// (xMROI - diamMROI2 / 2),
-			// (int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step,
-			// demo0, test);
-			// ImagePlus impSimulata = ImageUtils.generaSimulata5Colori((int)
-			// (xMROI - diamMROI2 / 2),
-			// (int) (yMROI - diamMROI2 / 2), (int) diamMROI2, imp11, step2,
-			// demo0, test);
-			// impSimulata.show();
-			// ImageProcessor ipSimulata = impSimulata.getProcessor();
-			// if (count == 0)
-			// newStack.update(ipSimulata);
-			// String sliceInfo1 = impSimulata.getTitle();
-			// String sliceInfo2 = (String) impSimulata.getProperty("Info");
-			// // aggiungo i dati header alle singole immagini dello stack
-			// if (sliceInfo2 != null)
-			// sliceInfo1 += "\n" + sliceInfo2;
-			// newStack.addSlice(sliceInfo2, ipSimulata);
-			//
-			// // MyLog.waitHere("thisPos= " + thisPos + " project= " + project
-			// +
-			// // "\ndiamEXT2= " + diamEXT2 + " diamMROI2= "
-			// // + diamMROI2);
-			//
-			// ImageWindow iwSimulata = impSimulata.getWindow();
-			// if (iwSimulata != null)
-			// iwSimulata.dispose();
-			//
-			// impSimulata.close();
 			impDiff.close();
 			imp11S.close();
 			imp13.close();
@@ -438,11 +460,19 @@ public class Unifor3D_ implements PlugIn {
 		int[] pixListSignal = ArrayUtils.arrayListToArrayInt(pixListSignal11);
 		double mean11 = UtilAyv.vetMean(pixListSignal);
 
-		int[] pixListDifference = ArrayUtils.arrayListToArrayInt(pixListDifference11);
+		float[] pixListDifference = ArrayUtils.arrayListToArrayFloat(pixListDifference11);
 		double devst11 = UtilAyv.vetSdKnuth(pixListDifference);
 
 		/// IMMAGINI SIMULATE
 		int countS = 0;
+		int[][] matClassi = new int[6][2];
+		int[] myColor = new int[livello];
+
+		myColor[0] = ((255 & 0xff) << 16) | ((0 & 0xff) << 8) | (0 & 0xff);
+		myColor[1] = ((255 & 0xff) << 16) | ((165 & 0xff) << 8) | (0 & 0xff);
+		myColor[2] = ((255 & 0xff) << 16) | ((255 & 0xff) << 8) | (0 & 0xff);
+		myColor[3] = ((124 & 0xff) << 16) | ((252 & 0xff) << 8) | (50 & 0xff);
+		myColor[4] = ((0 & 0xff) << 16) | ((128 & 0xff) << 8) | (0 & 0xff);
 
 		for (int i1 = startSlice - 1; i1 < endSlice + 1; i1++) {
 			IJ.showStatus("" + i1 + " / " + endSlice);
@@ -483,7 +513,15 @@ public class Unifor3D_ implements PlugIn {
 				diamMROI2S = 0;
 
 			// demo0, test);
-			ImagePlus impSimulata = ImageUtils.generaSimulata5Colori(mean11, imp11S, step2, demo0, test);
+
+			ImagePlus impSimulata = ImageUtils.generaSimulata5Colori(mean11, imp11S, minimi, massimi, myColor);
+			// int[][] classiSimulata = numeroPixelsColori(impSimulata);
+
+			// for (int i2 = 0; i2 < classiSimulata.length; i2++) {
+			// matClassi[i2][0] = matClassi[i2][0] + classiSimulata[i2][0];
+			// matClassi[i2][1] = matClassi[i2][1] + classiSimulata[i2][1];
+			// }
+
 			impSimulata.show();
 			ImageProcessor ipSimulata = impSimulata.getProcessor();
 			if (count == 0)
@@ -510,47 +548,72 @@ public class Unifor3D_ implements PlugIn {
 		ImagePlus simulataStack = new ImagePlus("STACK_IMMAGINI_SIMULATE", newStack);
 		simulataStack.show();
 
+		// qui devo realizzare il conteggio pixel classi
+
+		matClassi = numeroPixelsColori(simulataStack, myColor);
+
+		// IJ.log("NORMAL VECTOR mean11 pixels SEGNALE= " + mean11 + " devst11
+		// pixels DIFFERENZA= " + devst11);
+
 		// creo un imageProcessor col contenuto del vettore SEGNALE
 		int aaa = pixListSignal.length;
-
 		double www11 = Math.sqrt((double) aaa);
 		int www = (int) www11 + 1;
-
 		short[] pixList2 = new short[www * www];
 		for (int i1 = 0; i1 < aaa; i1++) {
 			pixList2[i1] = (short) pixListSignal[i1];
 		}
-
 		double mean22 = UtilAyv.vetMean(pixList2);
 		double devst22 = UtilAyv.vetSdKnuth(pixList2);
 		double snr22 = (mean22 * Math.sqrt(2.0)) / devst22;
-
-		IJ.log("PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22 + " snr22= " + snr22);
+		double snr3D = (mean11 * Math.sqrt(2.0)) / devst11;
+		// IJ.log("PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22 + "
+		// snr22= " + snr22);
+		// IJ.log("NORMAL VECTOR mean11 pixels SEGNALE= " + mean11 + " devst11
+		// pixels DIFFERENZA= " + devst11
+		// + " SNR calcolato= " + snr3D);
 
 		ImageProcessor ipx = new ShortProcessor(www, www, pixList2, null);
-		ImagePlus impx = new ImagePlus("MULTI", ipx);
+		ImagePlus impx = new ImagePlus("SEGNALE", ipx);
 		IJ.run(impx, "Histogram", "");
 
-		// MyLog.waitHere("mean11 pixels SEGNALE= " + mean11 + " devst11 pixels
-		// DIFFERENZA= " + devst11);
+		// creo un imageProcessor col contenuto del vettore DIFFERENZA
+		int bbb = pixListDifference.length;
+		double zzz11 = Math.sqrt((double) bbb);
+		int zzz = (int) zzz11 + 1;
+		float[] pixList3 = new float[zzz * zzz];
+		for (int i1 = 0; i1 < bbb; i1++) {
+			pixList3[i1] = (float) pixListDifference[i1];
+		}
+
+		ImageProcessor ipz = new FloatProcessor(zzz, zzz, pixList3, null);
+		ImagePlus impz = new ImagePlus("DIFFERENZA", ipz);
+		// impz.show();
+		IJ.run(impz, "Histogram", "bins=256 use x_min=-96 x_max=136 y_max=Auto");
+		// IJ.run(impz, "Histogram", "");
+//		MyLog.waitHere();
+
 		IJ.log("mean pixels SEGNALE= " + mean11);
 		IJ.log("devSt pixels DIFFERENZA= " + devst11);
-
-		int[] classi = pixClassi(pixListSignal);
-		// for (int i1 = 0; i1 < classi.length; i1++) {
-		// IJ.log("" + i1 + " " + classi[i1]);
-		// }
+		IJ.log("SNR_3D= " + snr3D);
+		IJ.log("SUDDIVISIONE IN CLASSI STACK IMMAGINI SIMULATE");
+		for (int i2 = 0; i2 < minimi.length; i2++) {
+			IJ.log("classe >" + minimi[i2] + "<" + massimi[i2] + " = " + matClassi[i2][1]);
+		}
+		IJ.log("classe <" + minimi[minimi.length - 1] + " = " + matClassi[5][1]);
 
 		ResultsTable rt1 = ResultsTable.getResultsTable();
 		rt1.reset();
 		rt1.incrementCounter();
 		rt1.addValue("Mean_SIGNAL_3D", mean11);
 		rt1.addValue("DevSt_DIFFERENCE_3D", devst11);
-		rt1.addValue("SNR_3D", devst11);
+		rt1.addValue("SNR_3D", snr3D);
+		IJ.log("-----------------------------");
 
-		ResultsTable rt2 = vectorResultsTable(classi);
 
-		rt2.show("Results");
+		// ResultsTable rt2 = vectorResultsTable(classi);
+
+		// rt2.show("Results");
 
 	} // chiude
 		// run
@@ -607,6 +670,24 @@ public class Unifor3D_ implements PlugIn {
 			for (int x = 0; x < r11.width; x++) {
 				if (mask11 == null || mask11.getPixel(x, y) != 0) {
 					pixList11.add((int) ip11.getPixelValue(x + r11.x, y + r11.y));
+				}
+			}
+		}
+	}
+
+	public static void pixVectorize2(ImagePlus imp11, double xCenterMROI, double yCenterMROI, double diamMROI,
+			ArrayList<Float> pixList11) {
+
+		imp11.setRoi(new OvalRoi(xCenterMROI - diamMROI / 2, yCenterMROI - diamMROI / 2, diamMROI, diamMROI));
+		Roi roi11 = imp11.getRoi();
+
+		ImageProcessor ip11 = imp11.getProcessor();
+		ImageProcessor mask11 = roi11 != null ? roi11.getMask() : null;
+		Rectangle r11 = roi11 != null ? roi11.getBounds() : new Rectangle(0, 0, ip11.getWidth(), ip11.getHeight());
+		for (int y = 0; y < r11.height; y++) {
+			for (int x = 0; x < r11.width; x++) {
+				if (mask11 == null || mask11.getPixel(x, y) != 0) {
+					pixList11.add((float) ip11.getPixelValue(x + r11.x, y + r11.y));
 				}
 			}
 		}
@@ -2442,5 +2523,47 @@ public class Unifor3D_ implements PlugIn {
 		}
 		return rt1;
 	}
+
+	public static int[][] numeroPixelsColori(ImagePlus imp1, int[] myColor) {
+
+		if (imp1 == null) {
+			IJ.error("numeroPixelClassi ricevuto null");
+			return (null);
+		}
+		int width = imp1.getWidth();
+		int offset = 0;
+		int[][] vetClassi = new int[myColor.length + 1][2];
+		boolean manca = true;
+		for (int i1 = 0; i1 < myColor.length; i1++) {
+			vetClassi[i1][0] = myColor[i1];
+		}
+		for (int z1 = 0; z1 < imp1.getImageStackSize(); z1++) {
+			ImagePlus imp2 = MyStackUtils.imageFromStack(imp1, z1 + 1);
+			if (imp2 == null)
+				continue;
+			ImageProcessor ip2 = imp2.getProcessor();
+			int[] pixels2 = (int[]) ip2.getPixels();
+			int pix2 = 0;
+			for (int y1 = 0; y1 < width; y1++) {
+				for (int x1 = 0; x1 < (width); x1++) {
+					offset = y1 * width + x1;
+					pix2 = pixels2[offset];
+					manca = true;
+					for (int i1 = 0; i1 < myColor.length; i1++)
+						if (pix2 == vetClassi[i1][0]) {
+							vetClassi[i1][1] = vetClassi[i1][1] + 1;
+							manca = false;
+							break;
+						}
+					if (manca) {
+						vetClassi[5][1] = vetClassi[5][1] + 1;
+						manca = false;
+					}
+				}
+			}
+		}
+		return (vetClassi);
+
+	} // classi
 
 } // ultima

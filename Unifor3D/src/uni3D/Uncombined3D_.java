@@ -262,33 +262,33 @@ public class Uncombined3D_ implements PlugIn {
 				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
 				ImagePlus impSimulata = null;
 
-				if (twelve) {
-					impSimulata = ImageUtils.generaSimulata12colori(mean11, imp20, step2, demo0, test);
-				} else {
-					impSimulata = ImageUtils.generaSimulata5Colori(mean11, imp20, step2, demo0, test);
-				}
-				// impSimulata.show();
-				ImageProcessor ipSimulata = impSimulata.getProcessor();
-				if (count == 0)
-					newStack.update(ipSimulata);
-				String sliceInfo1 = impSimulata.getTitle();
-				String sliceInfo2 = (String) impSimulata.getProperty("Info");
-				// aggiungo i dati header alle singole immagini dello stack
-				if (sliceInfo2 != null)
-					sliceInfo1 += "\n" + sliceInfo2;
-				newStack.addSlice(sliceInfo2, ipSimulata);
-
-				// MyLog.waitHere("thisPos= " + thisPos + " project= " + project
-				// +
-				// "\ndiamEXT2= " + diamEXT2 + " diamMROI2= "
-				// + diamMROI2);
-				// MyLog.waitHere();
-
-				ImageWindow iwSimulata = impSimulata.getWindow();
-				if (iwSimulata != null)
-					iwSimulata.dispose();
-
-				impSimulata.close();
+//				if (twelve) {
+//					impSimulata = ImageUtils.generaSimulata12colori(mean11, imp20, step2, demo0, test);
+//				} else {
+//					impSimulata = ImageUtils.generaSimulata5Colori(mean11, imp20, step2, demo0, test);
+//				}
+//				// impSimulata.show();
+//				ImageProcessor ipSimulata = impSimulata.getProcessor();
+//				if (count == 0)
+//					newStack.update(ipSimulata);
+//				String sliceInfo1 = impSimulata.getTitle();
+//				String sliceInfo2 = (String) impSimulata.getProperty("Info");
+//				// aggiungo i dati header alle singole immagini dello stack
+//				if (sliceInfo2 != null)
+//					sliceInfo1 += "\n" + sliceInfo2;
+//				newStack.addSlice(sliceInfo2, ipSimulata);
+//
+//				// MyLog.waitHere("thisPos= " + thisPos + " project= " + project
+//				// +
+//				// "\ndiamEXT2= " + diamEXT2 + " diamMROI2= "
+//				// + diamMROI2);
+//				// MyLog.waitHere();
+//
+//				ImageWindow iwSimulata = impSimulata.getWindow();
+//				if (iwSimulata != null)
+//					iwSimulata.dispose();
+//
+//				impSimulata.close();
 
 			}
 			ImagePlus simulataStack = new ImagePlus("STACK_IMMAGINI_SIMULATE", newStack);
