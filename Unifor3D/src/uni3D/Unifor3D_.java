@@ -515,12 +515,6 @@ public class Unifor3D_ implements PlugIn {
 			// demo0, test);
 
 			ImagePlus impSimulata = ImageUtils.generaSimulata5Colori(mean11, imp11S, minimi, massimi, myColor);
-			// int[][] classiSimulata = numeroPixelsColori(impSimulata);
-
-			// for (int i2 = 0; i2 < classiSimulata.length; i2++) {
-			// matClassi[i2][0] = matClassi[i2][0] + classiSimulata[i2][0];
-			// matClassi[i2][1] = matClassi[i2][1] + classiSimulata[i2][1];
-			// }
 
 			impSimulata.show();
 			ImageProcessor ipSimulata = impSimulata.getProcessor();
@@ -530,13 +524,10 @@ public class Unifor3D_ implements PlugIn {
 			String sliceInfo2 = (String) impSimulata.getProperty("Info");
 			// aggiungo i dati header alle singole immagini dello stack
 			if (sliceInfo2 != null)
-				sliceInfo1 += "\n" + sliceInfo2;
+				sliceInfo1 = sliceInfo1 + "\n" + sliceInfo2;
 			newStack.addSlice(sliceInfo2, ipSimulata);
 
-			// MyLog.waitHere("thisPos= " + thisPos + " project= " + project +
-			// "\ndiamEXT2= " + diamEXT2 + " diamMROI2= "
-			// + diamMROI2);
-
+	
 			ImageWindow iwSimulata = impSimulata.getWindow();
 			if (iwSimulata != null)
 				iwSimulata.dispose();
@@ -551,6 +542,9 @@ public class Unifor3D_ implements PlugIn {
 		// qui devo realizzare il conteggio pixel classi
 
 		matClassi = numeroPixelsColori(simulataStack, myColor);
+		
+		ImagePlus impColors = ImageUtils.generaScalaColori(myColor);
+		impColors.show();
 
 		// IJ.log("NORMAL VECTOR mean11 pixels SEGNALE= " + mean11 + " devst11
 		// pixels DIFFERENZA= " + devst11);
@@ -591,7 +585,7 @@ public class Unifor3D_ implements PlugIn {
 		// impz.show();
 		IJ.run(impz, "Histogram", "bins=256 use x_min=-96 x_max=136 y_max=Auto");
 		// IJ.run(impz, "Histogram", "");
-//		MyLog.waitHere();
+		// MyLog.waitHere();
 
 		IJ.log("mean pixels SEGNALE= " + mean11);
 		IJ.log("devSt pixels DIFFERENZA= " + devst11);
@@ -609,7 +603,6 @@ public class Unifor3D_ implements PlugIn {
 		rt1.addValue("DevSt_DIFFERENCE_3D", devst11);
 		rt1.addValue("SNR_3D", snr3D);
 		IJ.log("-----------------------------");
-
 
 		// ResultsTable rt2 = vectorResultsTable(classi);
 

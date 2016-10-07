@@ -321,12 +321,12 @@ public class Uncombined3D_ implements PlugIn {
 			lev = "5_livelli";
 			num1 = 5;
 		}
-		Path path100 = Paths.get(dir10);
-		Path path101 = path100.getParent();
-		ImagePlus scala = ImageUtils.generaScalaColori(num1);
-		String aux2 = path101 + "\\simul_" + lev + "\\" + myName + "scala";
-		// MyLog.waitHere("aux1= " + aux1);
-		new FileSaver(scala).saveAsTiff(aux2);
+//		Path path100 = Paths.get(dir10);
+//		Path path101 = path100.getParent();
+////		ImagePlus scala = ImageUtils.generaScalaColori(num1);
+//		String aux2 = path101 + "\\simul_" + lev + "\\" + myName + "scala";
+//		// MyLog.waitHere("aux1= " + aux1);
+//		new FileSaver(scala).saveAsTiff(aux2);
 		UtilAyv.cleanUp();
 
 		MyLog.waitHere("FINE");
