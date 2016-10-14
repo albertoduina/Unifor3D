@@ -176,7 +176,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			if (minimi[i1] != massimi[i1 + 1])
 				buco = true;
 		}
-		if (buco) MyLog.waitHere("LO SAI CHE LE CLASSI IMPOSTATE HANNO UN BUCO ?");
+		if (buco)
+			MyLog.waitHere("LO SAI CHE LE CLASSI IMPOSTATE HANNO UN BUCO ?");
 
 		// MyLog.resultsLog(minimi, "minimi");
 		// MyLog.resultsLog(massimi, "massimi");
@@ -246,6 +247,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				colorCoil = 1;
 
 			imp10 = UtilAyv.openImageNoDisplay(path10, false);
+			ImagePlus imp11 = imp10.duplicate();
 			width = imp10.getWidth();
 			height = imp10.getHeight();
 			if (generate) {
@@ -259,6 +261,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				generate = false;
 			}
 			ImageStack imaStack = imp10.getImageStack();
+			ImageStack imaStack11 = imp11.getImageStack();
 			if (imaStack == null) {
 				IJ.log("imageFromStack.imaStack== null");
 				return;
@@ -282,9 +285,90 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			double[] mediaHotspot = new double[imp10.getImageStackSize()];
 			int[] indiceHotspot = new int[imp10.getImageStackSize()];
 			double maxHotspot = -99999;
+
+			boolean stampa1 = true;
+			boolean stampa3 = true;
+
+			// =======================================================================
+			/// nuova versione utilizzando i pixel letti direttamente dallo
+			// stack
+			// ========================================================================
+
+			// getImageArray Returns the stack as an array of 1D pixel arrays
+			// short[][] pixelStack = (short[][]) imaStack.getImageArray();
+
+			long time1 = System.nanoTime();
+
+			float[] cubePixels = null;
+			float[] cubePixels11 = new float[latoHotCube * latoHotCube * latoHotCube];
+			for (int a1 = 0; a1 < cubePixels11.length; a1++) {
+				cubePixels11[a1] = 4000;
+			}
+
+			float cubeMax = Float.MIN_VALUE;
+			double cubeMean = Double.MIN_VALUE;
+			double maxTotal = Double.MIN_VALUE;
+			int xmax = 0;
+			int ymax = 0;
+			int zmax = 0;
+			int pip = latoHotCube / 2; // grazie al troncamento da' lo stesso
+										// risultato di (latoHotCube-1)/2
+
+			// utilizzo la poco documentata funzione getVoxels, che
+			// restituisce i pixels del voxel in un vettore float[].
+			// la maledetta funzione usa lo spigolo in
+			// alto a sinistra del voxel come coordinata zero,
+			// sappiavetelo
+
+			for (int zspigolo = 0; zspigolo < imp10.getImageStackSize() - latoHotCube + 1; zspigolo++) {
+				for (int xspigolo = 0; xspigolo < width - latoHotCube + 1; xspigolo++) {
+					for (int yspigolo = 0; yspigolo < width - latoHotCube + 1; yspigolo++) {
+						cubePixels = imaStack.getVoxels(xspigolo, yspigolo, zspigolo, latoHotCube, latoHotCube,
+								latoHotCube, cubePixels);
+
+						// cubeMax = ArrayUtils.vetMax(cubePixels);
+						cubeMean = ArrayUtils.vetMean(cubePixels);
+						// if (stampa1) {
+						// stampa1 = false;
+						// imaStack11.setVoxels(xspigolo, yspigolo, zspigolo,
+						// latoHotCube, latoHotCube, latoHotCube,
+						// cubePixels11);
+						//
+						// MyLog.resultsLog(cubePixels, "cubePixels");
+						// IJ.log("cubeMean= " + cubeMean);
+						// }
+
+						if (cubeMean > maxTotal) {
+							maxTotal = cubeMean;
+							xmax = xspigolo + pip;
+							ymax = yspigolo + pip;
+							zmax = zspigolo + pip;
+						}
+					}
+				}
+			}
+
+			/// questo esperimento pare funzionare, a questo punto potrei fare
+			/// la prova di creare una hotSphere !!
+			double radius = 40;
+			int xc = 100;
+			int yc = 100;
+			int zc = 80;
+			imaStack.drawSphere(radius, xc, yc, zc);
+
+			long time2 = System.nanoTime();
+
+			IJ.log("In " + (time2 - time1) + " nanosecondi voxel maximo ha coordinate di centro x= " + xmax + " y= "
+					+ ymax + " z= " + zmax + " maxTotal= " + maxTotal);
+			imp10.updateAndDraw();
+			// imp11.show();
+			imp10.show();
+			MyLog.waitHere();
+
 			int xCenter = 0;
 			int yCenter = 0;
 			int indice = 0;
+			long time3 = System.nanoTime();
 
 			for (int i1 = 0; i1 < imp10.getImageStackSize(); i1++) {
 				ImagePlus imp20 = MyStackUtils.imageFromStack(imp10, i1 + 1);
@@ -312,15 +396,19 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 				imp21.close();
 			}
 
-			if (debug) {
-				IJ.log("Posizione dell'hotspot piu' alto:  X= " + xCenter + " Y= " + yCenter + " Z= " + indice
-						+ " media= " + mediaHotspot[indice]);
+			long time4 = System.nanoTime();
+
+			if (true) {
+				IJ.log("In " + (time4 - time3) + " nanosecondi posizione dell'hotspot piu' alto: X= " + xCenter + " Y= "
+						+ yCenter + " Z= " + indice + " media= " + mediaHotspot[indice]);
 			}
+
+			MyLog.waitHere();
 			// --------------------------------------------
 			// vettorizazione pixels degli hotspot NxNxN
 			// ---------------------------------------------
-			int pip = (latoHotCube - 1) / 2;
-			for (int i1 = indice - pip; i1 < indice + pip; i1++) {
+			int pip2 = (latoHotCube - 1) / 2;
+			for (int i1 = indice - pip2; i1 < indice + pip2; i1++) {
 				double xCenterRoi = xCenter;
 				double yCenterRoi = yCenter;
 				ImagePlus imp21 = MyStackUtils.imageFromStack(imp10, i1);
@@ -461,7 +549,8 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			// iw11 = imp11.getWindow();
 		}
 
-		double[] out10 = MyFilter.maxPositionGeneric(imp11, lato);
+		double[] out10 = MyFilter.maxPositionGeneric(imp11, lato, stampa2);
+		stampa2 = false;
 		if (out10 == null) {
 			if (iw11 == null) {
 			} else
@@ -773,6 +862,32 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			impMappazzaOUT.updateAndRepaintWindow();
 		}
 		return;
+	}
+
+	/** Experimental */
+	public void hotSphere(double radius, int xc, int yc, int zc, ImageStack imaStack) {
+
+		float[] boundCubePixels = null;
+		int diameter = (int) Math.round(radius * 2);
+		double r = radius;
+		int xmin = (int) (xc - r + 0.5), ymin = (int) (yc - r + 0.5), zmin = (int) (zc - r + 0.5);
+		int xmax = xmin + diameter, ymax = ymin + diameter, zmax = zmin + diameter;
+		boundCubePixels = imaStack.getVoxels(xmin, ymin, zmin, diameter, diameter, diameter, boundCubePixels);
+		double r2 = r * r;
+		r -= 0.5;
+		double xoffset = xmin + r, yoffset = ymin + r, zoffset = zmin + r;
+		double xx, yy, zz;
+		for (int x = xmin; x <= xmax; x++) {
+			for (int y = ymin; y <= ymax; y++) {
+				for (int z = zmin; z <= zmax; z++) {
+					xx = x - xoffset;
+					yy = y - yoffset;
+					zz = z - zoffset;
+					// if (xx*xx+yy*yy+zz*zz<=r2)
+					// setVoxel(x, y, z, 255);
+				}
+			}
+		}
 	}
 
 } // ultima
