@@ -165,6 +165,24 @@ public class Unifor3D_ implements PlugIn {
 			if (minimi[i1] != massimi[i1 + 1])
 				buco = true;
 		}
+		String[] myLabels = new String[livello];
+		String sigmin = "";
+		String sigmax = "";
+		for (int i1 = 0; i1 < livello; i1++) {
+			if (minimi[i1] < 0) {
+				sigmin = "";
+			} else {
+				sigmin = "+";
+			}
+			if (massimi[i1] < 0) {
+				sigmax = "";
+			} else {
+				sigmax = "+";
+			}
+
+			myLabels[i1] = sigmin + minimi[i1] + " " + sigmax + massimi[i1];
+		}
+
 		if (buco)
 			MyLog.waitHere("LO SAI CHE LE CLASSI IMPOSTATE HANNO UN BUCO ?");
 
@@ -458,10 +476,10 @@ public class Unifor3D_ implements PlugIn {
 		imp203.deleteRoi();
 
 		int[] pixListSignal = ArrayUtils.arrayListToArrayInt(pixListSignal11);
-		double mean11 = UtilAyv.vetMean(pixListSignal);
+		double mean11 = ArrayUtils.vetMean(pixListSignal);
 
 		float[] pixListDifference = ArrayUtils.arrayListToArrayFloat(pixListDifference11);
-		double devst11 = UtilAyv.vetSdKnuth(pixListDifference);
+		double devst11 = ArrayUtils.vetSdKnuth(pixListDifference);
 
 		/// IMMAGINI SIMULATE
 		int countS = 0;
@@ -527,7 +545,6 @@ public class Unifor3D_ implements PlugIn {
 				sliceInfo1 = sliceInfo1 + "\n" + sliceInfo2;
 			newStack.addSlice(sliceInfo2, ipSimulata);
 
-	
 			ImageWindow iwSimulata = impSimulata.getWindow();
 			if (iwSimulata != null)
 				iwSimulata.dispose();
@@ -542,8 +559,18 @@ public class Unifor3D_ implements PlugIn {
 		// qui devo realizzare il conteggio pixel classi
 
 		matClassi = numeroPixelsColori(simulataStack, myColor);
-		
-		ImagePlus impColors = ImageUtils.generaScalaColori(myColor);
+
+		double totpix = 0;
+		for (int i1 = 0; i1 < matClassi.length - 1; i1++) {
+			totpix = totpix+ matClassi[i1][1];
+		}
+
+		double[] matPercClassi = new double[matClassi.length-1];
+		for (int i1 = 0; i1 < matClassi.length - 1; i1++) {
+			matPercClassi[i1] = (matClassi[i1][1] / totpix) * 100;
+		}
+
+		ImagePlus impColors = ImageUtils.generaScalaColori(myColor, myLabels);
 		impColors.show();
 
 		// IJ.log("NORMAL VECTOR mean11 pixels SEGNALE= " + mean11 + " devst11
@@ -557,8 +584,8 @@ public class Unifor3D_ implements PlugIn {
 		for (int i1 = 0; i1 < aaa; i1++) {
 			pixList2[i1] = (short) pixListSignal[i1];
 		}
-		double mean22 = UtilAyv.vetMean(pixList2);
-		double devst22 = UtilAyv.vetSdKnuth(pixList2);
+		double mean22 = ArrayUtils.vetMean(pixList2);
+		double devst22 = ArrayUtils.vetSdKnuth(pixList2);
 		double snr22 = (mean22 * Math.sqrt(2.0)) / devst22;
 		double snr3D = (mean11 * Math.sqrt(2.0)) / devst11;
 		// IJ.log("PADDED VECTOR mean22= " + mean22 + " devst22= " + devst22 + "
@@ -594,7 +621,13 @@ public class Unifor3D_ implements PlugIn {
 		for (int i2 = 0; i2 < minimi.length; i2++) {
 			IJ.log("classe >" + minimi[i2] + "<" + massimi[i2] + " = " + matClassi[i2][1]);
 		}
-		IJ.log("classe <" + minimi[minimi.length - 1] + " = " + matClassi[5][1]);
+		IJ.log("classe <" + minimi[minimi.length - 1] + " = " + IJ.d2s(matClassi[5][1]));
+
+		IJ.log("SUDDIVISIONE IN CLASSI PERCENTUALI STACK IMMAGINI SIMULATE (escludendo il fondo)");
+		IJ.log("pixel colorati= " + totpix );
+		for (int i2 = 0; i2 < minimi.length; i2++) {
+			IJ.log("classe >" + minimi[i2] + "<" + massimi[i2] + " = " + IJ.d2s(matPercClassi[i2]) + " %");
+		}
 
 		ResultsTable rt1 = ResultsTable.getResultsTable();
 		rt1.reset();

@@ -55,6 +55,7 @@ import utils.MyLine;
 import utils.MyLog;
 import utils.MyPlot;
 import utils.MyStackUtils;
+import utils.MyTimeUtils;
 import utils.MyVersionUtils;
 import utils.ReadDicom;
 import utils.TableSequence;
@@ -248,6 +249,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 			imp10 = UtilAyv.openImageNoDisplay(path10, false);
 			ImagePlus imp11 = imp10.duplicate();
+			ImagePlus imp22 = imp10.duplicate();
 			width = imp10.getWidth();
 			height = imp10.getHeight();
 			if (generate) {
@@ -262,6 +264,7 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			}
 			ImageStack imaStack = imp10.getImageStack();
 			ImageStack imaStack11 = imp11.getImageStack();
+			ImageStack imaStack22 = imp22.getImageStack();
 			if (imaStack == null) {
 				IJ.log("imageFromStack.imaStack== null");
 				return;
@@ -298,13 +301,11 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			// short[][] pixelStack = (short[][]) imaStack.getImageArray();
 
 			long time1 = System.nanoTime();
-
 			float[] cubePixels = null;
 			float[] cubePixels11 = new float[latoHotCube * latoHotCube * latoHotCube];
 			for (int a1 = 0; a1 < cubePixels11.length; a1++) {
 				cubePixels11[a1] = 4000;
 			}
-
 			float cubeMax = Float.MIN_VALUE;
 			double cubeMean = Double.MIN_VALUE;
 			double maxTotal = Double.MIN_VALUE;
@@ -321,8 +322,9 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 			// sappiavetelo
 
 			for (int zspigolo = 0; zspigolo < imp10.getImageStackSize() - latoHotCube + 1; zspigolo++) {
-				for (int xspigolo = 0; xspigolo < width - latoHotCube + 1; xspigolo++) {
-					for (int yspigolo = 0; yspigolo < width - latoHotCube + 1; yspigolo++) {
+				for (int yspigolo = 0; yspigolo < height - latoHotCube + 1; yspigolo++) {
+					for (int xspigolo = 0; xspigolo < width - latoHotCube + 1; xspigolo++) {
+
 						cubePixels = imaStack.getVoxels(xspigolo, yspigolo, zspigolo, latoHotCube, latoHotCube,
 								latoHotCube, cubePixels);
 
@@ -350,20 +352,96 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 
 			/// questo esperimento pare funzionare, a questo punto potrei fare
 			/// la prova di creare una hotSphere !!
-			double radius = 40;
-			int xc = 100;
-			int yc = 100;
-			int zc = 80;
-			imaStack.drawSphere(radius, xc, yc, zc);
+			// double radius = 40;
+			// int xc = 100;
+			// int yc = 100;
+			// int zc = 80;
+			// imaStack.drawSphere(radius, xc, yc, zc);
 
 			long time2 = System.nanoTime();
+			String tempo1 = MyTimeUtils.stringNanoTime(time2 - time1);
+			IJ.log("Tempo cubo  hh:mm:ss.ms " + tempo1);
 
-			IJ.log("In " + (time2 - time1) + " nanosecondi voxel maximo ha coordinate di centro x= " + xmax + " y= "
-					+ ymax + " z= " + zmax + " maxTotal= " + maxTotal);
-			imp10.updateAndDraw();
-			// imp11.show();
-			imp10.show();
-			MyLog.waitHere();
+			long time5 = System.nanoTime();
+			float[] cubePixels2 = null;
+			float[] cubePixels22 = new float[latoHotCube * latoHotCube * latoHotCube];
+			for (int a1 = 0; a1 < cubePixels22.length; a1++) {
+				cubePixels22[a1] = 4000;
+			}
+			float cubeMax2 = Float.MIN_VALUE;
+			double cubeMean2 = Double.MIN_VALUE;
+			double maxTotal2 = Double.MIN_VALUE;
+			int xmax2 = 0;
+			int ymax2 = 0;
+			int zmax2 = 0;
+			int pip22 = latoHotCube / 2; // grazie al troncamento da' lo stesso
+											// risultato di (latoHotCube-1)/2
+
+			// utilizzo la poco documentata funzione getVoxels, che
+			// restituisce i pixels del voxel in un vettore float[].
+			// la maledetta funzione usa lo spigolo in
+			// alto a sinistra del voxel come coordinata zero,
+			// sappiavetelo
+
+			for (int zspigolo = latoHotCube; zspigolo < imp22.getImageStackSize() - latoHotCube + 1; zspigolo++) {
+				for (int yspigolo = latoHotCube - 1; yspigolo < height - latoHotCube + 1; yspigolo++) {
+					for (int xspigolo = latoHotCube - 1; xspigolo < width - latoHotCube + 1; xspigolo++) {
+
+						// IJ.log("" + zspigolo + " " + xspigolo+" "+yspigolo);
+
+						cubePixels22 = hotSphere(latoHotCube, xspigolo, yspigolo, zspigolo, imaStack22);
+						// cubePixels = imaStack.getVoxels(xspigolo,
+						// yspigolo,
+						// zspigolo, latoHotCube, latoHotCube,
+						// latoHotCube, cubePixels);
+
+						// cubeMax = ArrayUtils.vetMax(cubePixels);
+						cubeMean = ArrayUtils.vetMean(cubePixels22);
+						// if (stampa1) {
+						// stampa1 = false;
+						// imaStack11.setVoxels(xspigolo, yspigolo, zspigolo,
+						// latoHotCube, latoHotCube, latoHotCube,
+						// cubePixels11);
+						//
+						// MyLog.resultsLog(cubePixels, "cubePixels");
+						// IJ.log("cubeMean= " + cubeMean);
+						// }
+
+						if (cubeMean > maxTotal) {
+							maxTotal = cubeMean;
+							xmax = xspigolo + pip22;
+							ymax = yspigolo + pip22;
+							zmax = zspigolo + pip22;
+						}
+					}
+				}
+			}
+
+			/// questo esperimento pare funzionare, a questo punto potrei fare
+			/// la prova di creare una hotSphere !!
+			// double radius = 40;
+			// int xc = 100;
+			// int yc = 100;
+			// int zc = 80;
+			// imaStack.drawSphere(radius, xc, yc, zc);
+
+			long time6 = System.nanoTime();
+			String tempo6 = MyTimeUtils.stringNanoTime(time6 - time5);
+			IJ.log("Tempo sfera hh:mm:ss.ms " + tempo6);
+
+			// MyLog.waitHere();
+			// String tempo = MyTimeUtils.combinationFormatter(time2 - time1);
+			// MyLog.waitHere("Tempo hh:mm:ss.ms " + tempo);
+			//
+			// IJ.log("In " + (time2 - time1) + " nanosecondi voxel maximo ha
+			// coordinate di centro x= " + xmax + " y= "
+			// + ymax + " z= " + zmax + " maxTotal= " + maxTotal);
+			// imp10.updateAndDraw();
+			// imp10.show();
+
+			imp22.updateAndDraw();
+			imp22.show();
+			MyLog.waitHere("vedi imp22");
 
 			int xCenter = 0;
 			int yCenter = 0;
@@ -865,8 +943,9 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 	}
 
 	/** Experimental */
-	public void hotSphere(double radius, int xc, int yc, int zc, ImageStack imaStack) {
+	public static float[] hotSphere(double radius, int xc, int yc, int zc, ImageStack imaStack) {
 
+		List<Float> aux = new ArrayList<Float>();
 		float[] boundCubePixels = null;
 		int diameter = (int) Math.round(radius * 2);
 		double r = radius;
@@ -883,11 +962,15 @@ public class Uncombined3D_MAPPAZZA implements PlugIn {
 					xx = x - xoffset;
 					yy = y - yoffset;
 					zz = z - zoffset;
-					// if (xx*xx+yy*yy+zz*zz<=r2)
-					// setVoxel(x, y, z, 255);
+					if (xx * xx + yy * yy + zz * zz <= r2) {
+						aux.add((float) imaStack.getVoxel(x, y, z));
+						imaStack.setVoxel(x, y, z, 10000);
+					}
 				}
 			}
 		}
+		float[] out1 = ArrayUtils.arrayListToArrayFloat(aux);
+		return out1;
 	}
 
 } // ultima
