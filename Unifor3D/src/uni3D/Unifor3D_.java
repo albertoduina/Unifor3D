@@ -218,9 +218,9 @@ public class Unifor3D_ implements PlugIn {
 		String info10 = "position search XZimage";
 		Boolean autoCalled = false;
 		Boolean step2 = false;
-		Boolean demo0 = false;
-		Boolean test = false;
-		Boolean fast = true;
+		Boolean demo0 = false;  // false  true
+		Boolean test = false;   // false  true
+		Boolean fast = true;  // true   false
 
 		// Ricerca posizione ROI per calcolo uniformita'. Versione con Canny
 		// Edge Detector, da utilizzare per il fantoccio sferico. La coordinata
@@ -923,21 +923,11 @@ public class Unifor3D_ implements PlugIn {
 		if (demo1)
 			MyLog.waitHere("000\noutput CannyEdgeDetector");
 
-		double[][] peaks1 = new double[4][1];
-		double[][] peaks2 = new double[4][1];
-		double[][] peaks3 = new double[4][1];
-		double[][] peaks4 = new double[4][1];
-		double[][] peaks5 = new double[4][1];
-		double[][] peaks6 = new double[4][1];
-		double[][] peaks7 = new double[4][1];
-		double[][] peaks8 = new double[4][1];
 		double[][] peaks9 = new double[4][1];
 		double[][] peaks10 = new double[4][1];
 		double[][] peaks11 = new double[4][1];
 		double[][] peaks12 = new double[4][1];
 
-		boolean strokewidth = true;
-		double strWidth = 1.5;
 
 		// ------ riadattamento da p10
 
@@ -947,7 +937,6 @@ public class Unifor3D_ implements PlugIn {
 
 		int[] xcoord = new int[2];
 		int[] ycoord = new int[2];
-		boolean manualOverride = false;
 
 		int[] vetx0 = new int[8];
 		int[] vetx1 = new int[8];
@@ -1478,7 +1467,7 @@ public class Unifor3D_ implements PlugIn {
 		out2[4] = yCenterMROI;
 		out2[5] = diamMROI;
 		if (demo1)
-			MyLog.waitHere("020\nFine PositionSearch11");
+			MyLog.waitHere("020\nFine positionSniper");
 		return out2;
 	}
 
