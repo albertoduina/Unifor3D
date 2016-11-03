@@ -93,14 +93,6 @@ public class Unifor3D_2 implements PlugIn {
 
 		String[] sortedList1 = pathSorter(dir1b);
 		ImagePlus imp10 = MyStackUtils.imagesToStack16(sortedList1);
-		// imp10.show();
-		// MyLog.waitHere();
-		// Orthogonal_Views();
-		
-		
-		
-		
-		
 		
 		String dir20 = Prefs.get("prefer.Unifor3D_dir2", "none");
 
