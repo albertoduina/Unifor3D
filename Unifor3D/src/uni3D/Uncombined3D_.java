@@ -28,6 +28,7 @@ import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.io.DirectoryChooser;
 import ij.io.FileSaver;
+import ij.io.OpenDialog;
 import ij.io.Opener;
 import ij.measure.ResultsTable;
 import ij.plugin.Duplicator;
@@ -111,21 +112,46 @@ public class Uncombined3D_ implements PlugIn {
 		ImagePlus imp10 = null;
 		String myName = null;
 		String path10 = null;
+		String path20 = null;
 		String[] dir1a = null;
+		String[] dir2a = null;
 		String dir10 = null;
+		String dir20 = null;
 		String dir1 = null;
+		String dir2 = null;
 		int num = 0;
+		int num2 = 0;
 		if (auto) {
 			dir10 = Prefs.get("prefer.Unifor3D_dir3", "none");
 			DirectoryChooser.setDefaultDirectory(dir10);
-			DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA STACK");
+			DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA STACK UNCOMBINED DA ELABORARE");
 			dir1 = od1.getDirectory();
 			Prefs.set("prefer.Unifor3D_dir3", dir1);
 			dir1a = new File(dir1).list();
 			num = dir1a.length;
+
+			dir20 = Prefs.get("prefer.Unifor3D_dir4", "none");
+			dir20 = dir20.substring(0, dir20.lastIndexOf(File.separator));
+			OpenDialog.setDefaultDirectory(dir20);
+			OpenDialog dd2 = new OpenDialog("SELEZIONARE LO STACK COMBINED DI RIFERIMENTO");
+			path20 = dd2.getPath();
+			Prefs.set("prefer.Unifor3D_dir4", path20);
+			num2 = 1;
 		} else {
-			path10 = UtilAyv.imageSelection("SELEZIONARE LO STACK DA ELABORARE");
+			dir10 = Prefs.get("prefer.Unifor3D_dir3", "none");
+			dir10 = dir10.substring(0, dir10.lastIndexOf(File.separator));
+			OpenDialog.setDefaultDirectory(dir10);
+			OpenDialog dd1 = new OpenDialog("SELEZIONARE LO STACK UNCOMBINED DA ELABORARE");
+			path10 = dd1.getPath();
+			Prefs.set("prefer.Unifor3D_dir3", path10);
 			num = 1;
+			dir20 = Prefs.get("prefer.Unifor3D_dir4", "none");
+			dir20 = dir20.substring(0, dir20.lastIndexOf(File.separator));
+			OpenDialog.setDefaultDirectory(dir20);
+			OpenDialog dd2 = new OpenDialog("SELEZIONARE LO STACK COMBINED DI RIFERIMENTO");
+			path20 = dd2.getPath();
+			Prefs.set("prefer.Unifor3D_dir4", path20);
+			num2 = 1;
 		}
 
 		int gridWidth = 2;
@@ -173,7 +199,7 @@ public class Uncombined3D_ implements PlugIn {
 				buco = true;
 		}
 		if (buco)
-			MyLog.waitHere("LO SAI CHE LE CLASSI IMPOSTATE HANNO UN BUCO BUCONE ?");
+			MyLog.waitHere("WHY MAKE AN UGLY HOLE IN YOUR CLASSES ??");
 
 		/// IMMAGINI SIMULATE
 		// int countS = 0;
@@ -217,6 +243,35 @@ public class Uncombined3D_ implements PlugIn {
 
 			myLabels[i1] = sigmin + minimi[i1] + " " + sigmax + massimi[i1];
 		}
+
+		// =================================================================
+		// ELABORAZIONE STACK COMBINED DI RIFERIMENTO
+		// =================================================================
+
+		MyLog.waitHere("elaborazione immagini di riferimento");
+
+		ImagePlus imp20 = UtilAyv.openImageNormal(path20);
+		myName = imp20.getTitle();
+
+		ImageStack imaStack20 = imp20.getImageStack();
+		if (imaStack20 == null) {
+			IJ.log("imageFromStack.imaStack== null");
+			return;
+		}
+
+		if (imaStack20.getSize() < 2) {
+			MyLog.waitHere("Per le elaborazioni 3D ci vuole uno stack di più immagini!");
+			return;
+		}
+
+		breakSpheres(imp20);
+		MyLog.waitHere("PALLE ROTTE!");
+
+		// iw2ayv
+
+		// =================================================================
+		// ELABORAZIONE STACK COMBINED DI RIFERIMENTO
+		// =================================================================
 
 		int count0 = 0;
 		while (count0 < num) {
@@ -284,10 +339,10 @@ public class Uncombined3D_ implements PlugIn {
 			int timeout1 = 200;
 
 			//// ====================================================
-//			float gaussianKernelRadius = 4.0f;
-//			float lowThreshold = 23.0f;
-//			float highThreshold = 24.0f;
-//			boolean contrastNormalized = true;
+			// float gaussianKernelRadius = 4.0f;
+			// float lowThreshold = 23.0f;
+			// float highThreshold = 24.0f;
+			// boolean contrastNormalized = true;
 			float gaussianKernelRadius = 2.7f;
 			float lowThreshold = 24.0f;
 			float highThreshold = 26.0f;
@@ -322,8 +377,9 @@ public class Uncombined3D_ implements PlugIn {
 					diamCircle2));
 			imp212.getRoi().setStrokeColor(Color.red);
 
-			ImagePlus imp302 = fitDifference(imp212, out212[0].length);
-			imp302.show();
+			double val1 = fitQuality(imp212, out212[0].length);
+			if (val1 < 20)
+				MyLog.waitHere("fit quality = " + val1);
 
 			//// ====================================================
 			ImagePlus imp213 = cannyFilter(imp203, gaussianKernelRadius, lowThreshold, highThreshold,
@@ -358,8 +414,9 @@ public class Uncombined3D_ implements PlugIn {
 					diamCircle3));
 			imp213.getRoi().setStrokeColor(Color.green);
 
-			ImagePlus imp303 = fitDifference(imp213, out213[0].length);
-			imp303.show();
+			double val3 = fitQuality(imp213, out213[0].length);
+			if (val3 < 20)
+				MyLog.waitHere("fit quality = " + val3);
 
 			IJ.run("Tile", "");
 			IJ.wait(2000);
@@ -2033,14 +2090,16 @@ public class Uncombined3D_ implements PlugIn {
 		return matrix;
 	}
 
-	/***
-	 * Immagine in imput ricavata da cannyLocalizer imposta a 128 i pixel
-	 * corrispondenti al cerchio fittato
+	/**
+	 * fitQuality Restituisce la percentuale dei pixel da fittare coincidenti
+	 * effettivamente col cerchio affittato
 	 * 
 	 * @param imp1
+	 * @param total
+	 *            numero pixels da fittare
 	 * @return
 	 */
-	public static ImagePlus fitDifference(ImagePlus imp1, int total) {
+	public static double fitQuality(ImagePlus imp1, int total) {
 
 		Overlay over1 = new Overlay();
 		double conta = 0;
@@ -2050,13 +2109,13 @@ public class Uncombined3D_ implements PlugIn {
 		Roi circle1 = imp1.getRoi();
 		if (circle1 == null) {
 			MyLog.waitHere("circle1= null");
-			return null;
+			return -1;
 		}
 		FloatPolygon fpol1 = circle1.getFloatPolygon();
 		int aux1 = 0;
 		for (int i1 = 0; i1 < fpol1.npoints; i1++) {
 			aux1 = ip1.getPixel((int) Math.round(fpol1.xpoints[i1]), (int) Math.round(fpol1.ypoints[i1]));
-			if (aux1 >0) {
+			if (aux1 > 0) {
 				conta++;
 				ip1.putPixel((int) Math.round(fpol1.xpoints[i1]), (int) Math.round(fpol1.ypoints[i1]), 127);
 			}
@@ -2067,7 +2126,122 @@ public class Uncombined3D_ implements PlugIn {
 		IJ.log("percento= " + IJ.d2s(percentPixGood, 2) + "% conta= " + conta + " totale= " + total);
 		if (percentPixGood < 20.0)
 			MyLog.waitHere("accettable pixel percentage < 20");
-		return imp1;
+		return percentPixGood;
+	}
+
+	public static void breakSpheres(ImagePlus imp1) {
+		// imp1.show();
+
+		IJ.run(imp1, "Orthogonal Views", "");
+		Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
+		if (step)
+			MyLog.waitHere("output di 'Orthogonal Views'");
+
+		ImagePlus imp2 = ort1.getXZImage();
+		if (imp2 == null)
+			MyLog.waitHere("imp2=null");
+		IJ.wait(100);
+		ImagePlus imp12 = new Duplicator().run(imp2);
+		IJ.wait(10);
+
+		ImagePlus imp3 = ort1.getYZImage();
+		if (imp3 == null)
+			MyLog.waitHere("imp13=null");
+		ImagePlus imp13 = new Duplicator().run(imp3);
+		IJ.wait(10);
+
+		Overlay over2 = new Overlay();
+		Overlay over3 = new Overlay();
+		imp2.setOverlay(over2);
+		imp3.setOverlay(over3);
+
+		imp12.setTitle("AA_IMP_12");
+		imp13.setTitle("BB_IMP_13");
+
+		int mode = 3;
+
+		int timeout1 = 200;
+
+		//// ====================================================
+		// float gaussianKernelRadius = 4.0f;
+		// float lowThreshold = 23.0f;
+		// float highThreshold = 24.0f;
+		// boolean contrastNormalized = true;
+		float gaussianKernelRadius = 2.7f;
+		float lowThreshold = 24.0f;
+		float highThreshold = 26.0f;
+		boolean contrastNormalized = true;
+		ImagePlus imp212 = cannyFilter(imp12, gaussianKernelRadius, lowThreshold, highThreshold, contrastNormalized,
+				mode, timeout1);
+		imp212.show();
+		int[][] out212 = cannyOutAnalisys(imp212);
+		imp212.show();
+
+		int[] xPoints2 = new int[out212[0].length];
+		int[] yPoints2 = new int[out212[0].length];
+		for (int i1 = 0; i1 < out212[0].length; i1++) {
+			xPoints2[i1] = out212[0][i1];
+			yPoints2[i1] = out212[1][i1];
+		}
+		PointRoi pr212 = new PointRoi(xPoints2, yPoints2, xPoints2.length);
+		imp212.setRoi(pr212);
+		ImageUtils.fitCircle(imp212);
+		imp212.show();
+
+		Rectangle boundRec2 = imp212.getProcessor().getRoi();
+		int xCenterCircle2 = Math.round(boundRec2.x + boundRec2.width / 2);
+		int yCenterCircle2 = Math.round(boundRec2.y + boundRec2.height / 2);
+		int diamCircle2 = boundRec2.width;
+		imp2.setRoi(new OvalRoi(xCenterCircle2 - diamCircle2 / 2, yCenterCircle2 - diamCircle2 / 2, diamCircle2,
+				diamCircle2));
+		imp2.getRoi().setStrokeColor(Color.red);
+		over2.add(imp2.getRoi());
+
+		imp212.setRoi(new OvalRoi(xCenterCircle2 - diamCircle2 / 2, yCenterCircle2 - diamCircle2 / 2, diamCircle2,
+				diamCircle2));
+		imp212.getRoi().setStrokeColor(Color.red);
+
+		double val1 = fitQuality(imp212, out212[0].length);
+		if (val1 < 20)
+			MyLog.waitHere("fit quality = " + val1);
+
+		//// ====================================================
+		ImagePlus imp213 = cannyFilter(imp13, gaussianKernelRadius, lowThreshold, highThreshold, contrastNormalized,
+				mode, timeout1);
+		imp213.show();
+
+		int[][] out213 = cannyOutAnalisys(imp213);
+		imp213.show();
+		int[] xPoints3 = new int[out213[0].length];
+		int[] yPoints3 = new int[out213[0].length];
+		for (int i1 = 0; i1 < out213[0].length; i1++) {
+			xPoints3[i1] = out213[0][i1];
+			yPoints3[i1] = out213[1][i1];
+		}
+		PointRoi pr213 = new PointRoi(xPoints3, yPoints3, xPoints3.length);
+		imp213.setRoi(pr213);
+
+		ImageUtils.fitCircle(imp213);
+		imp213.show();
+
+		Rectangle boundRec3 = imp213.getProcessor().getRoi();
+		int xCenterCircle3 = Math.round(boundRec3.x + boundRec3.width / 2);
+		int yCenterCircle3 = Math.round(boundRec3.y + boundRec3.height / 2);
+		int diamCircle3 = boundRec3.width;
+
+		imp3.setRoi(new OvalRoi(xCenterCircle3 - diamCircle3 / 2, yCenterCircle3 - diamCircle3 / 2, diamCircle3,
+				diamCircle3));
+		imp3.getRoi().setStrokeColor(Color.green);
+		over3.add(imp3.getRoi());
+
+		imp213.setRoi(new OvalRoi(xCenterCircle3 - diamCircle3 / 2, yCenterCircle3 - diamCircle3 / 2, diamCircle3,
+				diamCircle3));
+		imp213.getRoi().setStrokeColor(Color.green);
+
+		double val3 = fitQuality(imp213, out213[0].length);
+		if (val3 < 20)
+			MyLog.waitHere("fit quality = " + val3);
+
 	}
 
 } // ultima
