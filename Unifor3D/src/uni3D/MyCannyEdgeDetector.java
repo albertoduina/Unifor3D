@@ -3,7 +3,12 @@ package uni3D;
 import ij.plugin.PlugIn;
 import ij.*;
 import ij.process.*;
+import utils.ArrayUtils;
+import utils.ImageUtils;
 import ij.gui.GenericDialog;
+
+import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -502,5 +507,6 @@ public class MyCannyEdgeDetector implements PlugIn {
 			data[i] = remap[data[i]];
 		}
 	}
+	
 
 }
