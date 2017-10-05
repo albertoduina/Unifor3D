@@ -130,6 +130,7 @@ public class Uncombined3D_ implements PlugIn {
 			DirectoryChooser.setDefaultDirectory(dir10);
 			DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA STACK UNCOMBINED DA ELABORARE");
 			dir1 = od1.getDirectory();
+			if (dir1==null) return;
 			Prefs.set("prefer.Unifor3D_dir3", dir1);
 			dir1a = new File(dir1).list();
 			num = dir1a.length;
@@ -139,6 +140,7 @@ public class Uncombined3D_ implements PlugIn {
 			OpenDialog.setDefaultDirectory(dir20);
 			OpenDialog dd2 = new OpenDialog("SELEZIONARE LO STACK COMBINED DI RIFERIMENTO");
 			path17 = dd2.getPath();
+			if (path17==null)return;
 			Prefs.set("prefer.Unifor3D_dir4", path17);
 			num2 = 1;
 		} else {
@@ -147,6 +149,7 @@ public class Uncombined3D_ implements PlugIn {
 			OpenDialog.setDefaultDirectory(dir10);
 			OpenDialog dd1 = new OpenDialog("SELEZIONARE LO STACK UNCOMBINED DA ELABORARE");
 			path10 = dd1.getPath();
+			if (path10==null)return;
 			Prefs.set("prefer.Unifor3D_dir3", path10);
 			num = 1;
 			dir20 = Prefs.get("prefer.Unifor3D_dir4", "");
@@ -154,6 +157,8 @@ public class Uncombined3D_ implements PlugIn {
 			OpenDialog.setDefaultDirectory(dir20);
 			OpenDialog dd2 = new OpenDialog("SELEZIONARE LO STACK COMBINED DI RIFERIMENTO");
 			path17 = dd2.getPath();
+			if (path17==null)return;
+
 			Prefs.set("prefer.Unifor3D_dir4", path17);
 			num2 = 1;
 		}

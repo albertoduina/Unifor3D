@@ -61,7 +61,9 @@ public class Unifor3D_ implements PlugIn {
 	public void run(String arg) {
 
 		// new MyAboutBox().about10("Unifor3D");
-		new AboutBox().about("Unifor3D", MyVersionUtils.CURRENT_VERSION);
+
+		
+		new AboutBox().about("Unifor3D", MyVersion.CURRENT_VERSION);
 		IJ.wait(2000);
 		new AboutBox().close();
 
@@ -94,6 +96,7 @@ public class Unifor3D_ implements PlugIn {
 		DirectoryChooser.setDefaultDirectory(dir10);
 		DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA PRIMA ACQUISIZIONE");
 		String dir1 = od1.getDirectory();
+		if (dir1==null)return;
 		Prefs.set("prefer.Unifor3D_dir1", dir1);
 		// DirectoryChooser.setDefaultDirectory(dir10);
 		// ------------------------------
@@ -101,6 +104,7 @@ public class Unifor3D_ implements PlugIn {
 		DirectoryChooser.setDefaultDirectory(dir20);
 		DirectoryChooser od2 = new DirectoryChooser("SELEZIONARE CARTELLA SECONDA ACQUISIZIONE");
 		String dir2 = od2.getDirectory();
+		if (dir2==null) return;
 		Prefs.set("prefer.Unifor3D_dir2", dir2);
 		// ------------------------------
 		String[] dir1a = new File(dir1).list();
@@ -218,9 +222,9 @@ public class Unifor3D_ implements PlugIn {
 		String info10 = "position search XZimage";
 		Boolean autoCalled = false;
 		Boolean step2 = false;
-		Boolean demo0 = false;  // false  true
-		Boolean test = false;   // false  true
-		Boolean fast = true;  // true   false
+		Boolean demo0 = false; // false true
+		Boolean test = false; // false true
+		Boolean fast = true; // true false
 
 		// Ricerca posizione ROI per calcolo uniformita'. Versione con Canny
 		// Edge Detector, da utilizzare per il fantoccio sferico. La coordinata
@@ -481,6 +485,12 @@ public class Unifor3D_ implements PlugIn {
 		float[] pixListDifference = ArrayUtils.arrayListToArrayFloat(pixListDifference11);
 		double devst11 = ArrayUtils.vetSdKnuth(pixListDifference);
 
+		int minSignal = ArrayUtils.vetMin(pixListSignal);
+		int maxSignal = ArrayUtils.vetMax(pixListSignal);
+
+		double uiPerc1 = uiPercCalculation(maxSignal, minSignal);
+		double uiNew = newUnifor(pixListSignal);
+
 		/// IMMAGINI SIMULATE
 		int countS = 0;
 		int[][] matClassi = new int[6][2];
@@ -562,10 +572,10 @@ public class Unifor3D_ implements PlugIn {
 
 		double totpix = 0;
 		for (int i1 = 0; i1 < matClassi.length - 1; i1++) {
-			totpix = totpix+ matClassi[i1][1];
+			totpix = totpix + matClassi[i1][1];
 		}
 
-		double[] matPercClassi = new double[matClassi.length-1];
+		double[] matPercClassi = new double[matClassi.length - 1];
 		for (int i1 = 0; i1 < matClassi.length - 1; i1++) {
 			matPercClassi[i1] = (matClassi[i1][1] / totpix) * 100;
 		}
@@ -613,20 +623,22 @@ public class Unifor3D_ implements PlugIn {
 		IJ.run(impz, "Histogram", "bins=256 use x_min=-96 x_max=136 y_max=Auto");
 		// IJ.run(impz, "Histogram", "");
 		// MyLog.waitHere();
-
-		IJ.log("mean pixels SEGNALE= " + mean11);
-		IJ.log("devSt pixels DIFFERENZA= " + devst11);
-		IJ.log("SNR_3D= " + snr3D);
+		IJ.log("mean pixels SEGNALE= " + IJ.d2s(mean11, 3));
+		IJ.log("unint% pixels SEGNALE= " + IJ.d2s(uiPerc1, 3));
+		IJ.log("uiNEW pixels SEGNALE= " + IJ.d2s(uiNew, 3));
+		IJ.log("devSt pixels DIFFERENZA= " + IJ.d2s(devst11, 3) + " %");
+		IJ.log("SNR_3D= " + IJ.d2s(snr3D, 3));
+		IJ.log("-----------------------------");
 		IJ.log("SUDDIVISIONE IN CLASSI STACK IMMAGINI SIMULATE");
 		for (int i2 = 0; i2 < minimi.length; i2++) {
 			IJ.log("classe >" + minimi[i2] + "<" + massimi[i2] + " = " + matClassi[i2][1]);
 		}
-		IJ.log("classe <" + minimi[minimi.length - 1] + " = " + IJ.d2s(matClassi[5][1]));
+		IJ.log("classe <" + minimi[minimi.length - 1] + " = " + IJ.d2s(matClassi[5][1], 3));
 
 		IJ.log("SUDDIVISIONE IN CLASSI PERCENTUALI STACK IMMAGINI SIMULATE (escludendo il fondo)");
-		IJ.log("pixel colorati= " + totpix );
+		IJ.log("pixel colorati= " + totpix);
 		for (int i2 = 0; i2 < minimi.length; i2++) {
-			IJ.log("classe >" + minimi[i2] + "<" + massimi[i2] + " = " + IJ.d2s(matPercClassi[i2]) + " %");
+			IJ.log("classe >" + minimi[i2] + "<" + massimi[i2] + " = " + IJ.d2s(matPercClassi[i2], 3) + " %");
 		}
 
 		ResultsTable rt1 = ResultsTable.getResultsTable();
@@ -635,6 +647,7 @@ public class Unifor3D_ implements PlugIn {
 		rt1.addValue("Mean_SIGNAL_3D", mean11);
 		rt1.addValue("DevSt_DIFFERENCE_3D", devst11);
 		rt1.addValue("SNR_3D", snr3D);
+		rt1.addValue("UNINT%", uiPerc1);
 		IJ.log("-----------------------------");
 
 		// ResultsTable rt2 = vectorResultsTable(classi);
@@ -643,6 +656,28 @@ public class Unifor3D_ implements PlugIn {
 
 	} // chiude
 		// run
+
+	/**
+	 * 13/11/2016 Nuovo algoritmo per uniformita' per immagini con grappa
+	 * datomi da Lorella
+	 * @param pixListSignal
+	 * @return
+	 */
+
+	public static double newUnifor(int[] pixListSignal) {
+
+		double mean1 = ArrayUtils.vetMean(pixListSignal);
+		// MyLog.waitHere("mean1= "+mean1);
+		double val = 0;
+		double sum1 = 0;
+		for (int i1 = 0; i1 < pixListSignal.length; i1++) {
+			val = Math.abs(pixListSignal[i1] - mean1);
+			sum1 = sum1 + val;
+		}
+		// MyLog.waitHere("sum1= "+sum1);
+		double result = sum1 / (mean1 * pixListSignal.length);
+		return result;
+	}
 
 	public static ImagePlus stackDiffCalculation(ImagePlus stack1, ImagePlus stack2) {
 		ImageStack newStack = new ImageStack(stack1.getWidth(), stack1.getHeight());
@@ -927,7 +962,6 @@ public class Unifor3D_ implements PlugIn {
 		double[][] peaks10 = new double[4][1];
 		double[][] peaks11 = new double[4][1];
 		double[][] peaks12 = new double[4][1];
-
 
 		// ------ riadattamento da p10
 
