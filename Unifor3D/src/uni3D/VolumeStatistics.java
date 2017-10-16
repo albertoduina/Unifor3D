@@ -82,50 +82,68 @@ public class VolumeStatistics implements PlugIn {
 			else
 				titles[i] = "";
 		}
-		GenericDialog gd = new GenericDialog("Volume Statistics");
-		String defaultItem;
-		String title1 = "";
-		if (title1.equals(""))
-			defaultItem = titles[0];
-		else
-			defaultItem = title1;
-		gd.addChoice("Images Stack:", titles, defaultItem);
-		String title2 = "";
-		if (title2.equals(""))
-			defaultItem = titles[0];
-		else
-			defaultItem = title2;
-		gd.addChoice("Mask Stack:", titles, defaultItem);
-		// gd.addStringField("Result:", "Result", 10);
-		String[] strValues = { "bothValues", "lowValue", "highValue" };
-		defaultItem = "bothValues";
-		gd.addRadioButtonGroup("MaskValueSelection", strValues, 1, 3, defaultItem);
-		// gd.addCheckbox("32-bit (float) result", floatResult);
-		// gd.addHelp(IJ.URL+"/docs/menus/process.html#calculator");
-		gd.showDialog();
-		if (gd.wasCanceled())
-			return;
-		int index1 = gd.getNextChoiceIndex();
-		title1 = titles[index1];
-		// operator = gd.getNextChoiceIndex();
-		int index2 = gd.getNextChoiceIndex();
-		// String resultTitle = gd.getNextString();
-		// selective = gd.getNextBoolean();
-		// floatResult = gd.getNextBoolean();
-		title2 = titles[index2];
-		ImagePlus impImage = WindowManager.getImage(wList[index1]);
-		ImagePlus impMask = WindowManager.getImage(wList[index2]);
-		ArrayList<Integer> pixList = new ArrayList<Integer>();
-		pixStackVectorize(impImage, impMask, pixList);
-		int[] vetOut = ArrayUtils.arrayListToArrayInt(pixList);
-		IJ.log("selectedVolume= " + vetOut.length + " voxels");
-		IJ.log("min= " + ArrayUtils.vetMin(vetOut));
-		IJ.log("max= " + ArrayUtils.vetMax(vetOut));
-		IJ.log("mean= " + ArrayUtils.vetMean(vetOut));
-		IJ.log("sd= " + ArrayUtils.vetSdKnuth(vetOut));
-		IJ.log("median= " + ArrayUtils.vetMedian(vetOut));
-		IJ.log("primo quartile= " + ArrayUtils.vetQuartile(vetOut, 1));
-		IJ.log("terzo quartile= " + ArrayUtils.vetQuartile(vetOut, 3));
+		do {
+			GenericDialog gd = new GenericDialog("Volume Statistics");
+			String defaultItem;
+			String title1 = "";
+			if (title1.equals(""))
+				defaultItem = titles[0];
+			else
+				defaultItem = title1;
+			gd.addChoice("Images Stack:", titles, defaultItem);
+			String title2 = "";
+			if (title2.equals(""))
+				defaultItem = titles[0];
+			else
+				defaultItem = title2;
+			gd.addChoice("Mask Stack:", titles, defaultItem);
+			// gd.addStringField("Result:", "Result", 10);
+			String[] strValues = { "bothValues", "lowValue", "highValue" };
+			defaultItem = "bothValues";
+			gd.addRadioButtonGroup("MaskValueSelection", strValues, 1, 3, defaultItem);
+			// gd.addCheckbox("32-bit (float) result", floatResult);
+			// gd.addHelp(IJ.URL+"/docs/menus/process.html#calculator");
+			gd.showDialog();
+			if (gd.wasCanceled())
+				return;
+			int index1 = gd.getNextChoiceIndex();
+			title1 = titles[index1];
+			// operator = gd.getNextChoiceIndex();
+			int index2 = gd.getNextChoiceIndex();
+			// String resultTitle = gd.getNextString();
+			// selective = gd.getNextBoolean();
+			// floatResult = gd.getNextBoolean();
+			title2 = titles[index2];
+			ImagePlus impImage = WindowManager.getImage(wList[index1]);
+			ImagePlus impMask = WindowManager.getImage(wList[index2]);
+			ArrayList<Integer> pixList = new ArrayList<Integer>();
+			pixStackVectorize(impImage, impMask, pixList);
+			int[] vetOut = ArrayUtils.arrayListToArrayInt(pixList);
+
+			// IJ.log("selectedVolume= " + vetOut.length + " voxels");
+			// IJ.log("min= " + ArrayUtils.vetMin(vetOut));
+			// IJ.log("max= " + ArrayUtils.vetMax(vetOut));
+			// IJ.log("mean= " + ArrayUtils.vetMean(vetOut));
+			// IJ.log("sd= " + ArrayUtils.vetSdKnuth(vetOut));
+			// IJ.log("median= " + ArrayUtils.vetMedian(vetOut));
+			// IJ.log("primo quartile= " + ArrayUtils.vetQuartile(vetOut, 1));
+			// IJ.log("terzo quartile= " + ArrayUtils.vetQuartile(vetOut, 3));
+
+			ResultsTable rt = ResultsTable.getResultsTable();
+			// rt.reset();
+			rt.incrementCounter();
+			rt.addValue("image", impImage.getTitle());
+			rt.addValue("mask", impMask.getTitle());
+			rt.addValue("volume", vetOut.length);
+			rt.addValue("min", ArrayUtils.vetMin(vetOut));
+			rt.addValue("max", ArrayUtils.vetMax(vetOut));
+			rt.addValue("mean", ArrayUtils.vetMean(vetOut));
+			rt.addValue("sd", ArrayUtils.vetSdKnuth(vetOut));
+			rt.addValue("median", ArrayUtils.vetMedian(vetOut));
+			rt.addValue("1_quartile", ArrayUtils.vetQuartile(vetOut, 1));
+			rt.addValue("3_quartile", ArrayUtils.vetQuartile(vetOut, 3));
+			rt.show("Results");
+		} while (true);
 	}
 
 	/**

@@ -69,18 +69,62 @@ public class ShrinkMask implements PlugIn {
 		IJ.wait(2000);
 		new AboutBox().close();
 
-		String path0 = Prefs.get("prefer.Shrink", "");
-
-		OpenDialog.setDefaultDirectory(path0);
-		OpenDialog od1 = new OpenDialog("SELEZIONARE LO STACK CON LA MASK DA STRIZZARE");
-		String path1 = od1.getPath();
-		if (path1 == null)
+//		String path0 = Prefs.get("prefer.Shrink", "");
+//
+//		OpenDialog.setDefaultDirectory(path0);
+//		OpenDialog od1 = new OpenDialog("SELEZIONARE LO STACK CON LA MASK DA STRIZZARE");
+//		String path1 = od1.getPath();
+//		if (path1 == null)
+//			return;
+//		Prefs.set("prefer.Shrink", path1);
+		
+		int[] wList = WindowManager.getIDList();
+		if (wList == null) {
+			IJ.noImage();
 			return;
-		Prefs.set("prefer.Shrink", path1);
-		ImagePlus imp1 = UtilAyv.openImageMaximized(path1);
-		ImagePlus imp2 = shrek1(imp1);
+		}
+		String[] titles = new String[wList.length];
+		for (int i = 0; i < wList.length; i++) {
+			ImagePlus imp = WindowManager.getImage(wList[i]);
+			if (imp != null)
+				titles[i] = imp.getTitle();
+			else
+				titles[i] = "";
+		}
+		GenericDialog gd = new GenericDialog("ShrinkMask");
+		String defaultItem;
+		String title1 = "";
+		if (title1.equals(""))
+			defaultItem = titles[0];
+		else
+			defaultItem = title1;
+		gd.addChoice("Mask Stack:", titles, defaultItem);
+		gd.showDialog();
+		if (gd.wasCanceled())
+			return;
+		int index1 = gd.getNextChoiceIndex();
+		title1 = titles[index1];
+		// operator = gd.getNextChoiceIndex();
+		ImagePlus imp1 = WindowManager.getImage(wList[index1]);
+
+
+
+		GenericDialog gd3 = new GenericDialog("FUNZIONAMENTO");
+		gd3.enableYesNoCancel("MARCA BORDO", "SBUCCIA BORDO");
+		gd3.showDialog();
+		if (gd3.wasCanceled()) {
+			return;
+		}
+		boolean sbuccia = false;
+		if (gd3.wasOKed()) {
+			sbuccia = false;
+		} else {
+			sbuccia = true;
+		}
+		
+	
+		ImagePlus imp2 = shrek1(imp1, sbuccia);
 		UtilAyv.showImageMaximized2(imp2);
-		MyLog.waitHere();
 	}
 
 	/**
@@ -171,14 +215,16 @@ public class ShrinkMask implements PlugIn {
 		float pixValue = 0;
 
 		float[][][] matrix = new float[dimensions[2]][dimensions[1]][dimensions[0]];
-		IJ.log("dimensions z= " + dimensions[2] + " x= " + dimensions[1] + " y= " + dimensions[0]);
-		IJ.log("dimensions z= " + matrix.length + " x= " + matrix[0].length + " y= " + matrix[0][0].length);
+		// IJ.log("dimensions z= " + dimensions[2] + " x= " + dimensions[1] + "
+		// y= " + dimensions[0]);
+		// IJ.log("dimensions z= " + matrix.length + " x= " + matrix[0].length +
+		// " y= " + matrix[0][0].length);
 
-		Calibration cal8 = imp1.getCalibration();
+		// Calibration cal8 = imp1.getCalibration();
 
 		for (int z1 = 0; z1 < matrix.length; z1++) {
-			ImageProcessor ip1 = stack1.getProcessor(z1+1);
-			ip1.setCalibrationTable(cal8.getCTable());
+			ImageProcessor ip1 = stack1.getProcessor(z1 + 1);
+			// ip1.setCalibrationTable(cal8.getCTable());
 			float[] sdata = (float[]) ip1.getPixels();
 			for (int x1 = 0; x1 < matrix[0].length; x1++) {
 				int offset = x1 * matrix[0].length;
@@ -202,7 +248,7 @@ public class ShrinkMask implements PlugIn {
 		ImageStack stack = newimp.getStack();
 
 		for (int z1 = 0; z1 < matrix.length; z1++) {
-			ImageProcessor ip = stack.getProcessor(z1+1);
+			ImageProcessor ip = stack.getProcessor(z1 + 1);
 			float[] pixels = (float[]) ip.getPixels();
 			for (int x1 = 0; x1 < matrix[0].length; x1++) {
 				int offset = x1 * matrix[0].length;
@@ -216,7 +262,7 @@ public class ShrinkMask implements PlugIn {
 		return newimp;
 	}
 
-	public ImagePlus shrek1(ImagePlus imp1) {
+	public ImagePlus shrek1(ImagePlus imp1, boolean sbuccia) {
 
 		float[][][] matrix1 = stackToMatrix(imp1);
 		/// scansione su y
@@ -247,8 +293,39 @@ public class ShrinkMask implements PlugIn {
 				}
 			}
 		}
-		ImagePlus out1 = matrixToStack(matrix1);
-		return out1;
+		/// scansione su z
+		for (int x1 = 0; x1 < matrix1[0].length; x1++) {
+			for (int y1 = 0; y1 < matrix1[0].length; y1++) {
+				// lavoro su x
+				float[] vectz = new float[matrix1[0].length];
+				for (int z1 = 0; z1 < matrix1[0].length; z1++) {
+					vectz[z1] = matrix1[z1][x1][y1];
+				}
+				float[] out1 = scanVector(vectz);
+				for (int z1 = 0; z1 < matrix1[0].length; z1++) {
+					matrix1[z1][x1][y1] = out1[z1];
+				}
+			}
+		}
+
+		if (sbuccia) {
+			for (int z1 = 0; z1 < matrix1.length; z1++) {
+				for (int x1 = 0; x1 < matrix1[0].length; x1++) {
+					// lavoro su y
+					float[] vecty = new float[matrix1[0][0].length];
+					for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
+						vecty[y1] = matrix1[z1][x1][y1];
+					}
+					float[] out1 = shaveVector(vecty);
+					for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
+						matrix1[z1][x1][y1] = out1[y1];
+					}
+				}
+			}
+		}
+
+		ImagePlus impOut = matrixToStack(matrix1);
+		return impOut;
 	}
 
 	public float[] scanVector(float[] in1) {
@@ -265,12 +342,31 @@ public class ShrinkMask implements PlugIn {
 				active = false;
 			}
 		}
-		for (int i1 = vect.length-1; i1 > 0; i1--) {
-			if ((i1 == vect.length-1) || (vect[i1] == 0))
+		for (int i1 = vect.length - 1; i1 > 0; i1--) {
+			if ((i1 == vect.length - 1) || (vect[i1] == 0))
 				active = true;
 			if (active && vect[i1] > 0) {
 				vect[i1] = 999;
 				active = false;
+			}
+		}
+
+		return vect;
+	}
+
+	public float[] shaveVector(float[] in1) {
+		float[] vect = new float[in1.length];
+		for (int i1 = 0; i1 < vect.length; i1++) {
+			vect[i1] = in1[i1];
+		}
+		for (int i1 = 0; i1 < vect.length; i1++) {
+			if (vect[i1] == 999) {
+				vect[i1] = 0;
+			}
+		}
+		for (int i1 = vect.length - 1; i1 > 0; i1--) {
+			if (vect[i1] == 999) {
+				vect[i1] = 0;
 			}
 		}
 
