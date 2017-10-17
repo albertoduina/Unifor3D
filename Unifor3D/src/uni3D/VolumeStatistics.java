@@ -82,25 +82,47 @@ public class VolumeStatistics implements PlugIn {
 			else
 				titles[i] = "";
 		}
+		String defaultItem1 = "";
+		String defaultItem2 = "";
+		String defaultItem3 = "";
+		String title1 = "";
+		String title2 = "";
 		do {
 			GenericDialog gd = new GenericDialog("Volume Statistics");
-			String defaultItem;
-			String title1 = "";
 			if (title1.equals(""))
-				defaultItem = titles[0];
+				defaultItem1 = titles[0];
 			else
-				defaultItem = title1;
-			gd.addChoice("Images Stack:", titles, defaultItem);
-			String title2 = "";
+				defaultItem1 = title1;
+			gd.addChoice("Images Stack:", titles, defaultItem1);
 			if (title2.equals(""))
-				defaultItem = titles[0];
+				defaultItem2 = titles[1];
 			else
-				defaultItem = title2;
-			gd.addChoice("Mask Stack:", titles, defaultItem);
+				defaultItem2 = title2;
+			gd.addChoice("Mask Stack:", titles, defaultItem2);
+
+			// 10 Left-Thalamus-Proper 40
+			// 11 Left-Caudate 30
+			// 12 Left-Putamen 40
+			// 13 Left-Pallidum 40
+			// 16 Brain-Stem /4th Ventricle 40
+			// 17 Left-Hippocampus 30
+			// 18 Left-Amygdala 50
+			// 26 Left-Accumbens-area 50
+			// 49 Right-Thalamus-Proper 40
+			// 50 Right-Caudate 30
+			// 51 Right-Putamen 40
+			// 52 Right-Pallidum 40
+			// 53 Right-Hippocampus 30
+			// 54 Right-Amygdala 50
+			// 58 Right-Accumbens-area 50
+
 			// gd.addStringField("Result:", "Result", 10);
-			String[] strValues = { "bothValues", "lowValue", "highValue" };
-			defaultItem = "bothValues";
-			gd.addRadioButtonGroup("MaskValueSelection", strValues, 1, 3, defaultItem);
+			String[] strValues = { "0  allValues", "10 Left-Thalamus-Proper", "11 Left-Caudate", "12 Left-Putamen",
+					"13 Left-Pallidum", "16 Brain-Stem /4th Ventricle", "17 Left-Hippocampus", "18 Left-Amygdala",
+					"26 Left-Accumbens-area", "49 Right-Thalamus-Proper", "50 Right-Caudate", "51 Right-Putamen",
+					"52 Right-Pallidum", "53 Right-Hippocampus", "54 Right-Amygdala", "58 Right-Accumbens-area" };
+			defaultItem3 = "allValues";
+			gd.addRadioButtonGroup("MaskValueSelection", strValues, 4, 4, defaultItem3);
 			// gd.addCheckbox("32-bit (float) result", floatResult);
 			// gd.addHelp(IJ.URL+"/docs/menus/process.html#calculator");
 			gd.showDialog();
@@ -114,11 +136,20 @@ public class VolumeStatistics implements PlugIn {
 			// selective = gd.getNextBoolean();
 			// floatResult = gd.getNextBoolean();
 			title2 = titles[index2];
+			String aux1 = gd.getNextRadioButton();
+			if (aux1 == "")
+				aux1 = "0";
+			int selection = Integer.parseInt(aux1.replaceAll("\\D", ""));
+			// MyLog.waitHere("aux1= " + aux1 + " selection= " + selection);
 			ImagePlus impImage = WindowManager.getImage(wList[index1]);
 			ImagePlus impMask = WindowManager.getImage(wList[index2]);
+
 			ArrayList<Integer> pixList = new ArrayList<Integer>();
-			pixStackVectorize(impImage, impMask, pixList);
+			pixStackVectorize(impImage, impMask, pixList, selection);
 			int[] vetOut = ArrayUtils.arrayListToArrayInt(pixList);
+			// MyLog.logVectorVertical(vetOut, "maskedPixels");
+			if (vetOut.length < 10)
+				MyLog.waitHere("ci sono solo " + vetOut.length + " pixels selezionati!!");
 
 			// IJ.log("selectedVolume= " + vetOut.length + " voxels");
 			// IJ.log("min= " + ArrayUtils.vetMin(vetOut));
@@ -156,14 +187,18 @@ public class VolumeStatistics implements PlugIn {
 	 * @param pixList11
 	 */
 	public static void pixSingleVectorize(ImagePlus impSingleImage, ImagePlus impSingleMask,
-			ArrayList<Integer> pixList11) {
+			ArrayList<Integer> pixList11, int value) {
 
 		ImageProcessor ipSingleImage = impSingleImage.getProcessor();
 		ImageProcessor maskSingleImage = impSingleMask.getProcessor();
+		float[] imagePixels = (float[]) ipSingleImage.getPixels();
+		float[] maskPixels = (float[]) maskSingleImage.getPixels();
+
 		for (int y1 = 0; y1 < impSingleImage.getHeight(); y1++) {
+			int offset = y1 * impSingleImage.getHeight();
 			for (int x1 = 0; x1 < impSingleImage.getWidth(); x1++) {
-				if (maskSingleImage.getPixel(x1, y1) != 0) {
-					pixList11.add((int) ipSingleImage.getPixelValue(x1, y1));
+				if (value == 0 && maskPixels[offset + x1] != 0 || maskPixels[offset + x1] == (float) value) {
+					pixList11.add((int) imagePixels[offset + x1]);
 				}
 			}
 		}
@@ -172,24 +207,33 @@ public class VolumeStatistics implements PlugIn {
 	/**
 	 * Restituisce, in un ArrayList fornito come parametro, i valori di tutti i
 	 * pixel dello stack immagine sorgente, in cui il valore del pixel
-	 * corrispondente nello stack immagine mask non sia zero
+	 * corrispondente nello stack immagine mask sia value (0=qualsiasi valore)
 	 * 
 	 * @param impSingleImage
 	 * @param impSingleMask
 	 * @param pixList
+	 * @param value
 	 */
 
-	public static void pixStackVectorize(ImagePlus impStackImage, ImagePlus impStackMask, ArrayList<Integer> pixList) {
+	public static void pixStackVectorize(ImagePlus impStackImage, ImagePlus impStackMask, ArrayList<Integer> pixList,
+			int value) {
 
 		for (int z1 = 1; z1 <= impStackImage.getImageStackSize(); z1++) {
 			ImagePlus impSingleImage = MyStackUtils.imageFromStack(impStackImage, z1);
 			ImagePlus impSingleMask = MyStackUtils.imageFromStack(impStackMask, z1);
 			ImageProcessor ipSingleImage = impSingleImage.getProcessor();
 			ImageProcessor maskSingleImage = impSingleMask.getProcessor();
+			short[] imagePixels = (short[]) ipSingleImage.getPixels();
+			float[] maskPixels = (float[]) maskSingleImage.getPixels();
 			for (int y1 = 0; y1 < impSingleImage.getHeight(); y1++) {
+				int offset = y1 * impSingleImage.getWidth();
 				for (int x1 = 0; x1 < impSingleImage.getWidth(); x1++) {
-					if (maskSingleImage.getPixel(x1, y1) != 0) {
-						pixList.add((int) ipSingleImage.getPixelValue(x1, y1));
+					int aux1 = (int) maskPixels[offset + x1];
+					if ((value == 0 && aux1 != 0)) {
+						pixList.add((int) imagePixels[offset + x1]);
+					}
+					if ((value > 0 && aux1 == value)) {
+						pixList.add((int) imagePixels[offset + x1]);
 					}
 				}
 			}
@@ -197,18 +241,22 @@ public class VolumeStatistics implements PlugIn {
 	}
 
 	public static void pixStackVectorizeString(ImagePlus impStackImage, ImagePlus impStackMask,
-			ArrayList<String> pixList) {
+			ArrayList<String> pixList, int value) {
 
 		for (int z1 = 1; z1 <= impStackImage.getImageStackSize(); z1++) {
 			ImagePlus impSingleImage = MyStackUtils.imageFromStack(impStackImage, z1);
 			ImagePlus impSingleMask = MyStackUtils.imageFromStack(impStackMask, z1);
 			ImageProcessor ipSingleImage = impSingleImage.getProcessor();
 			ImageProcessor maskSingleImage = impSingleMask.getProcessor();
+			short[] imagePixels = (short[]) ipSingleImage.getPixels();
+			float[] maskPixels = (float[]) maskSingleImage.getPixels();
+
 			for (int y1 = 0; y1 < impSingleImage.getHeight(); y1++) {
+				int offset = y1 * impSingleImage.getWidth();
 				for (int x1 = 0; x1 < impSingleImage.getWidth(); x1++) {
-					if (maskSingleImage.getPixel(x1, y1) != 0) {
-						pixList.add((String) "" + (int) ipSingleImage.getPixelValue(x1, y1) + " " + x1 + " " + y1 + " "
-								+ z1);
+					int aux1 = (int) maskPixels[offset + x1];
+					if (value == 0 && aux1 > 1 || aux1 == value) {
+						pixList.add((String) "" + (int) imagePixels[offset + x1] + " " + x1 + " " + y1 + " " + z1);
 					}
 				}
 			}
