@@ -1,5 +1,6 @@
 package uni3D;
 
+import java.awt.Checkbox;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Rectangle;
@@ -7,6 +8,7 @@ import java.awt.TextField;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -69,6 +71,8 @@ public class VolumeStatistics implements PlugIn {
 		IJ.wait(2000);
 		new AboutBox().close();
 
+		ResultsTable rt = ResultsTable.getResultsTable();
+
 		int[] wList = WindowManager.getIDList();
 		if (wList == null) {
 			IJ.noImage();
@@ -87,94 +91,110 @@ public class VolumeStatistics implements PlugIn {
 		String defaultItem3 = "";
 		String title1 = "";
 		String title2 = "";
-		do {
-			GenericDialog gd = new GenericDialog("Volume Statistics");
-			if (title1.equals(""))
-				defaultItem1 = titles[0];
-			else
-				defaultItem1 = title1;
-			gd.addChoice("Images Stack:", titles, defaultItem1);
-			if (title2.equals(""))
-				defaultItem2 = titles[1];
-			else
-				defaultItem2 = title2;
-			gd.addChoice("Mask Stack:", titles, defaultItem2);
 
-			// 10 Left-Thalamus-Proper 40
-			// 11 Left-Caudate 30
-			// 12 Left-Putamen 40
-			// 13 Left-Pallidum 40
-			// 16 Brain-Stem /4th Ventricle 40
-			// 17 Left-Hippocampus 30
-			// 18 Left-Amygdala 50
-			// 26 Left-Accumbens-area 50
-			// 49 Right-Thalamus-Proper 40
-			// 50 Right-Caudate 30
-			// 51 Right-Putamen 40
-			// 52 Right-Pallidum 40
-			// 53 Right-Hippocampus 30
-			// 54 Right-Amygdala 50
-			// 58 Right-Accumbens-area 50
+		GenericDialog gd = new GenericDialog("Volume Statistics");
+		if (title1.equals(""))
+			defaultItem1 = titles[0];
+		else
+			defaultItem1 = title1;
+		gd.addChoice("Images Stack:", titles, defaultItem1);
+		if (title2.equals(""))
+			defaultItem2 = titles[1];
+		else
+			defaultItem2 = title2;
 
-			// gd.addStringField("Result:", "Result", 10);
-			String[] strValues = { "0  allValues", "10 Left-Thalamus-Proper", "11 Left-Caudate", "12 Left-Putamen",
-					"13 Left-Pallidum", "16 Brain-Stem /4th Ventricle", "17 Left-Hippocampus", "18 Left-Amygdala",
-					"26 Left-Accumbens-area", "49 Right-Thalamus-Proper", "50 Right-Caudate", "51 Right-Putamen",
-					"52 Right-Pallidum", "53 Right-Hippocampus", "54 Right-Amygdala", "58 Right-Accumbens-area" };
-			defaultItem3 = "allValues";
-			gd.addRadioButtonGroup("MaskValueSelection", strValues, 4, 4, defaultItem3);
-			// gd.addCheckbox("32-bit (float) result", floatResult);
-			// gd.addHelp(IJ.URL+"/docs/menus/process.html#calculator");
-			gd.showDialog();
-			if (gd.wasCanceled())
-				return;
-			int index1 = gd.getNextChoiceIndex();
-			title1 = titles[index1];
-			// operator = gd.getNextChoiceIndex();
-			int index2 = gd.getNextChoiceIndex();
-			// String resultTitle = gd.getNextString();
-			// selective = gd.getNextBoolean();
-			// floatResult = gd.getNextBoolean();
-			title2 = titles[index2];
-			String aux1 = gd.getNextRadioButton();
-			if (aux1 == "")
-				aux1 = "0";
-			int selection = Integer.parseInt(aux1.replaceAll("\\D", ""));
-			// MyLog.waitHere("aux1= " + aux1 + " selection= " + selection);
-			ImagePlus impImage = WindowManager.getImage(wList[index1]);
-			ImagePlus impMask = WindowManager.getImage(wList[index2]);
+		gd.addChoice("Mask Stack:", titles, defaultItem2);
+		gd.showDialog();
+		if (gd.wasCanceled())
+			return;
+		int index1 = gd.getNextChoiceIndex();
+		title1 = titles[index1];
+		// operator = gd.getNextChoiceIndex();
+		int index2 = gd.getNextChoiceIndex();
+		// String resultTitle = gd.getNextString();
+		// selective = gd.getNextBoolean();
+		// floatResult = gd.getNextBoolean();
+		title2 = titles[index2];
 
-			ArrayList<Integer> pixList = new ArrayList<Integer>();
-			pixStackVectorize(impImage, impMask, pixList, selection);
-			int[] vetOut = ArrayUtils.arrayListToArrayInt(pixList);
-			// MyLog.logVectorVertical(vetOut, "maskedPixels");
-			if (vetOut.length < 10)
-				MyLog.waitHere("ci sono solo " + vetOut.length + " pixels selezionati!!");
+		ImagePlus impImage = WindowManager.getImage(wList[index1]);
+		ImagePlus impMask = WindowManager.getImage(wList[index2]);
+		int[] val = singleMaskValues(impMask);
 
-			// IJ.log("selectedVolume= " + vetOut.length + " voxels");
-			// IJ.log("min= " + ArrayUtils.vetMin(vetOut));
-			// IJ.log("max= " + ArrayUtils.vetMax(vetOut));
-			// IJ.log("mean= " + ArrayUtils.vetMean(vetOut));
-			// IJ.log("sd= " + ArrayUtils.vetSdKnuth(vetOut));
-			// IJ.log("median= " + ArrayUtils.vetMedian(vetOut));
-			// IJ.log("primo quartile= " + ArrayUtils.vetQuartile(vetOut, 1));
-			// IJ.log("terzo quartile= " + ArrayUtils.vetQuartile(vetOut, 3));
+		GenericDialog gd2 = new GenericDialog("Mask Values Selection");
 
-			ResultsTable rt = ResultsTable.getResultsTable();
-			// rt.reset();
-			rt.incrementCounter();
-			rt.addValue("image", impImage.getTitle());
-			rt.addValue("mask", impMask.getTitle());
-			rt.addValue("volume", vetOut.length);
-			rt.addValue("min", ArrayUtils.vetMin(vetOut));
-			rt.addValue("max", ArrayUtils.vetMax(vetOut));
-			rt.addValue("mean", ArrayUtils.vetMean(vetOut));
-			rt.addValue("sd", ArrayUtils.vetSdKnuth(vetOut));
-			rt.addValue("median", ArrayUtils.vetMedian(vetOut));
-			rt.addValue("1_quartile", ArrayUtils.vetQuartile(vetOut, 1));
-			rt.addValue("3_quartile", ArrayUtils.vetQuartile(vetOut, 3));
-			rt.show("Results");
-		} while (true);
+		ArrayList<Integer> intlist = new ArrayList<Integer>();
+		ArrayList<String> stringlist = new ArrayList<String>();
+
+		String[] labels = { "0 AllValues", "10 Left-Thalamus-Proper", "11 Left-Caudate", "12 Left-Putamen",
+				"13 Left-Pallidum", "16 Brain-Stem /4th Ventricle", "17 Left-Hippocampus", "18 Left-Amygdala",
+				"26 Left-Accumbens-area", "49 Right-Thalamus-Proper", "50 Right-Caudate", "51 Right-Putamen",
+				"52 Right-Pallidum", "53 Right-Hippocampus", "54 Right-Amygdala", "58 Right-Accumbens-area" };
+
+		int[] valuelabels = { 0, 10, 11, 12, 13, 16, 17, 18, 26, 49, 50, 51, 52, 53, 54, 58 };
+
+		for (int i1 = 0; i1 < valuelabels.length; i1++) {
+			intlist.add(valuelabels[i1]);
+			stringlist.add(labels[i1]);
+		}
+
+		for (int i1 = 0; i1 < val.length; i1++) {
+			boolean tr1 = false;
+			for (int i2 = 0; i2 < valuelabels.length; i2++) {
+				if (val[i1] == valuelabels[i2])
+					tr1 = true;
+			}
+			if (tr1 == false) {
+				intlist.add(val[i1]);
+				stringlist.add("" + val[i1]);
+			}
+		}
+
+		String[] vetstring = ArrayUtils.arrayListToArrayString(stringlist);
+		int[] vetint = ArrayUtils.arrayListToArrayInt(intlist);
+
+		boolean[] defaultvalues = new boolean[labels.length];
+		for (int i1 = 0; i1 < val.length; i1++) {
+			for (int i2 = 0; i2 < labels.length; i2++) {
+				if (val[i1] == vetint[i2])
+					defaultvalues[i2] = true;
+			}
+		}
+
+		gd2.addCheckboxGroup(4, (int) ((defaultvalues.length + 0.5) / 4.0), labels, defaultvalues);
+		gd2.showDialog();
+		if (gd2.wasCanceled())
+			return;
+
+		Vector<Checkbox> checkboxes = gd2.getCheckboxes();
+
+		int selection = 0;
+		for (int i1 = 0; i1 < checkboxes.size(); i1++) {
+			if ((checkboxes.elementAt(i1).getState() == true)) {
+				selection = valuelabels[i1];
+				ArrayList<Integer> pixList = new ArrayList<Integer>();
+				pixStackVectorize(impImage, impMask, pixList, selection);
+				int[] vetOut = ArrayUtils.arrayListToArrayInt(pixList);
+				if (vetOut.length < 2) {
+					MyLog.waitHere("per la classe " + selection
+							+ " ho troppo pochi pixel selezionati per statisticheggiare! ");
+					continue;
+				}
+
+				rt.incrementCounter();
+				rt.addValue("image", impImage.getTitle());
+				rt.addValue("mask", impMask.getTitle());
+				rt.addValue("type", labels[i1]);
+				rt.addValue("volume", vetOut.length);
+				rt.addValue("min", ArrayUtils.vetMin(vetOut));
+				rt.addValue("max", ArrayUtils.vetMax(vetOut));
+				rt.addValue("mean", ArrayUtils.vetMean(vetOut));
+				rt.addValue("sd", ArrayUtils.vetSdKnuth(vetOut));
+				rt.addValue("median", ArrayUtils.vetMedian(vetOut));
+				rt.addValue("1_quartile", ArrayUtils.vetQuartile(vetOut, 1));
+				rt.addValue("3_quartile", ArrayUtils.vetQuartile(vetOut, 3));
+			}
+		}
+		rt.show("Results");
 	}
 
 	/**
@@ -261,6 +281,30 @@ public class VolumeStatistics implements PlugIn {
 				}
 			}
 		}
+	}
+
+	public static int[] singleMaskValues(ImagePlus impStackMask) {
+
+		ArrayList<Integer> maskList = new ArrayList<Integer>();
+		for (int z1 = 1; z1 <= impStackMask.getImageStackSize(); z1++) {
+			ImagePlus impSingleMask = MyStackUtils.imageFromStack(impStackMask, z1);
+			ImageProcessor maskSingleImage = impSingleMask.getProcessor();
+			float[] maskPixels = (float[]) maskSingleImage.getPixels();
+			for (int i1 = 0; i1 < maskPixels.length; i1++) {
+				int aux1 = (int) maskPixels[i1];
+				boolean trovato = false;
+				if (aux1 != 0) {
+					for (int i2 = 0; i2 < maskList.size(); i2++) {
+						if (aux1 == maskList.get(i2))
+							trovato = true;
+					}
+					if (!trovato)
+						maskList.add(aux1);
+				}
+			}
+		}
+		int[] out = ArrayUtils.arrayListToArrayInt(maskList);
+		return out;
 	}
 
 }
