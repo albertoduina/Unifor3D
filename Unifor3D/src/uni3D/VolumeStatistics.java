@@ -109,17 +109,11 @@ public class VolumeStatistics implements PlugIn {
 			return;
 		int index1 = gd.getNextChoiceIndex();
 		title1 = titles[index1];
-		// operator = gd.getNextChoiceIndex();
 		int index2 = gd.getNextChoiceIndex();
-		// String resultTitle = gd.getNextString();
-		// selective = gd.getNextBoolean();
-		// floatResult = gd.getNextBoolean();
 		title2 = titles[index2];
-
 		ImagePlus impImage = WindowManager.getImage(wList[index1]);
 		ImagePlus impMask = WindowManager.getImage(wList[index2]);
 		int[] val = singleMaskValues(impMask);
-
 		GenericDialog gd2 = new GenericDialog("Mask Values Selection");
 
 		ArrayList<Integer> intlist = new ArrayList<Integer>();
@@ -151,16 +145,24 @@ public class VolumeStatistics implements PlugIn {
 
 		String[] vetstring = ArrayUtils.arrayListToArrayString(stringlist);
 		int[] vetint = ArrayUtils.arrayListToArrayInt(intlist);
+		int vert = 4;
+		int hor = (vetstring.length + vert - 1) / vert;
+		int newlen = vert * hor;
+		String[] labels2 = new String[newlen];
+		for (int i1 = 0; i1 < vetstring.length; i1++) {
+			labels2[i1] = vetstring[i1];
+		}
 
-		boolean[] defaultvalues = new boolean[labels.length];
+		boolean[] defaultvalues = new boolean[newlen];
 		for (int i1 = 0; i1 < val.length; i1++) {
-			for (int i2 = 0; i2 < labels.length; i2++) {
+			for (int i2 = 0; i2 < vetint.length; i2++) {
 				if (val[i1] == vetint[i2])
 					defaultvalues[i2] = true;
 			}
+			defaultvalues[0] = true;
 		}
 
-		gd2.addCheckboxGroup(4, (int) ((defaultvalues.length + 0.5) / 4.0), labels, defaultvalues);
+		gd2.addCheckboxGroup(hor, vert, labels2, defaultvalues);
 		gd2.showDialog();
 		if (gd2.wasCanceled())
 			return;
@@ -168,9 +170,9 @@ public class VolumeStatistics implements PlugIn {
 		Vector<Checkbox> checkboxes = gd2.getCheckboxes();
 
 		int selection = 0;
-		for (int i1 = 0; i1 < checkboxes.size(); i1++) {
+		for (int i1 = 0; i1 < vetint.length; i1++) {
 			if ((checkboxes.elementAt(i1).getState() == true)) {
-				selection = valuelabels[i1];
+				selection = vetint[i1];
 				ArrayList<Integer> pixList = new ArrayList<Integer>();
 				pixStackVectorize(impImage, impMask, pixList, selection);
 				int[] vetOut = ArrayUtils.arrayListToArrayInt(pixList);
@@ -179,11 +181,10 @@ public class VolumeStatistics implements PlugIn {
 							+ " ho troppo pochi pixel selezionati per statisticheggiare! ");
 					continue;
 				}
-
 				rt.incrementCounter();
 				rt.addValue("image", impImage.getTitle());
 				rt.addValue("mask", impMask.getTitle());
-				rt.addValue("type", labels[i1]);
+				rt.addValue("type", labels2[i1]);
 				rt.addValue("volume", vetOut.length);
 				rt.addValue("min", ArrayUtils.vetMin(vetOut));
 				rt.addValue("max", ArrayUtils.vetMax(vetOut));
@@ -192,9 +193,11 @@ public class VolumeStatistics implements PlugIn {
 				rt.addValue("median", ArrayUtils.vetMedian(vetOut));
 				rt.addValue("1_quartile", ArrayUtils.vetQuartile(vetOut, 1));
 				rt.addValue("3_quartile", ArrayUtils.vetQuartile(vetOut, 3));
+				rt.show("Results");
 			}
 		}
 		rt.show("Results");
+		IJ.showMessage("FINE LAVORO");
 	}
 
 	/**
