@@ -30,8 +30,8 @@ public class VolumeStatistics implements PlugIn {
 	final static boolean step = true;
 
 	public void run(String arg) {
-//		boolean selective;
-//		selective = false;
+		// boolean selective;
+		// selective = false;
 
 		new AboutBox().about("VolumeStatistics", MyVersion.CURRENT_VERSION);
 		IJ.wait(2000);
@@ -54,7 +54,7 @@ public class VolumeStatistics implements PlugIn {
 		}
 		String defaultItem1 = "";
 		String defaultItem2 = "";
-//		String defaultItem3 = "";
+		// String defaultItem3 = "";
 		String title1 = "";
 		String title2 = "";
 
@@ -79,6 +79,11 @@ public class VolumeStatistics implements PlugIn {
 		title2 = titles[index2];
 		ImagePlus impImage = WindowManager.getImage(wList[index1]);
 		ImagePlus impMask = WindowManager.getImage(wList[index2]);
+		if (impImage.getBitDepth() != 16)
+			MyLog.waitHere("voglio una immagine a 16 bit!");
+		if (impMask.getBitDepth() != 32)
+			MyLog.waitHere("voglio una mask a 32 bit!");
+
 		int[] val = singleMaskValues(impMask);
 		GenericDialog gd2 = new GenericDialog("Mask Values Selection");
 

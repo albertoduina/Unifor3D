@@ -109,20 +109,29 @@ public class ShrinkMask implements PlugIn {
 		title1 = titles[index1];
 		// operator = gd.getNextChoiceIndex();
 		ImagePlus imp1 = WindowManager.getImage(wList[index1]);
-		int type = imp1.getBitDepth();
-		if (type != 32)
-			MyLog.waitHere(
-					"MESSAGE FOR THE SCREEN - KEYBOARD INTERFACE: MASK IMAGES ARE 32 BITS, INSTEAD YOUR IMAGE IS "
-							+ type + " BITS");
+		if (imp1.getBitDepth() != 32)
+			MyLog.waitHere("voglio una mask a 32 bit!");
 
 		GenericDialog gd3 = new GenericDialog("FUNZIONAMENTO");
 
 		String[] diciture = { "MARCA BORDO", "SBUCCIA BORDO", "ISOLA VALORE" };
+
 		gd3.addRadioButtonGroup("SCELTA OPERAZIONE", diciture, 2, 2, null);
+		String str1 = "marca bordo direzione X";
+		String str2 = "marca bordo direzione Y";
+		String str3 = "marca bordo direzione Z";
+
+		gd3.addCheckbox(str1, true);
+		gd3.addCheckbox(str2, true);
+		gd3.addCheckbox(str3, true);
+
 		gd3.showDialog();
 		if (gd3.wasCanceled()) {
 			return;
 		}
+		boolean mx = gd3.getNextBoolean();
+		boolean my = gd3.getNextBoolean();
+		boolean mz = gd3.getNextBoolean();
 
 		String sel = gd3.getNextRadioButton();
 		int selnum = 999;
@@ -132,12 +141,14 @@ public class ShrinkMask implements PlugIn {
 				break;
 			}
 		}
+
 		ImagePlus imp2 = null;
 		boolean isola = false;
 		switch (selnum) {
 
 		case 0:
-			imp2 = bordoMatrix(imp1);
+
+			imp2 = bordoMatrix(imp1, mx, my, mz);
 			break;
 		case 1:
 			imp2 = sbucciaMatrix(imp1);
@@ -350,53 +361,59 @@ public class ShrinkMask implements PlugIn {
 		return newimp;
 	}
 
-	public ImagePlus bordoMatrix(ImagePlus imp1) {
+	public ImagePlus bordoMatrix(ImagePlus imp1, boolean mx, boolean my, boolean mz) {
 
 		float[][][] matrix1 = stackToMatrix(imp1);
-		for (int z1 = 0; z1 < matrix1.length; z1++) {
-			for (int x1 = 0; x1 < matrix1[0].length; x1++) {
-				// lavoro su y
-				float[] vecty = new float[matrix1[0][0].length];
-				for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
-					vecty[y1] = matrix1[z1][x1][y1];
-				}
-				float[] out1 = scanVector(vecty, 100);
-				for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
-					matrix1[z1][x1][y1] = out1[y1];
+
+		if (my) {
+			for (int z1 = 0; z1 < matrix1.length; z1++) {
+				for (int x1 = 0; x1 < matrix1[0].length; x1++) {
+					// lavoro su y
+					float[] vecty = new float[matrix1[0][0].length];
+					for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
+						vecty[y1] = matrix1[z1][x1][y1];
+					}
+					float[] out1 = scanVector(vecty, 100);
+					for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
+						matrix1[z1][x1][y1] = out1[y1];
+					}
 				}
 			}
 		}
-		/// scansione su x
-		for (int z1 = 0; z1 < matrix1.length; z1++) {
-			for (int y1 = 0; y1 < matrix1[0].length; y1++) {
-				// lavoro su x
-				float[] vectx = new float[matrix1[0].length];
-				for (int x1 = 0; x1 < matrix1[0].length; x1++) {
-					vectx[x1] = matrix1[z1][x1][y1];
-				}
-				float[] out1 = scanVector(vectx, 100); // 200
-				for (int x1 = 0; x1 < matrix1[0].length; x1++) {
-					matrix1[z1][x1][y1] = out1[x1];
+		if (mx) {
+			for (int z1 = 0; z1 < matrix1.length; z1++) {
+				for (int y1 = 0; y1 < matrix1[0].length; y1++) {
+					// lavoro su x
+					float[] vectx = new float[matrix1[0].length];
+					for (int x1 = 0; x1 < matrix1[0].length; x1++) {
+						vectx[x1] = matrix1[z1][x1][y1];
+					}
+					float[] out1 = scanVector(vectx, 200); // 200
+					for (int x1 = 0; x1 < matrix1[0].length; x1++) {
+						matrix1[z1][x1][y1] = out1[x1];
+					}
 				}
 			}
 		}
 
-		/// scansione su z
-		for (int x1 = 0; x1 < matrix1[0].length; x1++) {
-			for (int y1 = 0; y1 < matrix1[0].length; y1++) {
-				// lavoro su x
-				float[] vectz = new float[matrix1[0].length];
-				for (int z1 = 0; z1 < matrix1[0].length; z1++) {
-					vectz[z1] = matrix1[z1][x1][y1];
-				}
-				float[] out1 = scanVector(vectz, 100); // 300
-				for (int z1 = 0; z1 < matrix1[0].length; z1++) {
-					matrix1[z1][x1][y1] = out1[z1];
+		if (mz) {
+			for (int x1 = 0; x1 < matrix1[0].length; x1++) {
+				for (int y1 = 0; y1 < matrix1[0].length; y1++) {
+					// lavoro su x
+					float[] vectz = new float[matrix1[0].length];
+					for (int z1 = 0; z1 < matrix1[0].length; z1++) {
+						vectz[z1] = matrix1[z1][x1][y1];
+					}
+					float[] out1 = scanVector(vectz, 300); // 300
+					for (int z1 = 0; z1 < matrix1[0].length; z1++) {
+						matrix1[z1][x1][y1] = out1[z1];
+					}
 				}
 			}
 		}
 
 		ImagePlus impOut = matrixToStack(matrix1);
+		impOut.setTitle("patataBordata");
 		return impOut;
 	}
 
@@ -442,6 +459,7 @@ public class ShrinkMask implements PlugIn {
 			}
 		}
 		ImagePlus impOut = matrixToStack(matrix1);
+		impOut.setTitle("patataSbucciata");
 		return impOut;
 	}
 
