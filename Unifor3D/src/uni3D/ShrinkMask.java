@@ -1,11 +1,13 @@
 package uni3D;
 
+import java.awt.Checkbox;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Rectangle;
 import java.awt.TextField;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Vector;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -51,7 +53,7 @@ import utils.ReadDicom;
 import utils.UtilAyv;
 
 //=====================================================
-//     Calcoli su di un volume definito da una mask
+//     Elaborazioni Mask
 //     13 ottobre 2017 
 //     By A.Duina - IW2AYV
 //     Linguaggio: Java per ImageJ
@@ -69,15 +71,16 @@ public class ShrinkMask implements PlugIn {
 		IJ.wait(2000);
 		new AboutBox().close();
 
-//		String path0 = Prefs.get("prefer.Shrink", "");
-//
-//		OpenDialog.setDefaultDirectory(path0);
-//		OpenDialog od1 = new OpenDialog("SELEZIONARE LO STACK CON LA MASK DA STRIZZARE");
-//		String path1 = od1.getPath();
-//		if (path1 == null)
-//			return;
-//		Prefs.set("prefer.Shrink", path1);
-		
+		// String path0 = Prefs.get("prefer.Shrink", "");
+		//
+		// OpenDialog.setDefaultDirectory(path0);
+		// OpenDialog od1 = new OpenDialog("SELEZIONARE LO STACK CON LA MASK DA
+		// STRIZZARE");
+		// String path1 = od1.getPath();
+		// if (path1 == null)
+		// return;
+		// Prefs.set("prefer.Shrink", path1);
+
 		int[] wList = WindowManager.getIDList();
 		if (wList == null) {
 			IJ.noImage();
@@ -106,24 +109,109 @@ public class ShrinkMask implements PlugIn {
 		title1 = titles[index1];
 		// operator = gd.getNextChoiceIndex();
 		ImagePlus imp1 = WindowManager.getImage(wList[index1]);
-
-
+		int type = imp1.getBitDepth();
+		if (type != 32)
+			MyLog.waitHere(
+					"MESSAGE FOR THE SCREEN - KEYBOARD INTERFACE: MASK IMAGES ARE 32 BITS, INSTEAD YOUR IMAGE IS "
+							+ type + " BITS");
 
 		GenericDialog gd3 = new GenericDialog("FUNZIONAMENTO");
-		gd3.enableYesNoCancel("MARCA BORDO", "SBUCCIA BORDO");
+
+		String[] diciture = { "MARCA BORDO", "SBUCCIA BORDO", "ISOLA VALORE" };
+		gd3.addRadioButtonGroup("SCELTA OPERAZIONE", diciture, 2, 2, null);
 		gd3.showDialog();
 		if (gd3.wasCanceled()) {
 			return;
 		}
-		boolean sbuccia = false;
-		if (gd3.wasOKed()) {
-			sbuccia = false;
-		} else {
-			sbuccia = true;
+
+		String sel = gd3.getNextRadioButton();
+		int selnum = 999;
+		for (int i1 = 0; i1 < diciture.length; i1++) {
+			if (sel.equals(diciture[i1])) {
+				selnum = i1;
+				break;
+			}
 		}
-		
-	
-		ImagePlus imp2 = shrek1(imp1, sbuccia);
+		ImagePlus imp2 = null;
+		boolean isola = false;
+		switch (selnum) {
+
+		case 0:
+			imp2 = bordoMatrix(imp1);
+			break;
+		case 1:
+			imp2 = sbucciaMatrix(imp1);
+			break;
+		case 2:
+			isola = true;
+			break;
+		}
+		if (isola) {
+			IJ.log("isola");
+			int[] val = singleMaskValues(imp1);
+
+			ArrayList<Integer> intlist = new ArrayList<Integer>();
+			ArrayList<String> stringlist = new ArrayList<String>();
+
+			String[] labels = { "10 Left-Thalamus-Proper", "11 Left-Caudate", "12 Left-Putamen", "13 Left-Pallidum",
+					"16 Brain-Stem /4th Ventricle", "17 Left-Hippocampus", "18 Left-Amygdala", "26 Left-Accumbens-area",
+					"49 Right-Thalamus-Proper", "50 Right-Caudate", "51 Right-Putamen", "52 Right-Pallidum",
+					"53 Right-Hippocampus", "54 Right-Amygdala", "58 Right-Accumbens-area" };
+
+			int[] valuelabels = { 10, 11, 12, 13, 16, 17, 18, 26, 49, 50, 51, 52, 53, 54, 58 };
+
+			for (int i1 = 0; i1 < valuelabels.length; i1++) {
+				intlist.add(valuelabels[i1]);
+				stringlist.add(labels[i1]);
+			}
+
+			for (int i1 = 0; i1 < val.length; i1++) {
+				boolean tr1 = false;
+				for (int i2 = 0; i2 < valuelabels.length; i2++) {
+					if (val[i1] == valuelabels[i2])
+						tr1 = true;
+				}
+				if (tr1 == false) {
+					intlist.add(val[i1]);
+					stringlist.add("" + val[i1]);
+				}
+			}
+
+			String[] vetstring = ArrayUtils.arrayListToArrayString(stringlist);
+			int[] vetint = ArrayUtils.arrayListToArrayInt(intlist);
+			int vert = 4;
+			int hor = (vetstring.length + vert - 1) / vert;
+			int newlen = vert * hor;
+			String[] labels2 = new String[newlen];
+			for (int i1 = 0; i1 < vetstring.length; i1++) {
+				labels2[i1] = vetstring[i1];
+			}
+
+			boolean[] defaultvalues = new boolean[newlen];
+			for (int i1 = 0; i1 < val.length; i1++) {
+				for (int i2 = 0; i2 < vetint.length; i2++) {
+					if (val[i1] == vetint[i2])
+						defaultvalues[i2] = true;
+				}
+				defaultvalues[0] = true;
+			}
+
+			GenericDialog gd2 = new GenericDialog("SELEZIONARE VALORI DA MANTENERE (UNO O PIU')");
+			gd2.addCheckboxGroup(hor, vert, labels2, defaultvalues);
+			gd2.showDialog();
+			if (gd2.wasCanceled())
+				return;
+			Vector<Checkbox> checkboxes = gd2.getCheckboxes();
+			ArrayList<Integer> arrayElimina = new ArrayList<Integer>();
+
+			for (int i1 = 0; i1 < vetint.length; i1++) {
+				if ((checkboxes.elementAt(i1).getState() == false)) {
+					arrayElimina.add(vetint[i1]);
+				}
+			}
+			int[] vetElimina = ArrayUtils.arrayListToArrayInt(arrayElimina);
+			imp2 = isolaMatrix(imp1, vetElimina);
+		}
 		UtilAyv.showImageMaximized2(imp2);
 	}
 
@@ -262,10 +350,9 @@ public class ShrinkMask implements PlugIn {
 		return newimp;
 	}
 
-	public ImagePlus shrek1(ImagePlus imp1, boolean sbuccia) {
+	public ImagePlus bordoMatrix(ImagePlus imp1) {
 
 		float[][][] matrix1 = stackToMatrix(imp1);
-		/// scansione su y
 		for (int z1 = 0; z1 < matrix1.length; z1++) {
 			for (int x1 = 0; x1 < matrix1[0].length; x1++) {
 				// lavoro su y
@@ -273,7 +360,7 @@ public class ShrinkMask implements PlugIn {
 				for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
 					vecty[y1] = matrix1[z1][x1][y1];
 				}
-				float[] out1 = scanVector(vecty);
+				float[] out1 = scanVector(vecty, 100);
 				for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
 					matrix1[z1][x1][y1] = out1[y1];
 				}
@@ -287,12 +374,13 @@ public class ShrinkMask implements PlugIn {
 				for (int x1 = 0; x1 < matrix1[0].length; x1++) {
 					vectx[x1] = matrix1[z1][x1][y1];
 				}
-				float[] out1 = scanVector(vectx);
+				float[] out1 = scanVector(vectx, 100); // 200
 				for (int x1 = 0; x1 < matrix1[0].length; x1++) {
 					matrix1[z1][x1][y1] = out1[x1];
 				}
 			}
 		}
+
 		/// scansione su z
 		for (int x1 = 0; x1 < matrix1[0].length; x1++) {
 			for (int y1 = 0; y1 < matrix1[0].length; y1++) {
@@ -301,25 +389,9 @@ public class ShrinkMask implements PlugIn {
 				for (int z1 = 0; z1 < matrix1[0].length; z1++) {
 					vectz[z1] = matrix1[z1][x1][y1];
 				}
-				float[] out1 = scanVector(vectz);
+				float[] out1 = scanVector(vectz, 100); // 300
 				for (int z1 = 0; z1 < matrix1[0].length; z1++) {
 					matrix1[z1][x1][y1] = out1[z1];
-				}
-			}
-		}
-
-		if (sbuccia) {
-			for (int z1 = 0; z1 < matrix1.length; z1++) {
-				for (int x1 = 0; x1 < matrix1[0].length; x1++) {
-					// lavoro su y
-					float[] vecty = new float[matrix1[0][0].length];
-					for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
-						vecty[y1] = matrix1[z1][x1][y1];
-					}
-					float[] out1 = shaveVector(vecty);
-					for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
-						matrix1[z1][x1][y1] = out1[y1];
-					}
 				}
 			}
 		}
@@ -328,49 +400,92 @@ public class ShrinkMask implements PlugIn {
 		return impOut;
 	}
 
-	public float[] scanVector(float[] in1) {
-		boolean active = false;
+	public float[] scanVector(float[] in1, int summa) {
+		boolean inside = false;
 		float[] vect = new float[in1.length];
 		for (int i1 = 0; i1 < vect.length; i1++) {
 			vect[i1] = in1[i1];
 		}
+		float previous = 0;
+		float next = 0;
 		for (int i1 = 0; i1 < vect.length; i1++) {
-			if ((i1 == 0) || (vect[i1] == 0))
-				active = true;
-			if (active && vect[i1] > 0) {
-				vect[i1] = 999;
-				active = false;
+			if (vect[i1] != previous)
+				inside = false;
+			if (vect[i1] != previous && vect[i1] < 100 && vect[i1] > 0 && previous < 100 && !inside) {
+				inside = true;
+				vect[i1] = vect[i1] + summa;
 			}
+			previous = vect[i1];
 		}
+		inside = false;
 		for (int i1 = vect.length - 1; i1 > 0; i1--) {
-			if ((i1 == vect.length - 1) || (vect[i1] == 0))
-				active = true;
-			if (active && vect[i1] > 0) {
-				vect[i1] = 999;
-				active = false;
+			if (vect[i1] != next)
+				inside = false;
+			if (vect[i1] != next && vect[i1] < 100 && vect[i1] > 0 && next < 100 && !inside) {
+				inside = true;
+				vect[i1] = vect[i1] + summa;
 			}
+			next = vect[i1];
 		}
-
 		return vect;
 	}
 
-	public float[] shaveVector(float[] in1) {
-		float[] vect = new float[in1.length];
-		for (int i1 = 0; i1 < vect.length; i1++) {
-			vect[i1] = in1[i1];
-		}
-		for (int i1 = 0; i1 < vect.length; i1++) {
-			if (vect[i1] == 999) {
-				vect[i1] = 0;
-			}
-		}
-		for (int i1 = vect.length - 1; i1 > 0; i1--) {
-			if (vect[i1] == 999) {
-				vect[i1] = 0;
-			}
-		}
+	public ImagePlus sbucciaMatrix(ImagePlus imp1) {
 
-		return vect;
+		float[][][] matrix1 = stackToMatrix(imp1);
+		for (int z1 = 0; z1 < matrix1.length; z1++) {
+			for (int x1 = 0; x1 < matrix1[0].length; x1++) {
+				for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
+					if ((int) matrix1[z1][x1][y1] > 100)
+						matrix1[z1][x1][y1] = 0;
+				}
+			}
+		}
+		ImagePlus impOut = matrixToStack(matrix1);
+		return impOut;
+	}
+
+	public ImagePlus isolaMatrix(ImagePlus imp1, int[] vetElimina) {
+
+		IJ.log("isola2");
+
+		float[][][] matrix1 = stackToMatrix(imp1);
+		for (int z1 = 0; z1 < matrix1.length; z1++) {
+			for (int x1 = 0; x1 < matrix1[0].length; x1++) {
+				for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
+					for (int w1 = 0; w1 < vetElimina.length; w1++) {
+						if ((int) matrix1[z1][x1][y1] == vetElimina[w1])
+							matrix1[z1][x1][y1] = 0;
+					}
+				}
+			}
+		}
+		ImagePlus impOut = matrixToStack(matrix1);
+		return impOut;
+	}
+
+	public static int[] singleMaskValues(ImagePlus impStackMask) {
+
+		ArrayList<Integer> maskList = new ArrayList<Integer>();
+		for (int z1 = 1; z1 <= impStackMask.getImageStackSize(); z1++) {
+			ImagePlus impSingleMask = MyStackUtils.imageFromStack(impStackMask, z1);
+			ImageProcessor maskSingleImage = impSingleMask.getProcessor();
+			float[] maskPixels = (float[]) maskSingleImage.getPixels();
+			for (int i1 = 0; i1 < maskPixels.length; i1++) {
+				int aux1 = (int) maskPixels[i1];
+				boolean trovato = false;
+				if (aux1 != 0) {
+					for (int i2 = 0; i2 < maskList.size(); i2++) {
+						if (aux1 == maskList.get(i2))
+							trovato = true;
+					}
+					if (!trovato)
+						maskList.add(aux1);
+				}
+			}
+		}
+		int[] out = ArrayUtils.arrayListToArrayInt(maskList);
+		return out;
 	}
 
 }
