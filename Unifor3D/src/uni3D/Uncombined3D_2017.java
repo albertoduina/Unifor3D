@@ -53,6 +53,7 @@ import utils.MyGenericDialogGrid;
 import utils.MyLine;
 import utils.MyLog;
 import utils.MyPlot;
+import utils.MySphere;
 import utils.MyStackUtils;
 import utils.MyVersionUtils;
 import utils.ReadDicom;
@@ -68,14 +69,13 @@ import utils.UtilAyv;
 //=====================================================
 
 public class Uncombined3D_2017 implements PlugIn {
-	static boolean debug = false;
+	static boolean debug1 = true;
 	final static int timeout = 100;
-	static boolean demo1 = false;
-	final static boolean step = false;
 	public static String VERSION = "CDQ 3D";
 
 	public void run(String arg) {
 
+		boolean demo0 = true;
 		new AboutBox().about("Uncombined3D", MyVersion.CURRENT_VERSION);
 		IJ.wait(20);
 		new AboutBox().close();
@@ -120,15 +120,15 @@ public class Uncombined3D_2017 implements PlugIn {
 		String myName = null;
 		String path10 = null;
 		String path17 = null;
-		String path20 = null;
+		// String path20 = null;
 		String[] dir1a = null;
-		String[] dir2a = null;
+		// String[] dir2a = null;
 		String dir10 = null;
 		String dir20 = null;
 		String dir1 = null;
-		String dir2 = null;
+		// String dir2 = null;
 		int num = 0;
-		int num2 = 0;
+		// int num2 = 0;
 		if (auto) {
 			dir10 = Prefs.get("prefer.Unifor3D_dir3", "none");
 			DirectoryChooser.setDefaultDirectory(dir10);
@@ -148,7 +148,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			if (path17 == null)
 				return;
 			Prefs.set("prefer.Unifor3D_dir4", path17);
-			num2 = 1;
+			// num2 = 1;
 		} else {
 			dir10 = Prefs.get("prefer.Unifor3D_dir3", "");
 			dir10 = UtilAyv.dirSeparator(dir10);
@@ -168,7 +168,7 @@ public class Uncombined3D_2017 implements PlugIn {
 				return;
 
 			Prefs.set("prefer.Unifor3D_dir4", path17);
-			num2 = 1;
+			// num2 = 1;
 		}
 
 		int gridWidth = 2;
@@ -284,28 +284,68 @@ public class Uncombined3D_2017 implements PlugIn {
 		}
 
 		IJ.log("================= ELABORAZIONE STACK COMBINED ================");
-		int[] coordinates1 = new int[3];
+		int[] coordinates1 = new int[4];
 		coordinates1[0] = imp27.getWidth() / 2;
 		coordinates1[1] = imp27.getHeight() / 2;
 		coordinates1[2] = 0;
+		coordinates1[3] = 0;
 
 		IJ.log("===============================================================");
 		IJ.log("threeBalls run 1 con coordinate generiche");
 		IJ.log("===============================================================");
-		int[] out1 = threeBalls(imp27, coordinates1);
 
-		int[] coordinates2 = new int[3];
-		coordinates2[0] = out1[0];
-		coordinates2[1] = out1[1];
-		coordinates2[2] = out1[2];
+		// int[] out1 = threeBalls(imp27, coordinates1, demo0);
+		double[] out1 = MySphere.centerSphere(imp27, demo0);
+		MyLog.logVector(out1, "out1");
+		MyLog.waitHere();
+
+		int[] coordinates2 = new int[4];
+//		coordinates2[0] = out1[0];
+//		coordinates2[1] = out1[1];
+//		coordinates2[2] = out1[2];
+//		coordinates2[3] = out1[3];
+
 		IJ.log("===============================================================");
 		IJ.log("threeBalls run 2 con le coordinate ricavate dal run 1");
 		IJ.log("===============================================================");
-		int[] centroSfera1 = threeBalls(imp27, coordinates2);
-		MyLog.logVector(centroSfera1, "centroSfera1 ricavato dal run 1");
+		int[] centrosfera = threeBalls(imp27, coordinates2, demo0);
+		MyLog.logVector(centrosfera, "centroSfera1 ricavato dal run 1");
 		MyLog.waitHere();
 		MyLog.waitHere(
-				"uncombined centroSfera1 X=" + centroSfera1[0] + " Y= " + centroSfera1[1] + " Z= " + centroSfera1[2]);
+				"uncombined centroSfera1 X=" + centrosfera[0] + " Y= " + centrosfera[1] + " Z= " + centrosfera[2]);
+
+		ImagePlus impMapR = null;
+		ImagePlus impMapG = null;
+		ImagePlus impMapB = null;
+		ImagePlus impMapRGB = null;
+		ImageStack stackRGB = null;
+
+		int width = imp27.getWidth();
+		int height = imp27.getHeight();
+		int depth = imp27.getStackSize();
+		int bitdepth = 24;
+		int myColors = 1;
+
+		boolean generate = true;
+		if (generate) {
+			impMapR = MySphere.generaMappazzaVuota16(width, height, depth, "impMappazzaR");
+			impMapG = MySphere.generaMappazzaVuota16(width, height, depth, "impMappazzaG");
+			impMapB = MySphere.generaMappazzaVuota16(width, height, depth, "impMappazzaB");
+			stackRGB = ImageStack.create(width, height, depth, bitdepth);
+			impMapRGB = new ImagePlus("MAPPAZZA_" + myColors, stackRGB);
+			generate = false;
+		}
+
+		int x0 = centrosfera[0];
+		int y0 = centrosfera[1];
+		int z0 = centrosfera[2];
+		int r0 = centrosfera[3];
+		int[] colorRGB3 = { 150, 150, 150 };
+		MySphere.addSphere(impMapR, impMapG, impMapB, x0, y0, z0, r0, colorRGB3, true);
+		impMapR.show();
+		impMapG.show();
+		impMapB.show();
+		MyLog.waitHere();
 
 		// =================================================================
 		// ELABORAZIONE STACK UNCOMBINED
@@ -349,14 +389,14 @@ public class Uncombined3D_2017 implements PlugIn {
 			coordinates3[1] = imp10.getHeight() / 2;
 			coordinates3[2] = 0;
 
-			int[] out3 = threeBalls(imp10, coordinates3);
+			int[] out3 = threeBalls(imp10, coordinates3, demo0);
 			MyLog.logVector(out3, "out3");
 			int[] coordinates4 = new int[3];
 			coordinates4[0] = out3[0];
 			coordinates4[1] = out3[1];
 			coordinates4[2] = out3[2];
 
-			int[] centroSfera2 = threeBalls(imp10, coordinates4);
+			int[] centroSfera2 = threeBalls(imp10, coordinates4, demo0);
 			MyLog.logVector(centroSfera2, "centroSfera2");
 			//
 			IJ.log("uncombined centroSfera2 X=" + centroSfera2[0] + " Y= " + centroSfera2[1] + " Z= "
@@ -366,9 +406,6 @@ public class Uncombined3D_2017 implements PlugIn {
 			// geometrica dela sfera ma effettuo la ricerca dello spot11x11 su
 			// tutte le sezioni, quindi i dati geometrici servono a una cippa
 			double profond = 30;
-			Boolean step2 = false;
-			Boolean demo0 = false;
-			Boolean test = false;
 			int mode = 0;
 			ImageStack newStack = new ImageStack(imp10.getWidth(), imp10.getHeight());
 
@@ -641,7 +678,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			if (lw != null)
 				lw.setLocation(10, 10);
 
-			MyLog.waitHere(listaMessaggi(5), debug, timeout);
+			MyLog.waitHere(listaMessaggi(5), debug1, timeout);
 
 		}
 
@@ -1230,19 +1267,17 @@ public class Uncombined3D_2017 implements PlugIn {
 	 * @return int[] xCenter, yCenter, zCenter, diameter
 	 * 
 	 */
-	public static int[] threeBalls(ImagePlus imp1, int[] coordinates) {
+	public static int[] threeBalls(ImagePlus imp1, int[] coordinates, boolean demo0) {
 
 		Color colore1 = Color.red;
 		Color colore2 = Color.green;
-		Color colore3 = Color.red;
+		// Color colore3 = Color.red;
 		int[] centroSfera = null;
-		;
 
 		boolean showProfiles = false;
-		boolean manual = false;
+		// boolean manual = false;
 
-		boolean demo0 = true;
-		MyLog.logVector(coordinates, "threeBalls.coordinates");
+		MyLog.logVector(coordinates, "threeBalls.coordinates_input");
 
 		// x=128, y=128, z=0 ottenuti da getCrossLoc se non passo niente
 		IJ.run(imp1, "Orthogonal Views", "");
@@ -1299,10 +1334,12 @@ public class Uncombined3D_2017 implements PlugIn {
 			yPoints2[i1] = out212[1][i1];
 		}
 
-		double[][] peaks9 = new double[4][1];
-		double[][] peaks10 = new double[4][1];
-		double[][] peaks11 = new double[4][1];
-		double[][] peaks12 = new double[4][1];
+		MyLog.waitHere();
+
+		// double[][] peaks9 = new double[4][1];
+		// double[][] peaks10 = new double[4][1];
+		// double[][] peaks11 = new double[4][1];
+		// double[][] peaks12 = new double[4][1];
 
 		// ------ riadattamento da p10
 
@@ -1367,7 +1404,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		// multipurpose line analyzer
 		int count = -1;
 		boolean vertical = false;
-		boolean valido = true;
+		// boolean valido = true;
 		for (int i1 = 0; i1 < 8; i1++) {
 			xcoord[0] = vetx0[i1];
 			ycoord[0] = vety0[i1];
@@ -1390,7 +1427,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			else
 				showProfiles = false;
 
-			myPeaks = cannyProfileAnalyzer2(imp12, vetTitle[i1], showProfiles, demo0, debug, vertical, timeout);
+			myPeaks = cannyProfileAnalyzer2(imp12, vetTitle[i1], showProfiles, demo0, debug1, vertical, timeout);
 
 			// myPeaks = profileAnalyzer(imp12, dimPixel, vetTitle[i1],
 			// showProfiles, vertical, timeout);
@@ -1421,7 +1458,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			}
 		}
 		if (demo0)
-			MyLog.waitHere("Si tracciano ulteriori linee", debug, timeout);
+			MyLog.waitHere("Si tracciano ulteriori linee", debug1, timeout);
 
 		int[] xPoints3 = new int[1];
 		int[] yPoints3 = new int[1];
@@ -1441,157 +1478,139 @@ public class Uncombined3D_2017 implements PlugIn {
 
 		over12.clear();
 
-		// ----------------------------------------------------------------------
-		// Verifica di avere trovato almeno 3 punti, altrimenti chiede la
-		// selezione manuale del cerchio
-		// -------------------------------------------------------------------
-		// MyLog.waitHere("uno");
+		PointRoi pr12 = new PointRoi(xPoints3, yPoints3, xPoints3.length);
+		pr12.setPointType(2);
+		pr12.setSize(2);
+		imp12.setRoi(pr12);
 
-		// if (xPoints3.length < 3 || test) {
-		// UtilAyv.showImageMaximized(imp11);
-		// MyLog.waitHere(
-		// "Non si riescono a determinare le coordinate di almeno 3 punti del
-		// cerchio \n posizionare manualmente una ROI circolare di diametro
-		// uguale al fantoccio e\n premere OK",
-		// debug, timeout1);
-		// manual = true;
-		// }
-
-		if (!manual) {
-
-			PointRoi pr12 = new PointRoi(xPoints3, yPoints3, xPoints3.length);
+		if (demo0) {
+			ImageUtils.addOverlayRoi(imp12, colore1, 3.1);
 			pr12.setPointType(2);
 			pr12.setSize(2);
-			imp12.setRoi(pr12);
 
-			if (demo0) {
-				ImageUtils.addOverlayRoi(imp12, colore1, 3.1);
-				pr12.setPointType(2);
-				pr12.setSize(2);
-
-				// over12.addElement(imp12.getRoi());
-				// over12.setStrokeColor(Color.green);
-				// imp12.setOverlay(over12);
-				// imp12.updateAndDraw();
-				// MyLog.waitHere(listaMessaggi(5), debug, timeout1);
-			}
-			// ---------------------------------------------------
-			// eseguo ora fitCircle per trovare centro e dimensione del
-			// fantoccio
-			// ---------------------------------------------------
-			if (xPoints3.length < 3) {
-				ImageWindow iw112 = imp12.getWindow();
-				if (iw112 != null)
-					iw112.dispose();
-				// ImageWindow iw111 = imp11.getWindow();
-				// if (iw111 != null)
-				// iw111.dispose();
-
-				return null;
-			}
-			ImageUtils.fitCircle(imp12);
-			Boolean demo2 = true;
-			Boolean demo3 = true;
-			if (demo2) {
-				imp12.getRoi().setStrokeColor(colore1);
-				over12.addElement(imp12.getRoi());
-			}
-
-			if (demo3)
-				MyLog.waitHere("La circonferenza risultante dal fit e' mostrata in rosso", debug, timeout1);
-			Rectangle boundRec = imp12.getProcessor().getRoi();
-			// xCenterCircle = Math.round(boundRec.x + boundRec.width / 2);
-			// yCenterCircle = Math.round(boundRec.y + boundRec.height / 2);
-			// diamCircle = boundRec.width;
-			// if (!manualOverride)
-			// writeStoredRoiData(boundRec);
-
-			// MyCircleDetector.drawCenter(imp12, over12, xCenterCircle,
-			// yCenterCircle, colore3);
-			// if (demo1)
-			// MyLog.waitHere("002\nLa circonferenza risultante dal fit e'
-			// mostrata in rosso ed ha \nxCenterCircle= "
-			// + xCenterCircle + " yCenterCircle= " + yCenterCircle + "
-			// diamCircle= " + diamCircle);
-
-			// =======================================================
-			PointRoi pr212 = new PointRoi(xPoints2, yPoints2, xPoints2.length);
-			imp212.setRoi(pr212);
-			imp212.getRoi().setStrokeColor(Color.blue);
-			// over212.add(imp212.getRoi());
-			IJ.log("threeBalls: fitCircle");
-
-			double[] out1 = ImageUtils.fitCircleNew(imp212);
-
-			MyLog.logVector(out1, "fitCircleNew out1");
-
-			imp212.updateAndDraw();
-			Rectangle boundRec2 = imp212.getProcessor().getRoi();
-			int xCenterCircle2 = Math.round(boundRec2.x + boundRec2.width / 2);
-			int yCenterCircle2 = Math.round(boundRec2.y + boundRec2.height / 2);
-			int diamCircle2 = boundRec2.width;
-			imp2.setRoi(new OvalRoi(xCenterCircle2 - diamCircle2 / 2, yCenterCircle2 - diamCircle2 / 2, diamCircle2,
-					diamCircle2));
-
-			imp212.setRoi(new OvalRoi(xCenterCircle2 - diamCircle2 / 2, yCenterCircle2 - diamCircle2 / 2, diamCircle2,
-					diamCircle2));
-			imp212.getRoi().setStrokeColor(Color.yellow);
-			// over212.add(imp212.getRoi());
-			double val2 = fitQuality(imp212, out212[0].length);
-			imp212.updateAndDraw();
-			if (val2 < 20)
-				IJ.log("ATTENZIONE fit quality <20  = " + val2);
-
-			IJ.log("My_fit_quality = " + val2);
-
-			// MyLog.waitHere(
-			// "XZ_IMP12 Good canny fitted pixels in green,\nbad canny fitted
-			// pixels
-			// in red,\ninterpolation used points blue,\nfitted circle yellow");
-			//// ====================================================
-			ImagePlus imp213 = cannyFilter(imp13, gaussianKernelRadius, lowThreshold, highThreshold, contrastNormalized,
-					mode, timeout1);
-			imp213.show();
-			imp213.setOverlay(over213);
-			int[][] out213 = cannyPointsExtractor(imp213);
-			imp213.show();
-			Rectangle boundRec3 = imp213.getProcessor().getRoi();
-			int xCenterCircle3 = Math.round(boundRec3.x + boundRec3.width / 2);
-			int yCenterCircle3 = Math.round(boundRec3.y + boundRec3.height / 2);
-			int diamCircle3 = boundRec3.width;
-			imp3.setRoi(new OvalRoi(xCenterCircle3 - diamCircle3 / 2, yCenterCircle3 - diamCircle3 / 2, diamCircle3,
-					diamCircle3));
-			imp3.getRoi().setStrokeColor(Color.green);
-			// over3.add(imp3.getRoi());
-			imp213.setRoi(new OvalRoi(xCenterCircle3 - diamCircle3 / 2, yCenterCircle3 - diamCircle3 / 2, diamCircle3,
-					diamCircle3));
-			imp213.getRoi().setStrokeColor(Color.green);
-
-			double val3 = fitQuality(imp213, out213[0].length);
-			if (val3 < 20)
-				MyLog.waitHere("fit quality < 20= " + val3);
-
-			// MyLog.waitHere(
-			// "YZ_IMP13 Good canny fitted pixels in green,\nbad canny fitted
-			// pixels
-			// in red,\ninterpolation used points blue,\nfitted circle yellow");
-
-			int zeta = (yCenterCircle2 + xCenterCircle3) / 2;
-
-			IJ.log("CENTRO SFERA");
-			IJ.log("immagine XZ: x= " + xCenterCircle2 + " z= " + yCenterCircle2 + " d= " + diamCircle2 + " quality= "
-					+ IJ.d2s(val2, 2) + "[ok se >20]");
-			IJ.log("immagine YZ: y= " + yCenterCircle3 + " z= " + xCenterCircle3 + " d= " + diamCircle3 + " quality= "
-					+ IJ.d2s(val3, 2) + "[ok se >20]");
-			IJ.log("coordinate centro  x= " + xCenterCircle2 + " y= " + yCenterCircle3 + " z= " + zeta);
-
-			int radius = (diamCircle2 + diamCircle3) / 4;
-			centroSfera = new int[4];
-			centroSfera[0] = xCenterCircle2;
-			centroSfera[1] = yCenterCircle3;
-			centroSfera[2] = zeta;
-			centroSfera[3] = radius;
+			// over12.addElement(imp12.getRoi());
+			// over12.setStrokeColor(Color.green);
+			// imp12.setOverlay(over12);
+			// imp12.updateAndDraw();
+			// MyLog.waitHere(listaMessaggi(5), debug, timeout1);
 		}
+		// ---------------------------------------------------
+		// eseguo ora fitCircle per trovare centro e dimensione del
+		// fantoccio
+		// ---------------------------------------------------
+		if (xPoints3.length < 3) {
+			ImageWindow iw112 = imp12.getWindow();
+			if (iw112 != null)
+				iw112.dispose();
+			// ImageWindow iw111 = imp11.getWindow();
+			// if (iw111 != null)
+			// iw111.dispose();
+
+			return null;
+		}
+		ImageUtils.fitCircle(imp12);
+		Boolean demo2 = true;
+		Boolean demo3 = true;
+		if (demo2) {
+			imp12.getRoi().setStrokeColor(colore1);
+			over12.addElement(imp12.getRoi());
+		}
+
+		if (demo3)
+			MyLog.waitHere("La circonferenza risultante dal fit e' mostrata in rosso", debug1, timeout1);
+		Rectangle boundRec = imp12.getProcessor().getRoi();
+		// xCenterCircle = Math.round(boundRec.x + boundRec.width / 2);
+		// yCenterCircle = Math.round(boundRec.y + boundRec.height / 2);
+		// diamCircle = boundRec.width;
+		// if (!manualOverride)
+		// writeStoredRoiData(boundRec);
+
+		// MyCircleDetector.drawCenter(imp12, over12, xCenterCircle,
+		// yCenterCircle, colore3);
+		// if (demo1)
+		// MyLog.waitHere("002\nLa circonferenza risultante dal fit e'
+		// mostrata in rosso ed ha \nxCenterCircle= "
+		// + xCenterCircle + " yCenterCircle= " + yCenterCircle + "
+		// diamCircle= " + diamCircle);
+
+		// =======================================================
+		PointRoi pr212 = new PointRoi(xPoints2, yPoints2, xPoints2.length);
+		imp212.setRoi(pr212);
+		imp212.getRoi().setStrokeColor(Color.blue);
+		// over212.add(imp212.getRoi());
+		IJ.log("threeBalls: fitCircle");
+
+		double[] out1 = ImageUtils.fitCircleNew(imp212);
+
+		MyLog.logVector(out1, "fitCircleNew out1");
+
+		imp212.updateAndDraw();
+		Rectangle boundRec2 = imp212.getProcessor().getRoi();
+		int xCenterCircle2 = Math.round(boundRec2.x + boundRec2.width / 2);
+		int yCenterCircle2 = Math.round(boundRec2.y + boundRec2.height / 2);
+		int diamCircle2 = boundRec2.width;
+		imp2.setRoi(new OvalRoi(xCenterCircle2 - diamCircle2 / 2, yCenterCircle2 - diamCircle2 / 2, diamCircle2,
+				diamCircle2));
+
+		imp212.setRoi(new OvalRoi(xCenterCircle2 - diamCircle2 / 2, yCenterCircle2 - diamCircle2 / 2, diamCircle2,
+				diamCircle2));
+		imp212.getRoi().setStrokeColor(Color.yellow);
+		// over212.add(imp212.getRoi());
+		double val2 = fitQuality(imp212, out212[0].length);
+		imp212.updateAndDraw();
+		if (val2 < 20)
+			IJ.log("ATTENZIONE fit quality <20  = " + val2);
+
+		IJ.log("My_fit_quality = " + val2);
+
+		// MyLog.waitHere(
+		// "XZ_IMP12 Good canny fitted pixels in green,\nbad canny fitted
+		// pixels
+		// in red,\ninterpolation used points blue,\nfitted circle yellow");
+		//// ====================================================
+		ImagePlus imp213 = cannyFilter(imp13, gaussianKernelRadius, lowThreshold, highThreshold, contrastNormalized,
+				mode, timeout1);
+		imp213.show();
+		imp213.setOverlay(over213);
+		int[][] out213 = cannyPointsExtractor(imp213);
+		imp213.show();
+		Rectangle boundRec3 = imp213.getProcessor().getRoi();
+		int xCenterCircle3 = Math.round(boundRec3.x + boundRec3.width / 2);
+		int yCenterCircle3 = Math.round(boundRec3.y + boundRec3.height / 2);
+		int diamCircle3 = boundRec3.width;
+		imp3.setRoi(new OvalRoi(xCenterCircle3 - diamCircle3 / 2, yCenterCircle3 - diamCircle3 / 2, diamCircle3,
+				diamCircle3));
+		imp3.getRoi().setStrokeColor(Color.green);
+		// over3.add(imp3.getRoi());
+		imp213.setRoi(new OvalRoi(xCenterCircle3 - diamCircle3 / 2, yCenterCircle3 - diamCircle3 / 2, diamCircle3,
+				diamCircle3));
+		imp213.getRoi().setStrokeColor(Color.green);
+
+		double val3 = fitQuality(imp213, out213[0].length);
+		if (val3 < 20)
+			MyLog.waitHere("fit quality < 20= " + val3);
+
+		// MyLog.waitHere(
+		// "YZ_IMP13 Good canny fitted pixels in green,\nbad canny fitted
+		// pixels
+		// in red,\ninterpolation used points blue,\nfitted circle yellow");
+
+		int zeta = (yCenterCircle2 + xCenterCircle3) / 2;
+
+		IJ.log("CENTRO SFERA");
+		IJ.log("immagine XZ: x= " + xCenterCircle2 + " z= " + yCenterCircle2 + " d= " + diamCircle2 + " quality= "
+				+ IJ.d2s(val2, 2) + "[ok se >20]");
+		IJ.log("immagine YZ: y= " + yCenterCircle3 + " z= " + xCenterCircle3 + " d= " + diamCircle3 + " quality= "
+				+ IJ.d2s(val3, 2) + "[ok se >20]");
+		IJ.log("coordinate centro  x= " + xCenterCircle2 + " y= " + yCenterCircle3 + " z= " + zeta);
+
+		int radius = (diamCircle2 + diamCircle3) / 4;
+		centroSfera = new int[4];
+		centroSfera[0] = xCenterCircle2;
+		centroSfera[1] = yCenterCircle3;
+		centroSfera[2] = zeta;
+		centroSfera[3] = radius;
+
 		return centroSfera;
 	}
 
@@ -1764,6 +1783,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		int count1 = 0;
 		boolean ready1 = false;
 		double max1 = 0;
+		imp1.show();
 		for (int i1 = 0; i1 < profi3[0].length; i1++) {
 
 			if (profi3[2][i1] > max1) {
