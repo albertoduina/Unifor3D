@@ -15,6 +15,7 @@ import ij.gui.Overlay;
 import ij.measure.ResultsTable;
 import utils.InputOutput;
 import utils.MyCircleDetector;
+import utils.MyFilter;
 import utils.MyLog;
 import utils.UtilAyv;
 
@@ -30,7 +31,6 @@ public class Uncombined3D_Test {
 		// new WaitForUserDialog("Do something, then click OK.").show();
 
 	}
-
 
 	@Test
 	public final void testPositionSearchZZ() {
@@ -101,4 +101,21 @@ public class Uncombined3D_Test {
 
 	}
 
+	@Test
+	public final void testPositionSearchCircular() {
+
+		String path1 = "./Data/DUP_XZ_128.tif";
+		ImagePlus imp1 = UtilAyv.openImageMaximized(path1);
+		int xpos = 135;
+		int ypos = 89;
+		int diam = 169;
+		double[] circleData = new double[3];
+		circleData[0] = (double) xpos;
+		circleData[1] = (double) ypos;
+		circleData[2] = (double) diam;
+		double diam2 = 13;
+		int demolevel = 3;
+		double[] out = MyFilter.positionSearchCircular(imp1, circleData, diam2, demolevel);
+		MyLog.waitHere();
+	}
 }

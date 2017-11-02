@@ -58,31 +58,41 @@ public class VolumeStatistics implements PlugIn {
 		String title1 = "";
 		String title2 = "";
 
-		GenericDialog gd = new GenericDialog("Volume Statistics");
-		if (title1.equals(""))
-			defaultItem1 = titles[0];
-		else
-			defaultItem1 = title1;
-		gd.addChoice("Images Stack:", titles, defaultItem1);
-		if (title2.equals(""))
-			defaultItem2 = titles[1];
-		else
-			defaultItem2 = title2;
+		boolean rep1 = false;
+		ImagePlus impImage = null;
+		ImagePlus impMask = null;
+		do {
+			rep1 = false;
+			GenericDialog gd = new GenericDialog("Volume Statistics");
+			if (title1.equals(""))
+				defaultItem1 = titles[0];
+			else
+				defaultItem1 = title1;
+			gd.addChoice("Images Stack:", titles, defaultItem1);
+			if (title2.equals(""))
+				defaultItem2 = titles[1];
+			else
+				defaultItem2 = title2;
 
-		gd.addChoice("Mask Stack:", titles, defaultItem2);
-		gd.showDialog();
-		if (gd.wasCanceled())
-			return;
-		int index1 = gd.getNextChoiceIndex();
-		title1 = titles[index1];
-		int index2 = gd.getNextChoiceIndex();
-		title2 = titles[index2];
-		ImagePlus impImage = WindowManager.getImage(wList[index1]);
-		ImagePlus impMask = WindowManager.getImage(wList[index2]);
-		if (impImage.getBitDepth() != 16)
-			MyLog.waitHere("voglio una immagine a 16 bit!");
-		if (impMask.getBitDepth() != 32)
-			MyLog.waitHere("voglio una mask a 32 bit!");
+			gd.addChoice("Mask Stack:", titles, defaultItem2);
+			gd.showDialog();
+			if (gd.wasCanceled())
+				return;
+			int index1 = gd.getNextChoiceIndex();
+			title1 = titles[index1];
+			int index2 = gd.getNextChoiceIndex();
+			title2 = titles[index2];
+			impImage = WindowManager.getImage(wList[index1]);
+			impMask = WindowManager.getImage(wList[index2]);
+			if (impImage.getBitDepth() != 16) {
+				IJ.showMessage("la immagine DEVE essere a 16 bit");
+				rep1 = true;
+			}
+			if (impMask.getBitDepth() != 32) {
+				IJ.showMessage("la mask DEVE essere 32 bit!");
+				rep1 = true;
+			}
+		} while (rep1);
 
 		int[] val = singleMaskValues(impMask);
 		GenericDialog gd2 = new GenericDialog("Mask Values Selection");
@@ -141,6 +151,8 @@ public class VolumeStatistics implements PlugIn {
 		Vector<Checkbox> checkboxes = gd2.getCheckboxes();
 
 		int selection = 0;
+		double mean = 0;
+		double sd = 0;
 		for (int i1 = 0; i1 < vetint.length; i1++) {
 			if ((checkboxes.elementAt(i1).getState() == true)) {
 				selection = vetint[i1];
@@ -152,6 +164,7 @@ public class VolumeStatistics implements PlugIn {
 							+ " ho troppo pochi pixel selezionati per statisticheggiare! ");
 					continue;
 				}
+
 				rt.incrementCounter();
 				rt.addValue("image", impImage.getTitle());
 				rt.addValue("mask", impMask.getTitle());
@@ -159,8 +172,11 @@ public class VolumeStatistics implements PlugIn {
 				rt.addValue("volume", vetOut.length);
 				rt.addValue("min", ArrayUtils.vetMin(vetOut));
 				rt.addValue("max", ArrayUtils.vetMax(vetOut));
-				rt.addValue("mean", ArrayUtils.vetMean(vetOut));
-				rt.addValue("sd", ArrayUtils.vetSdKnuth(vetOut));
+				mean = ArrayUtils.vetMean(vetOut);
+				rt.addValue("mean", mean);
+				sd = ArrayUtils.vetSdKnuth(vetOut);
+				rt.addValue("sd", sd);
+				rt.addValue("snr", mean / sd);
 				rt.addValue("median", ArrayUtils.vetMedian(vetOut));
 				rt.addValue("1_quartile", ArrayUtils.vetQuartile(vetOut, 1));
 				rt.addValue("3_quartile", ArrayUtils.vetQuartile(vetOut, 3));
