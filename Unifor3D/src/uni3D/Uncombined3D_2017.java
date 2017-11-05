@@ -75,6 +75,8 @@ public class Uncombined3D_2017 implements PlugIn {
 	public static String VERSION = "CDQ 3D";
 
 	public void run(String arg) {
+		int diam7x7 = 10;
+		int diam11x11 = 14;
 
 		boolean demo0 = false;
 		new AboutBox().about("Uncombined3D", MyVersion.CURRENT_VERSION);
@@ -128,7 +130,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		String[] dir1b = null;
 		// String[] dir2a = null;
 		String dirDefaultUncombined1 = null;
-		String dirDefaultUncombined2=null;
+		String dirDefaultUncombined2 = null;
 
 		String dirDefaultCombined = null;
 		String dir1 = null;
@@ -158,8 +160,6 @@ public class Uncombined3D_2017 implements PlugIn {
 			dir1b = new File(dir2).list();
 			num2 = dir1b.length;
 
-			
-			
 			dirDefaultCombined = Prefs.get("prefer.Unifor3D_dir4", "");
 			dirDefaultCombined = UtilAyv.dirSeparator(dirDefaultCombined);
 			OpenDialog.setDefaultDirectory(dirDefaultCombined);
@@ -187,8 +187,8 @@ public class Uncombined3D_2017 implements PlugIn {
 			if (pathUncombined2 == null)
 				return;
 			Prefs.set("prefer.Unifor3D_dir5", dir2);
-			dir1b = new File(dir2).list();
-			num2 = dir1b.length;
+			// dir1b = new File(dir2).list();
+			// num2 = dir1b.length;
 
 			dirDefaultCombined = Prefs.get("prefer.Unifor3D_dir4", "");
 			dirDefaultCombined = UtilAyv.dirSeparator(dirDefaultCombined);
@@ -201,6 +201,10 @@ public class Uncombined3D_2017 implements PlugIn {
 			Prefs.set("prefer.Unifor3D_dir4", pathCombined);
 			// num2 = 1;
 		}
+
+		IJ.log("dir1= " + dir1);
+		IJ.log("dir2= " + dir2);
+		IJ.log("pathCombined= " + pathCombined);
 
 		int gridWidth = 2;
 		int gridHeight = livelli;
@@ -392,6 +396,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		int b3 = 250;
 
 		while (count0 < num1) {
+
 			long time1 = System.nanoTime();
 
 			aa += 1;
@@ -415,13 +420,23 @@ public class Uncombined3D_2017 implements PlugIn {
 			// IJ.log("aa= " + aa + " cr= " + cr + " cg= " + cg + " cb= " + cb);
 			if (auto) {
 				pathUncombined1 = dir1 + dir1a[count0];
+				pathUncombined2 = dir1 + dir1b[count0];
+				IJ.log("pathUncombined1= " + pathUncombined1);
+				IJ.log("pathUncombined2= " + pathUncombined2);
 				IJ.log("elaborazione " + count0 + " / " + num1);
 			}
 			// MyLog.waitHere("path10= " + path10);
+
 			impUncombined1 = UtilAyv.openImageNoDisplay(pathUncombined1, false);
 			myName = impUncombined1.getTitle();
 
+			impUncombined2 = UtilAyv.openImageNoDisplay(pathUncombined2, false);
+			if (impUncombined2 == null)
+				MyLog.waitHere("uncombined2==null");
+			myName = impUncombined2.getTitle();
+
 			count0++;
+			IJ.log("count0= " + count0);
 			// int width = imp10.getWidth();
 			// int height = imp10.getHeight();
 			ImageStack imaStack1 = impUncombined1.getImageStack();
@@ -435,12 +450,9 @@ public class Uncombined3D_2017 implements PlugIn {
 				return;
 			}
 
-			
-			
 			int demolevel = 0;
 			// int diamsearch = 6;
-			int diamsearch = 14;
-			double[] circularSpot = MySphere.searchCircularSpot(impUncombined1, sphereA, diamsearch, "", demolevel);
+			double[] circularSpot = MySphere.searchCircularSpot(impUncombined1, sphereA, diam7x7, "", demolevel);
 			MyLog.logVector(circularSpot, "circularSpot");
 			IJ.log("uncombined spot X " + count0 + " =" + circularSpot[0] + " Y= " + circularSpot[1] + " Z= "
 					+ circularSpot[2]);
@@ -448,7 +460,6 @@ public class Uncombined3D_2017 implements PlugIn {
 			int x2 = (int) circularSpot[0];
 			int y2 = (int) circularSpot[1];
 			int z2 = (int) circularSpot[2];
-			int d2 = diamsearch;
 			int[] colorRGB2 = new int[3];
 			colorRGB2[0] = cr;
 			colorRGB2[1] = cg;
@@ -460,7 +471,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			sphereB[0] = x2;
 			sphereB[1] = y2;
 			sphereB[2] = z2;
-			sphereB[3] = d2;
+			sphereB[3] = diam7x7;
 
 			surfaceonly = false;
 			MySphere.addSphere(impMapR, impMapG, impMapB, sphereB, bounds, colorRGB2, surfaceonly);
@@ -469,20 +480,30 @@ public class Uncombined3D_2017 implements PlugIn {
 			impMapG.updateAndDraw();
 			impMapB.updateAndDraw();
 			impMapRGB.updateAndDraw();
+			double[] vetpixel_7x7 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereB, demolevel);
+			int len1 = vetpixel_7x7.length;
+			double s_MROI = ArrayUtils.vetMean(vetpixel_7x7);
+			double sd_MROI = ArrayUtils.vetSdKnuth(vetpixel_7x7);
+			double p_MROI = sd_MROI / Math.sqrt(2.0);
 
-			double[] vetpixel = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereB, demolevel);
-			int len1 = vetpixel.length;
-			double mean1 = ArrayUtils.vetMean(vetpixel);
 			IJ.log("volume effettivo sfera  = " + len1 + "[voxels]");
-			IJ.log("mean sfera " + count0 + " = " + mean1);
+			IJ.log("mean sfera " + count0 + " = " + s_MROI);
+
+			double[] sphereC = new double[4];
+			sphereC[0] = x2;
+			sphereC[1] = y2;
+			sphereC[2] = z2;
+			sphereC[3] = diam11x11;
+			MyLog.logVector(sphereC, "sphereC");
+
+			double[] vetpixel_11x11 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereC, demolevel);
+			MyLog.logVector(vetpixel_11x11, "vetpixel_11x11");
 
 			// MyLog.waitHere();
 			long time2 = System.nanoTime();
 			String tempo1 = MyTimeUtils.stringNanoTime(time2 - time1);
 			IJ.log("Tempo sfera " + count0 + "   hh:mm:ss.ms " + tempo1);
-			
-			impUncombined2 = UtilAyv.openImageNoDisplay(pathUncombined2, false);
-			myName = impUncombined2.getTitle();
+
 			ImageStack imaStack2 = impUncombined2.getImageStack();
 			if (imaStack2 == null) {
 				IJ.log("imageFromStack.imaStack== null");
@@ -494,123 +515,40 @@ public class Uncombined3D_2017 implements PlugIn {
 				return;
 			}
 
+			ImagePlus impDiff = MyStackUtils.stackDiff(impUncombined1, impUncombined2);
+			double[] vetpixeldiff_11x11 = MySphere.vectorizeSphericalSpot(impDiff, sphereA, sphereC, demolevel);
+			MyLog.logVector(vetpixeldiff_11x11, "vetpixeldiff_11x11");
+			impDiff.setTitle("IMMAGINE DIFFERENZA");
+			impDiff.show();
 
+			// ============================================
+			// INIZIO CALCOLO SNR
+			// ============================================
+			ArrayList<Double> pixlist_11x11OK = new ArrayList<Double>();
+			ArrayList<Double> pixlistdiff_11x11OK = new ArrayList<Double>();
 
-			
-			ImagePlus stackdiff= MyStackUtils.stackDiff(impUncombined1, impUncombined1);
-			stackdiff.show();
+			for (int i1 = 0; i1 < vetpixel_11x11.length; i1++) {
+				if (vetpixel_11x11[i1] > (5 * p_MROI)) {
+					pixlist_11x11OK.add(vetpixel_11x11[i1]);
+					pixlistdiff_11x11OK.add(vetpixeldiff_11x11[i1]);
+				}
+			}
+			double[] vetpixok = ArrayUtils.arrayListToArrayDouble(pixlist_11x11OK);
+			double[] vetpixdiffok = ArrayUtils.arrayListToArrayDouble(pixlistdiff_11x11OK);
+			MyLog.logVector(vetpixok, "vetpixok");
+			MyLog.logVector(vetpixdiffok, "vetpixdiffok");
+			double sd_diff = ArrayUtils.vetSdKnuth(vetpixdiffok);
+			IJ.log("s_MROI= " + s_MROI);
+			IJ.log("sd_diff= " + sd_diff);
+			double snr = 0;
+			if (vetpixok.length < 121) {
+				MyLog.waitHere("diametro ricerca troppo piccolo");
+			} else {
+				snr = s_MROI * Math.sqrt(2) / sd_diff;
+			}
+
+			IJ.log("snr= " + snr);
 			MyLog.waitHere();
-			
-			
-			
-			
-			if (false) {
-				// al contrario dell'uniformita' non mi baso su una
-				// ricostruzione
-				// geometrica dela sfera ma effettuo la ricerca dello spot11x11
-				// su
-				// tutte le sezioni, quindi i dati geometrici servono a una
-				// cippa
-				double profond = 30;
-				int mode = 0;
-				ImageStack newStack = new ImageStack(impUncombined1.getWidth(), impUncombined1.getHeight());
-
-				for (int i1 = 0; i1 < impUncombined1.getImageStackSize(); i1++) {
-					if (!auto)
-						IJ.log("localizzo hotspot " + i1 + " / " + impUncombined1.getImageStackSize());
-					ImagePlus imp20 = MyStackUtils.imageFromStack(impUncombined1, i1 + 1);
-					double[] pos20 = positionSearch(imp20, profond, "", mode, timeout);
-					if (pos20 == null) {
-						continue;
-					}
-					double diamMROI = 11;
-					double xCenterRoi = pos20[0];
-					double yCenterRoi = pos20[1];
-					ImagePlus imp21 = MyStackUtils.imageFromStack(impUncombined1, i1 + 1);
-					pixVectorize(imp21, xCenterRoi, yCenterRoi, diamMROI, pixListSignal11);
-					// IJ.wait(timeout);
-					imp20.close();
-					imp21.close();
-				}
-				int[] pixListSignal = ArrayUtils.arrayListToArrayInt(pixListSignal11);
-				double mean11 = ArrayUtils.vetMean(pixListSignal);
-				int count = -1;
-				for (int i1 = 0; i1 < impUncombined1.getImageStackSize(); i1++) {
-					count++;
-					if (!auto)
-						IJ.log("calcolo simulata " + i1 + " / " + impUncombined1.getImageStackSize());
-					ImagePlus imp20 = MyStackUtils.imageFromStack(impUncombined1, i1 + 1);
-					ImagePlus impSimulata = null;
-
-					// if (twelve) {
-					// impSimulata = ImageUtils.generaSimulata12colori(mean11,
-					// imp20, step2, demo0, test);
-					// } else {
-
-					impSimulata = ImageUtils.generaSimulataMultiColori(mean11, imp20, minimi, massimi, myColor);
-
-					// impSimulata = ImageUtils.generaSimulata5Colori(mean11,
-					// imp20, step2, demo0, test);
-					// }
-
-					ImageProcessor ipSimulata = impSimulata.getProcessor();
-					if (count == 0)
-						newStack.update(ipSimulata);
-					String sliceInfo1 = impSimulata.getTitle();
-					String sliceInfo2 = (String) impSimulata.getProperty("Info");
-					// aggiungo i dati header alle singole immagini dello stack
-					if (sliceInfo2 != null)
-						sliceInfo1 += "\n" + sliceInfo2;
-					newStack.addSlice(sliceInfo2, ipSimulata);
-
-					// MyLog.waitHere("thisPos= " + thisPos + " project= " +
-					// project
-					// +
-					// "\ndiamEXT2= " + diamEXT2 + " diamMROI2= "
-					// + diamMROI2);
-					// MyLog.waitHere();
-
-					ImageWindow iwSimulata = impSimulata.getWindow();
-					if (iwSimulata != null)
-						iwSimulata.dispose();
-
-					impSimulata.close();
-
-				}
-
-				ImagePlus simulataStack = new ImagePlus("STACK_IMMAGINI_SIMULATE", newStack);
-				ImagePlus impColors = ImageUtils.generaScalaColori(myColor, myLabels);
-				impColors.show();
-
-				simulataStack.show();
-
-			}
-			if (false) {
-				Path path100 = Paths.get(dirDefaultUncombined1);
-				Path path101 = path100.getParent();
-
-				String lev = null;
-				if (twelve)
-					lev = "12_livelli";
-				else
-					lev = "5_livelli";
-				// boolean ok1 = createDirectory(path101 + "\\simul_" + lev +
-				// "\\");
-				// String aux1 = path101 + "\\simul_" + lev + "\\" + myName +
-				// "sim";
-				// // MyLog.waitHere("aux1= " + aux1);
-				// new FileSaver(simulataStack).saveAsTiff(aux1);
-				// String aux2 = path101 + "\\simul_" + lev + "\\" + "colori_" +
-				// "sim";
-				// new FileSaver(impColors).saveAsTiff(aux2);
-
-				while (WindowManager.getWindowCount() > 0) {
-					IJ.wait(100);
-					IJ.run("Close");
-					IJ.wait(100);
-				}
-			}
-
 		}
 		int levels;
 
