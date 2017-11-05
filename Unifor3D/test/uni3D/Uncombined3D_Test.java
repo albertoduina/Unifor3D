@@ -115,7 +115,8 @@ public class Uncombined3D_Test {
 		circleData[2] = (double) diam;
 		double diam2 = 13;
 		int demolevel = 3;
-		double[] out = MyFilter.positionSearchCircular(imp1, circleData, diam2, demolevel);
+		
+		double[] out = MyFilter.positionSearchCircular1(imp1, circleData, diam2, demolevel);
 		MyLog.waitHere();
 	}
 }
