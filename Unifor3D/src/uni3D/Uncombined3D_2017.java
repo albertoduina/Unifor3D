@@ -127,7 +127,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		String pathCombined = null;
 		// String path20 = null;
 		String[] dir1a = null;
-		String[] dir1b = null;
+		String[] dir2a = null;
 		// String[] dir2a = null;
 		String dirDefaultUncombined1 = null;
 		String dirDefaultUncombined2 = null;
@@ -157,8 +157,8 @@ public class Uncombined3D_2017 implements PlugIn {
 			if (dir2 == null)
 				return;
 			Prefs.set("prefer.Unifor3D_dir5", dir2);
-			dir1b = new File(dir2).list();
-			num2 = dir1b.length;
+			dir2a = new File(dir2).list();
+			num2 = dir2a.length;
 
 			dirDefaultCombined = Prefs.get("prefer.Unifor3D_dir4", "");
 			dirDefaultCombined = UtilAyv.dirSeparator(dirDefaultCombined);
@@ -368,9 +368,9 @@ public class Uncombined3D_2017 implements PlugIn {
 		bounds[2] = depth;
 		MySphere.addSphere(impMapR, impMapG, impMapB, sphereA, bounds, colorRGB3, surfaceonly);
 		MySphere.generaMappazzaCombinata(impMapR, impMapG, impMapB, impMapRGB, myColors);
-		impMapR.show();
-		impMapG.show();
-		impMapB.show();
+		// impMapR.show();
+		// impMapG.show();
+		// impMapB.show();
 		impMapRGB.show();
 		// MyLog.waitHere();
 
@@ -420,22 +420,33 @@ public class Uncombined3D_2017 implements PlugIn {
 			// IJ.log("aa= " + aa + " cr= " + cr + " cg= " + cg + " cb= " + cb);
 			if (auto) {
 				pathUncombined1 = dir1 + dir1a[count0];
-				pathUncombined2 = dir1 + dir1b[count0];
-				IJ.log("pathUncombined1= " + pathUncombined1);
-				IJ.log("pathUncombined2= " + pathUncombined2);
-				IJ.log("elaborazione " + count0 + " / " + num1);
+				pathUncombined2 = dir2 + dir2a[count0];
+				// IJ.log("pathUncombined1= " + pathUncombined1);
+				// IJ.log("pathUncombined2= " + pathUncombined2);
+				// IJ.log("elaborazione " + count0 + " / " + num1);
+				// MyLog.waitHere();
 			}
 			// MyLog.waitHere("path10= " + path10);
 
 			impUncombined1 = UtilAyv.openImageNoDisplay(pathUncombined1, false);
+			if (impUncombined1 == null)
+				MyLog.waitHere("uncombined1==null");
+
 			myName = impUncombined1.getTitle();
+			// impUncombined1.show();
 
 			impUncombined2 = UtilAyv.openImageNoDisplay(pathUncombined2, false);
 			if (impUncombined2 == null)
 				MyLog.waitHere("uncombined2==null");
+			String t1 = impUncombined2.getTitle();
+			t1 = t1 + "-2";
+			impUncombined2.setTitle(t1);
 			myName = impUncombined2.getTitle();
+			// impUncombined2.show();
 
+			// MyLog.waitHere("test difference!");
 			count0++;
+			IJ.log("===================================");
 			IJ.log("count0= " + count0);
 			// int width = imp10.getWidth();
 			// int height = imp10.getHeight();
@@ -453,9 +464,10 @@ public class Uncombined3D_2017 implements PlugIn {
 			int demolevel = 0;
 			// int diamsearch = 6;
 			double[] circularSpot = MySphere.searchCircularSpot(impUncombined1, sphereA, diam7x7, "", demolevel);
-			MyLog.logVector(circularSpot, "circularSpot");
-			IJ.log("uncombined spot X " + count0 + " =" + circularSpot[0] + " Y= " + circularSpot[1] + " Z= "
-					+ circularSpot[2]);
+			// MyLog.logVector(circularSpot, "circularSpot");
+			// IJ.log("uncombined spot X " + count0 + " =" + circularSpot[0] + "
+			// Y= " + circularSpot[1] + " Z= "
+			// + circularSpot[2]);
 
 			int x2 = (int) circularSpot[0];
 			int y2 = (int) circularSpot[1];
@@ -480,29 +492,32 @@ public class Uncombined3D_2017 implements PlugIn {
 			impMapG.updateAndDraw();
 			impMapB.updateAndDraw();
 			impMapRGB.updateAndDraw();
+
 			double[] vetpixel_7x7 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereB, demolevel);
 			int len1 = vetpixel_7x7.length;
 			double s_MROI = ArrayUtils.vetMean(vetpixel_7x7);
 			double sd_MROI = ArrayUtils.vetSdKnuth(vetpixel_7x7);
 			double p_MROI = sd_MROI / Math.sqrt(2.0);
 
-			IJ.log("volume effettivo sfera  = " + len1 + "[voxels]");
-			IJ.log("mean sfera " + count0 + " = " + s_MROI);
+			IJ.log("Dati sfera (xc, yc, zc, radius)= " + sphereB[0] + ", " + sphereB[1] + ", " + sphereB[2] + ", "
+					+ sphereB[3]);
+			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
+			IJ.log("Mean sfera " + count0 + " = " + s_MROI);
 
 			double[] sphereC = new double[4];
 			sphereC[0] = x2;
 			sphereC[1] = y2;
 			sphereC[2] = z2;
 			sphereC[3] = diam11x11;
-			MyLog.logVector(sphereC, "sphereC");
+			// MyLog.logVector(sphereC, "sphereC");
 
 			double[] vetpixel_11x11 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereC, demolevel);
-			MyLog.logVector(vetpixel_11x11, "vetpixel_11x11");
+			// MyLog.logVector(vetpixel_11x11, "vetpixel_11x11");
 
 			// MyLog.waitHere();
 			long time2 = System.nanoTime();
 			String tempo1 = MyTimeUtils.stringNanoTime(time2 - time1);
-			IJ.log("Tempo sfera " + count0 + "   hh:mm:ss.ms " + tempo1);
+			IJ.log("Tempo calcolo sfera " + count0 + "   hh:mm:ss.ms " + tempo1);
 
 			ImageStack imaStack2 = impUncombined2.getImageStack();
 			if (imaStack2 == null) {
@@ -516,10 +531,12 @@ public class Uncombined3D_2017 implements PlugIn {
 			}
 
 			ImagePlus impDiff = MyStackUtils.stackDiff(impUncombined1, impUncombined2);
-			double[] vetpixeldiff_11x11 = MySphere.vectorizeSphericalSpot(impDiff, sphereA, sphereC, demolevel);
-			MyLog.logVector(vetpixeldiff_11x11, "vetpixeldiff_11x11");
 			impDiff.setTitle("IMMAGINE DIFFERENZA");
-			impDiff.show();
+			// impDiff.show();
+			// MyLog.waitHere();
+
+			double[] vetpixeldiff_11x11 = MySphere.vectorizeSphericalSpot(impDiff, sphereA, sphereC, demolevel);
+			// MyLog.logVector(vetpixeldiff_11x11, "vetpixeldiff_11x11");
 
 			// ============================================
 			// INIZIO CALCOLO SNR
@@ -535,8 +552,9 @@ public class Uncombined3D_2017 implements PlugIn {
 			}
 			double[] vetpixok = ArrayUtils.arrayListToArrayDouble(pixlist_11x11OK);
 			double[] vetpixdiffok = ArrayUtils.arrayListToArrayDouble(pixlistdiff_11x11OK);
-			MyLog.logVector(vetpixok, "vetpixok");
-			MyLog.logVector(vetpixdiffok, "vetpixdiffok");
+			// MyLog.logVector(vetpixok, "vetpixok");
+			// MyLog.logVector(vetpixdiffok, "vetpixdiffok");
+			IJ.log("pixel_TEST (>121)= " + vetpixok.length);
 			double sd_diff = ArrayUtils.vetSdKnuth(vetpixdiffok);
 			IJ.log("s_MROI= " + s_MROI);
 			IJ.log("sd_diff= " + sd_diff);
@@ -548,7 +566,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			}
 
 			IJ.log("snr= " + snr);
-			MyLog.waitHere();
+			// MyLog.waitHere();
 		}
 		int levels;
 
