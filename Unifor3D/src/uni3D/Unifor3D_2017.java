@@ -1816,16 +1816,6 @@ public class Unifor3D_2017 implements PlugIn {
 		return out;
 	}
 
-	public static ResultsTable vectorResultsTable(int[] vetClassi) {
-
-		ResultsTable rt1 = ResultsTable.getResultsTable();
-		String t1 = "Numerosita' Classi";
-		for (int i1 = 0; i1 < vetClassi.length; i1++) {
-			rt1.incrementCounter();
-			rt1.addValue(t1, vetClassi[i1]);
-		}
-		return rt1;
-	}
 
 	public static int[][] numeroPixelsColori(ImagePlus imp1, int[] myColor) {
 
