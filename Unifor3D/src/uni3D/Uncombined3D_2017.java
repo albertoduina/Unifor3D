@@ -32,9 +32,12 @@ import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 import utils.AboutBox;
 import utils.ArrayUtils;
+import utils.ButtonMessages;
 import utils.ImageUtils;
 import utils.InputOutput;
+import utils.MyConst;
 import utils.MyFilter;
+import utils.MyFwhm;
 import utils.MyGenericDialogGrid;
 import utils.MyLine;
 import utils.MyLog;
@@ -42,6 +45,7 @@ import utils.MyPlot;
 import utils.MySphere;
 import utils.MyStackUtils;
 import utils.MyTimeUtils;
+import utils.ReadDicom;
 import utils.UtilAyv;
 
 //=====================================================
@@ -64,8 +68,8 @@ public class Uncombined3D_2017 implements PlugIn {
 	static int puntatore = 0;
 
 	public void run(String arg) {
-		int diam7x7 = 10;
-		int diam11x11 = 14;
+		int diam7x7 = 16;
+		int diam11x11 = 20;
 
 		boolean demo0 = false;
 		int debuglevel = 0;
@@ -73,6 +77,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		// boolean debug = false;
 		// if (debuglevel > 0)
 		// debug = true;
+		ResultsTable rt1 = ResultsTable.getResultsTable();
 
 		new AboutBox().about("Uncombined3D", MyVersion.CURRENT_VERSION);
 		IJ.wait(20);
@@ -405,6 +410,9 @@ public class Uncombined3D_2017 implements PlugIn {
 			if (auto) {
 				pathUncombined1 = dir1 + dir1a[count0];
 				pathUncombined2 = dir2 + dir2a[count0];
+				IJ.log("pathUncombined1= " + pathUncombined1);
+				IJ.log("pathUncombined2= " + pathUncombined2);
+
 			}
 			impUncombined1 = UtilAyv.openImageNoDisplay(pathUncombined1, false);
 			if (impUncombined1 == null)
@@ -454,14 +462,16 @@ public class Uncombined3D_2017 implements PlugIn {
 
 			double[] vetpixel_7x7 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereB);
 			int len1 = vetpixel_7x7.length;
-			double s_MROI = ArrayUtils.vetMean(vetpixel_7x7);
+			double sMROI = ArrayUtils.vetMean(vetpixel_7x7);
+
 			double sd_MROI = ArrayUtils.vetSdKnuth(vetpixel_7x7);
 			double p_MROI = sd_MROI / Math.sqrt(2.0);
 
 			IJ.log("Dati sfera (xc, yc, zc, radius)= " + sphereB[0] + ", " + sphereB[1] + ", " + sphereB[2] + ", "
 					+ sphereB[3]);
 			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
-			IJ.log("Mean sfera " + count0 + " = " + s_MROI);
+			IJ.log("Mean sfera " + count0 + " = " + sMROI);
+			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
 
 			double[] sphereC = new double[4];
 			sphereC[0] = x2;
@@ -503,16 +513,97 @@ public class Uncombined3D_2017 implements PlugIn {
 			double[] vetpixdiffok = ArrayUtils.arrayListToArrayDouble(pixlistdiff_11x11OK);
 			IJ.log("pixel_TEST (>121)= " + vetpixok.length);
 			double sd_diff = ArrayUtils.vetSdKnuth(vetpixdiffok);
-			IJ.log("s_MROI= " + s_MROI);
+			IJ.log("s_MROI= " + sMROI);
 			IJ.log("sd_diff= " + sd_diff);
-			double snr = 0;
+			double snrMROI = 0;
 			if (vetpixok.length < 121) {
 				MyLog.waitHere("diametro ricerca troppo piccolo");
 			} else {
-				snr = s_MROI * Math.sqrt(2) / sd_diff;
+				snrMROI = sMROI * Math.sqrt(2) / sd_diff;
+			}
+			IJ.log("snrMROI= " + snrMROI);
+
+			String subCoil = ReadDicom.readDicomParameter(impUncombined1, MyConst.DICOM_COIL);
+
+			rt1.incrementCounter();
+
+			rt1.addValue("subCOIL", subCoil);
+
+			rt1.addValue("Fantoccio [x,y,z,d] ", IJ.d2s(sphereA[0], 0) + ", " + IJ.d2s(sphereA[1], 0) + ", "
+					+ IJ.d2s(sphereA[2], 0) + ", " + IJ.d2s(sphereA[3], 0));
+
+			rt1.addValue("hotSphere [x,y,z,d] ", IJ.d2s(sphereB[0], 0) + ", " + IJ.d2s(sphereB[1], 0) + ", "
+					+ IJ.d2s(sphereB[2], 0) + ", " + IJ.d2s(sphereB[3], 0));
+
+			rt1.addValue("SEGNALE_mroi", sMROI);
+			rt1.addValue("RUMORE_diff", sd_diff);
+			rt1.addValue("SNR_mroi", snrMROI);
+
+			double[] cross = ImageUtils.getCircleLineCrossingPoints(sphereA[0], sphereA[1], sphereB[0], sphereB[1],
+					sphereB[0], sphereB[1], sphereB[3] / 2);
+
+			// il punto che ci interesasa sara' quello con minor distanza dal
+			// centro sfera B
+			double dx1 = sphereB[0] - cross[0];
+			double dx2 = sphereB[0] - cross[2];
+			double dy1 = sphereB[1] - cross[1];
+			double dy2 = sphereB[1] - cross[3];
+			double lun1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+			double lun2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+			double xBordo = 0;
+			double yBordo = 0;
+			if (lun1 < lun2) {
+				xBordo = cross[0];
+				yBordo = cross[1];
+			} else {
+				xBordo = cross[2];
+				yBordo = cross[3];
 			}
 
-			IJ.log("snr= " + snr);
+			// ora devo calcolare l' FWHM del segnale lungo il segmento
+			// centro/bordo
+
+			IJ.log("count0= " + count0 + " slice= " + (int) sphereB[1]);
+			ImagePlus impThis = MyStackUtils.imageFromStack(impUncombined1, (int) sphereB[1]);
+			if (impThis == null)
+				MyLog.waitHere("impThis==null");
+
+			double dimPixel = ReadDicom.readDouble(
+					ReadDicom.readSubstring(ReadDicom.readDicomParameter(impThis, MyConst.DICOM_PIXEL_SPACING), 2));
+
+			double[] out3 = ImageUtils.crossingFrame(sphereA[0], sphereA[1], sphereB[0], sphereB[1], width, height);
+
+			double dist1 = MyFwhm.lengthCalculation(out3[0], out3[1], sphereA[0], sphereA[1]);
+			double dist2 = MyFwhm.lengthCalculation(out3[2], out3[3], sphereA[0], sphereA[1]);
+			int xStartProfile = 0;
+			int yStartProfile = 0;
+			int xEndProfile = 0;
+			int yEndProfile = 0;
+
+			if (dist1 <= dist2) {
+				xStartProfile = (int) Math.round(out3[0]);
+				yStartProfile = (int) Math.round(out3[1]);
+				xEndProfile = (int) Math.round(out3[2]);
+				yEndProfile = (int) Math.round(out3[3]);
+			} else {
+				xStartProfile = (int) Math.round(out3[2]);
+				yStartProfile = (int) Math.round(out3[3]);
+				xEndProfile = (int) Math.round(out3[0]);
+				yEndProfile = (int) Math.round(out3[1]);
+			}
+
+			double[] profile = getProfile(impThis, xStartProfile, yStartProfile, xEndProfile, yEndProfile, dimPixel,
+					false);
+			MyLog.logVector(profile, "profile");
+			String codice = "";
+			boolean verbose = false;
+			double[] outFwhm2 = MyFwhm.analyzeProfile(profile, dimPixel, codice, false, verbose);
+
+			MyLog.logVector(outFwhm2, "outFwhm2");
+
+			rt1.addValue("FWHM ", outFwhm2[0]);
+
 			// ================================================
 			// SIMULATE
 			// ================================================
@@ -521,15 +612,16 @@ public class Uncombined3D_2017 implements PlugIn {
 				slice = i1 + 1;
 				ImagePlus imp20 = MyStackUtils.imageFromStack(impUncombined1, slice);
 
-				MySphere.simulataGrigio16(s_MROI, imp20, impMapR2, impMapG2, impMapB2, slice, livelli, minimi, massimi,
+				MySphere.simulataGrigio16(sMROI, imp20, impMapR2, impMapG2, impMapB2, slice, livelli, minimi, massimi,
 						colorCoil, myColors, puntatore, debuglevel);
 				MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, myColors);
 			}
 			long time2 = System.nanoTime();
 			String tempo1 = MyTimeUtils.stringNanoTime(time2 - time1);
 			IJ.log("Tempo calcolo sfera " + count0 + "   hh:mm:ss.ms " + tempo1);
-
+			rt1.show("Results");
 			// impMapRGB2.updateAndDraw();
+			rt1.show("Results");
 		}
 		// MyLog.waitHere();
 
@@ -559,5 +651,40 @@ public class Uncombined3D_2017 implements PlugIn {
 		MyLog.waitHere("FINE");
 
 	} // chiude
+
+	/**
+	 * Analisi di un profilo NON mediato
+	 * 
+	 * @param imp1
+	 *            Immagine da analizzare
+	 * @param ax
+	 *            Coordinata x inizio segmento
+	 * @param ay
+	 *            Coordinata y inizio segmento
+	 * @param bx
+	 *            Coordinata x fine segmento
+	 * @param by
+	 *            Coordinata x fine segmento
+	 * 
+	 * @return outFwhm[0]=FWHM, outFwhm[1]=peak position
+	 */
+
+	private static double[] getProfile(ImagePlus imp1, int ax, int ay, int bx, int by, double dimPixel, boolean step) {
+
+		if (imp1 == null) {
+			IJ.error("getProfile ricevuto immagine null");
+			return (null);
+		}
+		imp1.setRoi(new Line(ax, ay, bx, by));
+		Roi roi1 = imp1.getRoi();
+		imp1.killRoi();
+		double[] profi1 = ((Line) roi1).getPixels(); // profilo non mediato
+		profi1[profi1.length - 1] = 0; // azzero a mano l'ultimo pixel
+		if (step) {
+			imp1.updateAndDraw();
+			ButtonMessages.ModelessMsg("Profilo non mediato  <50>", "CONTINUA");
+		}
+		return (profi1);
+	}
 
 } // ultima

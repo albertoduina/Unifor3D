@@ -111,6 +111,7 @@ public class ShrinkMask implements PlugIn {
 		ImagePlus imp1 = WindowManager.getImage(wList[index1]);
 		if (imp1.getBitDepth() != 32)
 			MyLog.waitHere("voglio una mask a 32 bit!");
+		String title = imp1.getTitle();
 
 		GenericDialog gd3 = new GenericDialog("FUNZIONAMENTO");
 
@@ -143,6 +144,7 @@ public class ShrinkMask implements PlugIn {
 		}
 
 		ImagePlus imp2 = null;
+		ImagePlus imp3 = null;
 		boolean isola = false;
 		switch (selnum) {
 
@@ -151,7 +153,8 @@ public class ShrinkMask implements PlugIn {
 			imp2 = bordoMatrix(imp1, mx, my, mz);
 			break;
 		case 1:
-			imp2 = sbucciaMatrix(imp1);
+			imp3 = bordoMatrix(imp1, mx, my, mz);
+			imp2 = sbucciaMatrix(imp3, title);
 			break;
 		case 2:
 			isola = true;
@@ -447,7 +450,7 @@ public class ShrinkMask implements PlugIn {
 		return vect;
 	}
 
-	public ImagePlus sbucciaMatrix(ImagePlus imp1) {
+	public ImagePlus sbucciaMatrix(ImagePlus imp1, String tit1) {
 
 		float[][][] matrix1 = stackToMatrix(imp1);
 		for (int z1 = 0; z1 < matrix1.length; z1++) {
@@ -459,7 +462,20 @@ public class ShrinkMask implements PlugIn {
 			}
 		}
 		ImagePlus impOut = matrixToStack(matrix1);
-		impOut.setTitle("patataSbucciata");
+		// String tit1 = imp1.getTitle();
+		String tit2 = "patataSbucciata";
+		String tit3 = "";
+		int num = 1;
+
+		String[] parts = tit1.split("-");
+		// MyLog.logVector(parts, "parts");
+
+		if (parts[0].equals(tit2)) {
+			num = Integer.parseInt(parts[1]);
+			num++;
+		}
+		tit3 = tit2 + "-" + num;
+		impOut.setTitle(tit3);
 		return impOut;
 	}
 

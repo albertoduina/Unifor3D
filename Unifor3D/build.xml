@@ -103,6 +103,7 @@
 			<!--attribute name="Implementation-Version" value="${version.num}-b${build.number}" /-->
 			<attribute name="Implementation-Version" value="$b${build.number}" />
 		</manifest>
+		
 		<jar destfile="${output}/Unifor3D_b${build.number}.jar" manifest="MANIFEST.MF">
 			<fileset dir="${output}" />
 		</jar>

@@ -37,7 +37,7 @@ public class VolumeStatistics implements PlugIn {
 		IJ.wait(2000);
 		new AboutBox().close();
 
-		ResultsTable rt = ResultsTable.getResultsTable();
+		ResultsTable rt1 = ResultsTable.getResultsTable();
 
 		int[] wList = WindowManager.getIDList();
 		if (wList == null) {
@@ -84,10 +84,6 @@ public class VolumeStatistics implements PlugIn {
 			title2 = titles[index2];
 			impImage = WindowManager.getImage(wList[index1]);
 			impMask = WindowManager.getImage(wList[index2]);
-			if (impImage.getBitDepth() != 16) {
-				IJ.showMessage("la immagine DEVE essere a 16 bit");
-				rep1 = true;
-			}
 			if (impMask.getBitDepth() != 32) {
 				IJ.showMessage("la mask DEVE essere 32 bit!");
 				rep1 = true;
@@ -165,25 +161,25 @@ public class VolumeStatistics implements PlugIn {
 					continue;
 				}
 
-				rt.incrementCounter();
-				rt.addValue("image", impImage.getTitle());
-				rt.addValue("mask", impMask.getTitle());
-				rt.addValue("type", labels2[i1]);
-				rt.addValue("volume", vetOut.length);
-				rt.addValue("min", ArrayUtils.vetMin(vetOut));
-				rt.addValue("max", ArrayUtils.vetMax(vetOut));
+				rt1.incrementCounter();
+				rt1.addValue("image", impImage.getTitle());
+				rt1.addValue("mask", impMask.getTitle());
+				rt1.addValue("type", labels2[i1]);
+				rt1.addValue("volume", vetOut.length);
+				rt1.addValue("min", ArrayUtils.vetMin(vetOut));
+				rt1.addValue("max", ArrayUtils.vetMax(vetOut));
 				mean = ArrayUtils.vetMean(vetOut);
-				rt.addValue("mean", mean);
+				rt1.addValue("mean", mean);
 				sd = ArrayUtils.vetSdKnuth(vetOut);
-				rt.addValue("sd", sd);
-				rt.addValue("snr", mean / sd);
-				rt.addValue("median", ArrayUtils.vetMedian(vetOut));
-				rt.addValue("1_quartile", ArrayUtils.vetQuartile(vetOut, 1));
-				rt.addValue("3_quartile", ArrayUtils.vetQuartile(vetOut, 3));
-				rt.show("Results");
+				rt1.addValue("sd", sd);
+				rt1.addValue("snr", mean / sd);
+				rt1.addValue("median", ArrayUtils.vetMedian(vetOut));
+				rt1.addValue("1_quartile", ArrayUtils.vetQuartile(vetOut, 1));
+				rt1.addValue("3_quartile", ArrayUtils.vetQuartile(vetOut, 3));
+				rt1.show("Results");
 			}
 		}
-		rt.show("Results");
+		rt1.show("Results");
 		IJ.showMessage("FINE LAVORO");
 	}
 
@@ -272,6 +268,35 @@ public class VolumeStatistics implements PlugIn {
 			}
 		}
 	}
+
+	// public static void pixStackVectorizeFloat(ImagePlus impStackImage,
+	// ImagePlus impStackMask,
+	// ArrayList<String> pixList, int value) {
+	//
+	// for (int z1 = 1; z1 <= impStackImage.getImageStackSize(); z1++) {
+	// ImagePlus impSingleImage = MyStackUtils.imageFromStack(impStackImage,
+	// z1);
+	// ImagePlus impSingleMask = MyStackUtils.imageFromStack(impStackMask, z1);
+	// ImageProcessor ipSingleImage = impSingleImage.getProcessor();
+	// ImageProcessor maskSingleImage = impSingleMask.getProcessor();
+	// short[] imagePixels = (short[]) ipSingleImage.getPixels();
+	// float[] maskPixels = (float[]) maskSingleImage.getPixels();
+	// float[] bufferPixels = null;
+	// ayv
+	//
+	//
+	// for (int y1 = 0; y1 < impSingleImage.getHeight(); y1++) {
+	// int offset = y1 * impSingleImage.getWidth();
+	// for (int x1 = 0; x1 < impSingleImage.getWidth(); x1++) {
+	// int aux1 = (int) maskPixels[offset + x1];
+	// if (value == 0 && aux1 > 1 || aux1 == value) {
+	// pixList.add((String) "" + (int) imagePixels[offset + x1] + " " + x1 + " "
+	// + y1 + " " + z1);
+	// }
+	// }
+	// }
+	// }
+	// }
 
 	public static int[] singleMaskValues(ImagePlus impStackMask) {
 

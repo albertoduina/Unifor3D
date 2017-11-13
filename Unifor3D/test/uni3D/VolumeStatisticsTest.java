@@ -30,10 +30,11 @@ public class VolumeStatisticsTest {
 	@Test
 	public final void testPixStackVectorize() {
 
-		String pathImage = "./Data/image.tif";
+//		String pathImage = "./Data/image.tif";
+		String pathImage = "./Data/image2.tif";
 		ImagePlus impImage = UtilAyv.openImageNoDisplay(pathImage, false);
 
-		String pathMask = "./Data/mask.tif";
+		String pathMask = "./Data/mask2.tif";
 		ImagePlus impMask = UtilAyv.openImageNoDisplay(pathMask, false);
 
 		ArrayList<Integer> pixList = new ArrayList<Integer>();
