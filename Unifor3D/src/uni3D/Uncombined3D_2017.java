@@ -290,6 +290,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		// =================================================================
 
 		ImagePlus impCombined = UtilAyv.openImageNormal(pathCombined);
+		// impCombined.resetDisplayRange();
 		impCombined.show();
 
 		ImageStack stackCombined = impCombined.getImageStack();
@@ -351,7 +352,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		// =========================
 		// SFERA ESTERNA GRIGIA
 		// =========================
-		int[] colorRGB3 = { 90, 90, 90 };
+		int[] colorRGB3 = { 120, 120, 120 };
 		int[] colorRGB4 = { 10, 10, 10 };
 		boolean surfaceonly = false;
 		int[] bounds = new int[3];
@@ -386,6 +387,8 @@ public class Uncombined3D_2017 implements PlugIn {
 		int b3 = 250;
 		IJ.log("================= ELABORAZIONE DI " + num1 + " STACK UNCOMBINED ================");
 
+		impCombined.resetDisplayRange();
+		impCombined.repaintWindow();
 		while (count0 < num1) {
 
 			long time1 = System.nanoTime();
@@ -420,6 +423,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			impUncombined2 = UtilAyv.openImageNoDisplay(pathUncombined2, false);
 			if (impUncombined2 == null)
 				MyLog.waitHere("uncombined2==null");
+			// impUncombined1.show();
 			String t1 = impUncombined2.getTitle();
 			t1 = t1 + "-2";
 			count0++;
@@ -437,7 +441,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			}
 
 			int demolevel = 0;
-			double[] circularSpot = MySphere.searchCircularSpot(impUncombined1, sphereA, diam7x7, "", demolevel);
+			double[] circularSpot = MySphere.searchCircularSpot(impUncombined1, sphereA, diam11x11, "", demolevel);
 
 			int x2 = (int) circularSpot[0];
 			int y2 = (int) circularSpot[1];
@@ -450,7 +454,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			sphereB[0] = x2;
 			sphereB[1] = y2;
 			sphereB[2] = z2;
-			sphereB[3] = diam7x7;
+			sphereB[3] = diam11x11;
 
 			surfaceonly = false;
 			MySphere.addSphere(impMapR1, impMapG1, impMapB1, sphereB, bounds, colorRGB2, surfaceonly);
@@ -460,26 +464,23 @@ public class Uncombined3D_2017 implements PlugIn {
 			impMapB1.updateAndDraw();
 			impMapRGB1.updateAndDraw();
 
-			double[] vetpixel_7x7 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereB);
+			double[] sphereC = sphereB.clone();
+			sphereC[3] = diam7x7;
+
+			double[] vetpixel_7x7 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereC);
 			int len1 = vetpixel_7x7.length;
 			double sMROI = ArrayUtils.vetMean(vetpixel_7x7);
 
 			double sd_MROI = ArrayUtils.vetSdKnuth(vetpixel_7x7);
 			double p_MROI = sd_MROI / Math.sqrt(2.0);
 
-			IJ.log("Dati sfera (xc, yc, zc, radius)= " + sphereB[0] + ", " + sphereB[1] + ", " + sphereB[2] + ", "
-					+ sphereB[3]);
+			IJ.log("Dati sfera (xc, yc, zc, radius)= " + sphereC[0] + ", " + sphereC[1] + ", " + sphereC[2] + ", "
+					+ sphereC[3]);
 			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
 			IJ.log("Mean sfera " + count0 + " = " + sMROI);
 			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
 
-			double[] sphereC = new double[4];
-			sphereC[0] = x2;
-			sphereC[1] = y2;
-			sphereC[2] = z2;
-			sphereC[3] = diam11x11;
-
-			double[] vetpixel_11x11 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereC);
+			double[] vetpixel_11x11 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereB);
 
 			ImageStack imaStack2 = impUncombined2.getImageStack();
 			if (imaStack2 == null) {
@@ -495,7 +496,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			ImagePlus impDiff = MyStackUtils.stackDiff(impUncombined1, impUncombined2);
 			impDiff.setTitle("IMMAGINE DIFFERENZA");
 
-			double[] vetpixeldiff_11x11 = MySphere.vectorizeSphericalSpot(impDiff, sphereA, sphereC);
+			double[] vetpixeldiff_11x11 = MySphere.vectorizeSphericalSpot(impDiff, sphereA, sphereB);
 
 			// ============================================
 			// INIZIO CALCOLO SNR
@@ -565,44 +566,88 @@ public class Uncombined3D_2017 implements PlugIn {
 			// centro/bordo
 
 			IJ.log("count0= " + count0 + " slice= " + (int) sphereB[1]);
-			ImagePlus impThis = MyStackUtils.imageFromStack(impUncombined1, (int) sphereB[1]);
-			if (impThis == null)
-				MyLog.waitHere("impThis==null");
+			boolean ko = false;
+			double[] outFwhm2 = null;
+			// if ((int) sphereB[1] + 1 < num1) {
+			// ko = true;
 
-			double dimPixel = ReadDicom.readDouble(
-					ReadDicom.readSubstring(ReadDicom.readDicomParameter(impThis, MyConst.DICOM_PIXEL_SPACING), 2));
+			// ImagePlus impThis = MyStackUtils.imageFromStack(impUncombined1,
+			// (int) sphereB[2]);
+			//
+			// double dimPixel = ReadDicom.readDouble(
+			// ReadDicom.readSubstring(ReadDicom.readDicomParameter(impThis,
+			// MyConst.DICOM_PIXEL_SPACING), 2));
+			//
+			// double[] out3 = ImageUtils.crossingFrame(sphereA[0], sphereA[1],
+			// sphereB[0], sphereB[1], width, height);
+			//
+			// double dist1 = MyFwhm.lengthCalculation(out3[0], out3[1],
+			// sphereA[0], sphereA[1]);
+			// double dist2 = MyFwhm.lengthCalculation(out3[2], out3[3],
+			// sphereA[0], sphereA[1]);
+			// int xStartProfile = 0;
+			// int yStartProfile = 0;
+			// int xEndProfile = 0;
+			// int yEndProfile = 0;
+			//
+			// if (dist1 <= dist2) {
+			// xStartProfile = (int) Math.round(out3[0]);
+			// yStartProfile = (int) Math.round(out3[1]);
+			// xEndProfile = (int) Math.round(out3[2]);
+			// yEndProfile = (int) Math.round(out3[3]);
+			// } else {
+			// xStartProfile = (int) Math.round(out3[2]);
+			// yStartProfile = (int) Math.round(out3[3]);
+			// xEndProfile = (int) Math.round(out3[0]);
+			// yEndProfile = (int) Math.round(out3[1]);
+			// }
+			//
+			// Overlay over1 = new Overlay();
+			// impThis.setOverlay(over1);
+			//
+			// impThis.setRoi(new Line(xStartProfile, yStartProfile,
+			// xEndProfile, yEndProfile));
+			//
+			// impThis.getRoi().setStrokeColor(Color.red);
+			// over1.addElement(impThis.getRoi());
+			// impThis.deleteRoi();
+			// impThis.resetDisplayRange();
+			// impThis.show();
+			// ImageWindow iw1 = impThis.getWindow();
 
-			double[] out3 = ImageUtils.crossingFrame(sphereA[0], sphereA[1], sphereB[0], sphereB[1], width, height);
+			// double[] profile = getProfile(impThis, xStartProfile,
+			// yStartProfile, xEndProfile, yEndProfile, dimPixel,
+			// false);
 
-			double dist1 = MyFwhm.lengthCalculation(out3[0], out3[1], sphereA[0], sphereA[1]);
-			double dist2 = MyFwhm.lengthCalculation(out3[2], out3[3], sphereA[0], sphereA[1]);
-			int xStartProfile = 0;
-			int yStartProfile = 0;
-			int xEndProfile = 0;
-			int yEndProfile = 0;
+			double[][] profile = MySphere.getProfile3D(impUncombined1, sphereA, sphereB, false);
+			IJ.log("lunghezza profilo= " + profile.length);
 
-			if (dist1 <= dist2) {
-				xStartProfile = (int) Math.round(out3[0]);
-				yStartProfile = (int) Math.round(out3[1]);
-				xEndProfile = (int) Math.round(out3[2]);
-				yEndProfile = (int) Math.round(out3[3]);
-			} else {
-				xStartProfile = (int) Math.round(out3[2]);
-				yStartProfile = (int) Math.round(out3[3]);
-				xEndProfile = (int) Math.round(out3[0]);
-				yEndProfile = (int) Math.round(out3[1]);
+			// MyLog.logMatrix(profile, "profile");
+			// MyLog.waitHere();
+			double[] prof2 = new double[profile.length];
+			for (int i1 = 0; i1 < profile.length; i1++) {
+				prof2[i1] = profile[i1][3];
 			}
 
-			double[] profile = getProfile(impThis, xStartProfile, yStartProfile, xEndProfile, yEndProfile, dimPixel,
-					false);
-			MyLog.logVector(profile, "profile");
+			// MyLog.logMatrix(profile, "profile");
 			String codice = "";
 			boolean verbose = false;
-			double[] outFwhm2 = MyFwhm.analyzeProfile(profile, dimPixel, codice, false, verbose);
+			double dimPixel = 1;
+			outFwhm2 = MyFwhm.analyzeProfile(prof2, dimPixel, codice, false, verbose);
+			if (outFwhm2 == null)
+				MyLog.waitHere("fwhm2==null");
+			// }
+			// if (outFwhm2 == null)
+			// MyLog.waitHere("fwhm2==null");
 
-			MyLog.logVector(outFwhm2, "outFwhm2");
+			// MyLog.logVector(outFwhm2, "outFwhm2");
 
+			// if (ko)
+			// rt1.addValue("FWHM ", "NULL");
+			// else
 			rt1.addValue("FWHM ", outFwhm2[0]);
+			rt1.addValue("peak", outFwhm2[2]);
+			rt1.show("Results");
 
 			// ================================================
 			// SIMULATE
@@ -619,31 +664,17 @@ public class Uncombined3D_2017 implements PlugIn {
 			long time2 = System.nanoTime();
 			String tempo1 = MyTimeUtils.stringNanoTime(time2 - time1);
 			IJ.log("Tempo calcolo sfera " + count0 + "   hh:mm:ss.ms " + tempo1);
-			rt1.show("Results");
-			// impMapRGB2.updateAndDraw();
-			rt1.show("Results");
+			impUncombined1.updateAndDraw();
+			// MyLog.waitHere("verifica");
+			if (WindowManager.getFrame("Profilo penetrazione__") != null) {
+				IJ.selectWindow("Profilo penetrazione__");
+				IJ.run("Close");
+			}
+			ImageWindow iw1 = impUncombined1.getWindow();
+			if (iw1 != null)
+				iw1.close();
+			// iw1.close();
 		}
-		// MyLog.waitHere();
-
-		// int levels;
-		//
-		// String lev = null;
-		// if (twelve) {
-		// lev = "12_livelli";
-		// levels = 12;
-		// } else {
-		// lev = "5_livelli";
-		// levels = 5;
-
-		// Path path100 = Paths.get(dir10);
-		// Path path101 = path100.getParent();
-		//// ImagePlus scala = ImageUtils.generaScalaColori(num1);
-		// String aux2 = path101 + "\\simul_" + lev + "\\" + myName +
-		// "scala";
-		// // MyLog.waitHere("aux1= " + aux1);
-		// new FileSaver(scala).saveAsTiff(aux2);
-		// UtilAyv.cleanUp2();
-		// }
 		long time4 = System.nanoTime();
 		String tempo2 = MyTimeUtils.stringNanoTime(time4 - time3);
 		IJ.log("Tempo totale  hh:mm:ss.ms " + tempo2);
@@ -651,40 +682,5 @@ public class Uncombined3D_2017 implements PlugIn {
 		MyLog.waitHere("FINE");
 
 	} // chiude
-
-	/**
-	 * Analisi di un profilo NON mediato
-	 * 
-	 * @param imp1
-	 *            Immagine da analizzare
-	 * @param ax
-	 *            Coordinata x inizio segmento
-	 * @param ay
-	 *            Coordinata y inizio segmento
-	 * @param bx
-	 *            Coordinata x fine segmento
-	 * @param by
-	 *            Coordinata x fine segmento
-	 * 
-	 * @return outFwhm[0]=FWHM, outFwhm[1]=peak position
-	 */
-
-	private static double[] getProfile(ImagePlus imp1, int ax, int ay, int bx, int by, double dimPixel, boolean step) {
-
-		if (imp1 == null) {
-			IJ.error("getProfile ricevuto immagine null");
-			return (null);
-		}
-		imp1.setRoi(new Line(ax, ay, bx, by));
-		Roi roi1 = imp1.getRoi();
-		imp1.killRoi();
-		double[] profi1 = ((Line) roi1).getPixels(); // profilo non mediato
-		profi1[profi1.length - 1] = 0; // azzero a mano l'ultimo pixel
-		if (step) {
-			imp1.updateAndDraw();
-			ButtonMessages.ModelessMsg("Profilo non mediato  <50>", "CONTINUA");
-		}
-		return (profi1);
-	}
 
 } // ultima
