@@ -76,20 +76,6 @@ public class Uncombined3D_2017 implements PlugIn {
 		new AboutBox().about("Uncombined3D", MyVersion.CURRENT_VERSION);
 		IJ.wait(20);
 		new AboutBox().close();
-		GenericDialog gd = new GenericDialog("", IJ.getInstance());
-		String[] items = { "5 livelli", "12 livelli" };
-		gd.addRadioButtonGroup("SIMULATE", items, 2, 2, "5 livelli");
-		gd.showDialog();
-		if (gd.wasCanceled()) {
-			return;
-		}
-		String level = gd.getNextRadioButton();
-		int livelli = 0;
-		if (level.equals("5 livelli")) {
-			livelli = 5;
-		} else {
-			livelli = 12;
-		}
 
 		IJ.log("=================================================");
 		IJ.log("  PER CREARE GLI STACK DA ELABORARE CON QUESTO");
@@ -183,6 +169,21 @@ public class Uncombined3D_2017 implements PlugIn {
 		IJ.log("dir2= " + dir2);
 		IJ.log("pathCombined= " + pathCombined);
 
+		GenericDialog gd = new GenericDialog("", IJ.getInstance());
+		String[] items = { "5 livelli", "12 livelli" };
+		gd.addRadioButtonGroup("SIMULATE", items, 2, 2, "5 livelli");
+		gd.showDialog();
+		if (gd.wasCanceled()) {
+			return;
+		}
+		String level = gd.getNextRadioButton();
+		int livelli = 0;
+		if (level.equals("5 livelli")) {
+			livelli = 5;
+		} else {
+			livelli = 12;
+		}
+
 		int gridWidth = 2;
 		int gridHeight = livelli;
 		int gridSize = gridWidth * gridHeight;
@@ -205,7 +206,7 @@ public class Uncombined3D_2017 implements PlugIn {
 
 		int decimals = 0;
 		String title2 = "LIMITI CLASSI PIXELS";
-		if (mgdg.showDialog3(gridWidth, gridHeight, tf2, lab2, value2, value3, title2, decimals)) { 
+		if (mgdg.showDialog3(gridWidth, gridHeight, tf2, lab2, value2, value3, title2, decimals)) {
 		}
 
 		for (int i1 = 0; i1 < value2.length; i1++) {
@@ -363,6 +364,9 @@ public class Uncombined3D_2017 implements PlugIn {
 		impCombined.repaintWindow();
 		while (count0 < num1) {
 			long time1 = System.nanoTime();
+			int[] vetClassi = null;
+			int[] vetTotClassi = new int[livelli + 1];
+
 			if (auto) {
 				pathUncombined1 = dir1 + dir1a[count0];
 				pathUncombined2 = dir2 + dir2a[count0];
@@ -415,9 +419,9 @@ public class Uncombined3D_2017 implements PlugIn {
 
 			MySphere.addSphere(impMapR1, impMapG1, impMapB1, sphereB, bounds, colorRGB2, surfaceonly);
 			MySphere.compilaMappazzaCombinata(impMapR1, impMapG1, impMapB1, impMapRGB1, algoColor);
-			impMapR1.updateAndDraw();
-			impMapG1.updateAndDraw();
-			impMapB1.updateAndDraw();
+			// impMapR1.updateAndDraw();
+			// impMapG1.updateAndDraw();
+			// impMapB1.updateAndDraw();
 			impMapRGB1.updateAndDraw();
 
 			double[] sphereC = sphereB.clone();
@@ -486,124 +490,34 @@ public class Uncombined3D_2017 implements PlugIn {
 
 			rt1.addValue("subCOIL", subCoil);
 
-			rt1.addValue("Fantoccio [x,y,z,d] ", IJ.d2s(sphereA[0], 0) + ", " + IJ.d2s(sphereA[1], 0) + ", "
-					+ IJ.d2s(sphereA[2], 0) + ", " + IJ.d2s(sphereA[3], 0));
+			rt1.addValue("Fantoccio [x:y:z:d] ", IJ.d2s(sphereA[0], 0) + ":" + IJ.d2s(sphereA[1], 0) + ":"
+					+ IJ.d2s(sphereA[2], 0) + ":" + IJ.d2s(sphereA[3], 0));
 
-			rt1.addValue("hotSphere [x,y,z,d] ", IJ.d2s(sphereB[0], 0) + ", " + IJ.d2s(sphereB[1], 0) + ", "
-					+ IJ.d2s(sphereB[2], 0) + ", " + IJ.d2s(sphereB[3], 0));
+			rt1.addValue("hotSphere [x:y:z:d] ", IJ.d2s(sphereB[0], 0) + ":" + IJ.d2s(sphereB[1], 0) + ":"
+					+ IJ.d2s(sphereB[2], 0) + ":" + IJ.d2s(sphereB[3], 0));
 
 			rt1.addValue("SEGNALE_mroi", sMROI);
 			rt1.addValue("RUMORE_diff", sd_diff);
 			rt1.addValue("SNR_mroi", snrMROI);
-
-			double[] cross = ImageUtils.getCircleLineCrossingPoints(sphereA[0], sphereA[1], sphereB[0], sphereB[1],
-					sphereB[0], sphereB[1], sphereB[3] / 2);
-
-			// il punto che ci interesasa sara' quello con minor distanza dal
-			// centro sfera B
-			double dx1 = sphereB[0] - cross[0];
-			double dx2 = sphereB[0] - cross[2];
-			double dy1 = sphereB[1] - cross[1];
-			double dy2 = sphereB[1] - cross[3];
-			double lun1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
-			double lun2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-
-			double xBordo = 0;
-			double yBordo = 0;
-			if (lun1 < lun2) {
-				xBordo = cross[0];
-				yBordo = cross[1];
-			} else {
-				xBordo = cross[2];
-				yBordo = cross[3];
-			}
-
 			// ora devo calcolare l' FWHM del segnale lungo il segmento
 			// centro/bordo
-
 			IJ.log("count0= " + count0 + " slice= " + (int) sphereB[1]);
-			boolean ko = false;
 			double[] outFwhm2 = null;
-			// if ((int) sphereB[1] + 1 < num1) {
-			// ko = true;
-
-			// ImagePlus impThis = MyStackUtils.imageFromStack(impUncombined1,
-			// (int) sphereB[2]);
-			//
-			// double dimPixel = ReadDicom.readDouble(
-			// ReadDicom.readSubstring(ReadDicom.readDicomParameter(impThis,
-			// MyConst.DICOM_PIXEL_SPACING), 2));
-			//
-			// double[] out3 = ImageUtils.crossingFrame(sphereA[0], sphereA[1],
-			// sphereB[0], sphereB[1], width, height);
-			//
-			// double dist1 = MyFwhm.lengthCalculation(out3[0], out3[1],
-			// sphereA[0], sphereA[1]);
-			// double dist2 = MyFwhm.lengthCalculation(out3[2], out3[3],
-			// sphereA[0], sphereA[1]);
-			// int xStartProfile = 0;
-			// int yStartProfile = 0;
-			// int xEndProfile = 0;
-			// int yEndProfile = 0;
-			//
-			// if (dist1 <= dist2) {
-			// xStartProfile = (int) Math.round(out3[0]);
-			// yStartProfile = (int) Math.round(out3[1]);
-			// xEndProfile = (int) Math.round(out3[2]);
-			// yEndProfile = (int) Math.round(out3[3]);
-			// } else {
-			// xStartProfile = (int) Math.round(out3[2]);
-			// yStartProfile = (int) Math.round(out3[3]);
-			// xEndProfile = (int) Math.round(out3[0]);
-			// yEndProfile = (int) Math.round(out3[1]);
-			// }
-			//
-			// Overlay over1 = new Overlay();
-			// impThis.setOverlay(over1);
-			//
-			// impThis.setRoi(new Line(xStartProfile, yStartProfile,
-			// xEndProfile, yEndProfile));
-			//
-			// impThis.getRoi().setStrokeColor(Color.red);
-			// over1.addElement(impThis.getRoi());
-			// impThis.deleteRoi();
-			// impThis.resetDisplayRange();
-			// impThis.show();
-			// ImageWindow iw1 = impThis.getWindow();
-
-			// double[] profile = getProfile(impThis, xStartProfile,
-			// yStartProfile, xEndProfile, yEndProfile, dimPixel,
-			// false);
 
 			double[][] profile = MySphere.getProfile3D(impUncombined1, sphereA, sphereB, false);
 			IJ.log("lunghezza profilo= " + profile.length);
-
-			// MyLog.logMatrix(profile, "profile");
-			// MyLog.waitHere();
 			double[] prof2 = new double[profile.length];
 			for (int i1 = 0; i1 < profile.length; i1++) {
 				prof2[i1] = profile[i1][3];
 			}
-
-			// MyLog.logMatrix(profile, "profile");
 			String codice = "";
 			boolean verbose = false;
 			double dimPixel = 1;
 			outFwhm2 = MyFwhm.analyzeProfile(prof2, dimPixel, codice, false, verbose);
 			if (outFwhm2 == null)
 				MyLog.waitHere("fwhm2==null");
-			// }
-			// if (outFwhm2 == null)
-			// MyLog.waitHere("fwhm2==null");
-
-			// MyLog.logVector(outFwhm2, "outFwhm2");
-
-			// if (ko)
-			// rt1.addValue("FWHM ", "NULL");
-			// else
 			rt1.addValue("FWHM ", outFwhm2[0]);
 			rt1.addValue("peak/2", outFwhm2[2] / 2);
-			rt1.show("Results");
 
 			// ================================================
 			// SIMULATE
@@ -616,17 +530,14 @@ public class Uncombined3D_2017 implements PlugIn {
 				for (int i1 = 0; i1 < depth; i1++) {
 					slice = i1 + 1;
 					ImagePlus imp20 = MyStackUtils.imageFromStack(impUncombined1, slice);
-
-					// MySphere.simulataGrigio16(sMROI, imp20, impMapR2,
-					// impMapG2, impMapB2, slice, livelli, minimi,
-					// massimi, colorCoil, algoColor, puntatore, debuglevel);
-					MySphere.simulataGrigio16(sMROI, imp20, impMapR2, impMapG2, impMapB2, slice, livelli, minimi,
-							massimi, colorCoil, algoColor, puntatore, debuglevel);
+					vetClassi = MySphere.simulataGrigio16(sMROI, imp20, impMapR2, impMapG2, impMapB2, slice, livelli,
+							minimi, massimi, colorCoil, algoColor, puntatore, debuglevel);
+					for (int i2 = 0; i2 < vetClassi.length; i2++) {
+						vetTotClassi[i2] = vetTotClassi[i2] + vetClassi[i2];
+					}
 					impMapR2.updateAndDraw();
 					impMapG2.updateAndDraw();
 					impMapB2.updateAndDraw();
-					// MyLog.waitHere();
-
 					MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
 				}
 			}
@@ -634,7 +545,37 @@ public class Uncombined3D_2017 implements PlugIn {
 			String tempo1 = MyTimeUtils.stringNanoTime(time2 - time1);
 			IJ.log("Tempo calcolo sfera " + count0 + "   hh:mm:ss.ms " + tempo1);
 			impUncombined1.updateAndDraw();
-			// MyLog.waitHere("verifica");
+
+			double totColorati = 0;
+			for (int i1 = 0; i1 < vetTotClassi.length - 1; i1++) {
+				totColorati = totColorati + vetTotClassi[i1];
+			}
+			double totFondo = vetTotClassi[vetTotClassi.length - 1];
+			rt1.addValue("Voxels sfera colorati", totColorati);
+			rt1.addValue("Voxels sfera fondo", totFondo);
+
+			for (int i2 = 0; i2 < minimi.length; i2++) {
+				rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2], vetTotClassi[i2]);
+			}
+
+			// rt1.addValue("Voxels fondo ", vetTotClassi[vetTotClassi.length -
+			// 1]);
+
+			double[] matPercClassi = new double[vetTotClassi.length - 1];
+			for (int i1 = 0; i1 < vetTotClassi.length - 1; i1++) {
+				matPercClassi[i1] = (vetTotClassi[i1] / (totColorati + totFondo)) * 100;
+			}
+
+			rt1.addValue("Voxels sfera colorati [%]", totColorati * 100 / (totColorati + totFondo));
+			rt1.addValue("Voxels sfera fondo [%]", ResultsTable.d2s(totFondo * 100 / (totColorati + totFondo), 2));
+
+			for (int i2 = 0; i2 < minimi.length; i2++) {
+				rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2] + "[%]",
+						ResultsTable.d2s(matPercClassi[i2], 2));
+			}
+
+			rt1.show("Results");
+
 			if (WindowManager.getFrame("Profilo penetrazione__") != null) {
 				IJ.selectWindow("Profilo penetrazione__");
 				IJ.run("Close");
@@ -642,7 +583,6 @@ public class Uncombined3D_2017 implements PlugIn {
 			ImageWindow iw1 = impUncombined1.getWindow();
 			if (iw1 != null)
 				iw1.close();
-			// iw1.close();
 		}
 		MySphere.addSphereFilling(impMapR1, impMapG1, impMapB1, sphereA, bounds, colorRGB4, false);
 		MySphere.compilaMappazzaCombinata(impMapR1, impMapG1, impMapB1, impMapRGB1, algoColor);
