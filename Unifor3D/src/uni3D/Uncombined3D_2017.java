@@ -35,6 +35,7 @@ import utils.ArrayUtils;
 import utils.ButtonMessages;
 import utils.ImageUtils;
 import utils.InputOutput;
+import utils.MyColor;
 import utils.MyConst;
 import utils.MyFilter;
 import utils.MyFwhm;
@@ -229,31 +230,31 @@ public class Uncombined3D_2017 implements PlugIn {
 		if (buco)
 			MyLog.waitHere("WHY MAKE AN UGLY HOLE IN YOUR CLASSES ??");
 
-		int[][] myColor = new int[12][3];
-		myColor[0][0] = 255;
-		myColor[0][1] = 0;
-		myColor[0][2] = 0;
-		myColor[1][0] = 255;
-		myColor[1][1] = 128;
-		myColor[1][2] = 0;
-		myColor[2][0] = 255;
-		myColor[2][1] = 255;
-		myColor[2][2] = 0;
-		myColor[3][0] = 128;
-		myColor[3][1] = 255;
-		myColor[3][2] = 0;
-		myColor[4][0] = 0;
-		myColor[4][1] = 255;
-		myColor[4][2] = 255;
-		myColor[5][0] = 0;
-		myColor[5][1] = 0;
-		myColor[5][2] = 255;
-		myColor[6][0] = 127;
-		myColor[6][1] = 0;
-		myColor[6][2] = 255;
-		myColor[7][0] = 255;
-		myColor[7][1] = 0;
-		myColor[7][2] = 127;
+		// int[][] myColor = new int[12][3];
+		// myColor[0][0] = 255;
+		// myColor[0][1] = 0;
+		// myColor[0][2] = 0;
+		// myColor[1][0] = 255;
+		// myColor[1][1] = 128;
+		// myColor[1][2] = 0;
+		// myColor[2][0] = 255;
+		// myColor[2][1] = 255;
+		// myColor[2][2] = 0;
+		// myColor[3][0] = 128;
+		// myColor[3][1] = 255;
+		// myColor[3][2] = 0;
+		// myColor[4][0] = 0;
+		// myColor[4][1] = 255;
+		// myColor[4][2] = 255;
+		// myColor[5][0] = 0;
+		// myColor[5][1] = 0;
+		// myColor[5][2] = 255;
+		// myColor[6][0] = 127;
+		// myColor[6][1] = 0;
+		// myColor[6][2] = 255;
+		// myColor[7][0] = 255;
+		// myColor[7][1] = 0;
+		// myColor[7][2] = 127;
 
 		String[] myLabels = new String[livelli];
 		String sigmin = "";
@@ -409,19 +410,13 @@ public class Uncombined3D_2017 implements PlugIn {
 			/// preoccuparmni delle simulate
 			int[] colorRGB2 = new int[3];
 			colorCoil++;
-			for (int i1 = 0; i1 < 8; i1++) {
-				colorRGB2[0] = myColor[colorCoil][0];
-				colorRGB2[1] = myColor[colorCoil][1];
-				colorRGB2[2] = myColor[colorCoil][2];
-			}
-			if (colorCoil == 3)
+			if (colorCoil == MyColor.colori())
 				colorCoil = 0;
 
+			colorRGB2 = MyColor.coloreSfera(colorCoil, livelli);
+			// }
 			MySphere.addSphere(impMapR1, impMapG1, impMapB1, sphereB, bounds, colorRGB2, surfaceonly);
 			MySphere.compilaMappazzaCombinata(impMapR1, impMapG1, impMapB1, impMapRGB1, algoColor);
-			// impMapR1.updateAndDraw();
-			// impMapG1.updateAndDraw();
-			// impMapB1.updateAndDraw();
 			impMapRGB1.updateAndDraw();
 
 			double[] sphereC = sphereB.clone();
@@ -439,25 +434,19 @@ public class Uncombined3D_2017 implements PlugIn {
 			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
 			IJ.log("Mean sfera " + count0 + " = " + sMROI);
 			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
-
 			double[] vetpixel_11x11 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereB);
-
 			ImageStack imaStack2 = impUncombined2.getImageStack();
 			if (imaStack2 == null) {
 				IJ.log("imageFromStack.imaStack== null");
 				return;
 			}
-
 			if (imaStack2.getSize() < 2) {
 				MyLog.waitHere("Per le elaborazioni 3D ci vuole uno stack di piu'mmagini!");
 				return;
 			}
-
 			ImagePlus impDiff = MyStackUtils.stackDiff(impUncombined1, impUncombined2);
 			impDiff.setTitle("IMMAGINE DIFFERENZA");
-
 			double[] vetpixeldiff_11x11 = MySphere.vectorizeSphericalSpot(impDiff, sphereA, sphereB);
-
 			// ============================================
 			// INIZIO CALCOLO SNR
 			// ============================================
@@ -483,13 +472,9 @@ public class Uncombined3D_2017 implements PlugIn {
 				snrMROI = sMROI * Math.sqrt(2) / sd_diff;
 			}
 			IJ.log("snrMROI= " + snrMROI);
-
 			String subCoil = ReadDicom.readDicomParameter(impUncombined1, MyConst.DICOM_COIL);
-
 			rt1.incrementCounter();
-
 			rt1.addValue("subCOIL", subCoil);
-
 			rt1.addValue("Fantoccio [x:y:z:d] ", IJ.d2s(sphereA[0], 0) + ":" + IJ.d2s(sphereA[1], 0) + ":"
 					+ IJ.d2s(sphereA[2], 0) + ":" + IJ.d2s(sphereA[3], 0));
 
@@ -503,7 +488,6 @@ public class Uncombined3D_2017 implements PlugIn {
 			// centro/bordo
 			IJ.log("count0= " + count0 + " slice= " + (int) sphereB[1]);
 			double[] outFwhm2 = null;
-
 			double[][] profile = MySphere.getProfile3D(impUncombined1, sphereA, sphereB, false);
 			IJ.log("lunghezza profilo= " + profile.length);
 			double[] prof2 = new double[profile.length];
@@ -524,14 +508,27 @@ public class Uncombined3D_2017 implements PlugIn {
 			// ================================================
 			int slice = 0;
 			if (true) {
-				impMapR2.show();
-				impMapG2.show();
-				impMapB2.show();
+				// impMapR2.show();
+				// impMapG2.show();
+				// impMapB2.show();
+				// impUncombined1.show();
+				debuglevel = 2;
 				for (int i1 = 0; i1 < depth; i1++) {
 					slice = i1 + 1;
 					ImagePlus imp20 = MyStackUtils.imageFromStack(impUncombined1, slice);
-					vetClassi = MySphere.simulataGrigio16(sMROI, imp20, impMapR2, impMapG2, impMapB2, slice, livelli,
-							minimi, massimi, colorCoil, algoColor, puntatore, debuglevel);
+					double[] circle = new double[3];
+					circle[0] = sphereA[0];
+					circle[1] = sphereA[1];
+					double diam1 = MySphere.projectedDiameter(sphereA, slice);
+					circle[2] = diam1;
+					vetClassi = MySphere.simulataGrigio16(sMROI, imp20, circle, impMapR2, impMapG2, impMapB2, slice,
+							livelli, minimi, massimi, colorCoil, puntatore, debuglevel, sphereC);
+					debuglevel = 0;
+
+					// vetClassi = MySphere.simulataGrigio16(sMROI, imp20,
+					// impMapR2, impMapG2, impMapB2, slice, livelli,
+					// minimi, massimi, colorCoil, algoColor, puntatore,
+					// debuglevel);
 					for (int i2 = 0; i2 < vetClassi.length; i2++) {
 						vetTotClassi[i2] = vetTotClassi[i2] + vetClassi[i2];
 					}
@@ -541,11 +538,11 @@ public class Uncombined3D_2017 implements PlugIn {
 					MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
 				}
 			}
+			// MyLog.waitHere("MUCCA");
 			long time2 = System.nanoTime();
 			String tempo1 = MyTimeUtils.stringNanoTime(time2 - time1);
 			IJ.log("Tempo calcolo sfera " + count0 + "   hh:mm:ss.ms " + tempo1);
 			impUncombined1.updateAndDraw();
-
 			double totColorati = 0;
 			for (int i1 = 0; i1 < vetTotClassi.length - 1; i1++) {
 				totColorati = totColorati + vetTotClassi[i1];
@@ -557,15 +554,10 @@ public class Uncombined3D_2017 implements PlugIn {
 			for (int i2 = 0; i2 < minimi.length; i2++) {
 				rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2], vetTotClassi[i2]);
 			}
-
-			// rt1.addValue("Voxels fondo ", vetTotClassi[vetTotClassi.length -
-			// 1]);
-
 			double[] matPercClassi = new double[vetTotClassi.length - 1];
 			for (int i1 = 0; i1 < vetTotClassi.length - 1; i1++) {
 				matPercClassi[i1] = (vetTotClassi[i1] / (totColorati + totFondo)) * 100;
 			}
-
 			rt1.addValue("Voxels sfera colorati [%]", totColorati * 100 / (totColorati + totFondo));
 			rt1.addValue("Voxels sfera fondo [%]", ResultsTable.d2s(totFondo * 100 / (totColorati + totFondo), 2));
 
@@ -573,9 +565,7 @@ public class Uncombined3D_2017 implements PlugIn {
 				rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2] + "[%]",
 						ResultsTable.d2s(matPercClassi[i2], 2));
 			}
-
 			rt1.show("Results");
-
 			if (WindowManager.getFrame("Profilo penetrazione__") != null) {
 				IJ.selectWindow("Profilo penetrazione__");
 				IJ.run("Close");
@@ -590,9 +580,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		long time4 = System.nanoTime();
 		String tempo2 = MyTimeUtils.stringNanoTime(time4 - time3);
 		IJ.log("Tempo totale  hh:mm:ss.ms " + tempo2);
-
 		MyLog.waitHere("FINE");
-
 	} // chiude
 
 } // ultima
