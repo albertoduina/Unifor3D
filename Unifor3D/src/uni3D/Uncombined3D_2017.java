@@ -538,7 +538,6 @@ public class Uncombined3D_2017 implements PlugIn {
 					MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
 				}
 			}
-			// MyLog.waitHere("MUCCA");
 			long time2 = System.nanoTime();
 			String tempo1 = MyTimeUtils.stringNanoTime(time2 - time1);
 			IJ.log("Tempo calcolo sfera " + count0 + "   hh:mm:ss.ms " + tempo1);
