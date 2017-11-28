@@ -171,19 +171,24 @@ public class Uncombined3D_2017 implements PlugIn {
 		IJ.log("pathCombined= " + pathCombined);
 
 		GenericDialog gd = new GenericDialog("", IJ.getInstance());
-		String[] items = { "5 livelli", "12 livelli" };
-		gd.addRadioButtonGroup("SIMULATE", items, 2, 2, "5 livelli");
+		int minValue = 1;
+		int maxValue = 12;
+		int defaultValue = 5;
+		gd.addSlider("livelli", minValue, maxValue, defaultValue);
+		// String[] items = { "5 livelli", "12 livelli" };
+		// gd.addRadioButtonGroup("SIMULATE", items, 2, 2, "5 livelli");
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return;
 		}
-		String level = gd.getNextRadioButton();
-		int livelli = 0;
-		if (level.equals("5 livelli")) {
-			livelli = 5;
-		} else {
-			livelli = 12;
-		}
+		// String level = gd.getNextRadioButton();
+		int livelli = (int) gd.getNextNumber();
+		// int livelli = 0;
+		// if (level.equals("5 livelli")) {
+		// livelli = 5;
+		// } else {
+		// livelli = 12;
+		// }
 
 		int gridWidth = 2;
 		int gridHeight = livelli;
@@ -321,7 +326,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		int height = impCombined.getHeight();
 		int depth = impCombined.getStackSize();
 		int bitdepth = 24;
-		int algoColor = 3;
+		int algoColor = 1;
 
 		boolean generate = true;
 		if (generate) {
@@ -341,17 +346,15 @@ public class Uncombined3D_2017 implements PlugIn {
 		// =========================
 		// SFERA ESTERNA GRIGIA
 		// =========================
-		int[] colorRGB3 = { 100, 100, 100 };
-		int[] colorRGB4 = { 20, 20, 20 };
+		int[] colorRGB4 = { 80, 80, 80 };
 		boolean surfaceonly = true;
 		int[] bounds = new int[3];
 		bounds[0] = width;
 		bounds[1] = height;
 		bounds[2] = depth;
-		MySphere.addSphere(impMapR1, impMapG1, impMapB1, sphereA, bounds, colorRGB3, surfaceonly);
+		MySphere.addSphere(impMapR1, impMapG1, impMapB1, sphereA, bounds, colorRGB4, surfaceonly);
 		MySphere.compilaMappazzaCombinata(impMapR1, impMapG1, impMapB1, impMapRGB1, algoColor);
 		impMapRGB1.show();
-		impMapRGB2.show();
 
 		// =================================================================
 		// ELABORAZIONE STACK UNCOMBINED
@@ -512,6 +515,19 @@ public class Uncombined3D_2017 implements PlugIn {
 				// impMapG2.show();
 				// impMapB2.show();
 				// impUncombined1.show();
+				// =========================
+				// SFERA ESTERNA GRIGIA
+				// =========================
+				int[] colorRGB44 = { 8, 8, 8 };
+				surfaceonly = true;
+				int[] bounds2 = new int[3];
+				bounds2[0] = width;
+				bounds2[1] = height;
+				bounds2[2] = depth;
+				MySphere.addSphere(impMapR2, impMapG2, impMapB2, sphereA, bounds, colorRGB44, surfaceonly);
+				MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
+				impMapRGB2.show();
+
 				debuglevel = 2;
 				for (int i1 = 0; i1 < depth; i1++) {
 					slice = i1 + 1;
@@ -573,8 +589,12 @@ public class Uncombined3D_2017 implements PlugIn {
 			if (iw1 != null)
 				iw1.close();
 		}
-		MySphere.addSphereFilling(impMapR1, impMapG1, impMapB1, sphereA, bounds, colorRGB4, false);
-		MySphere.compilaMappazzaCombinata(impMapR1, impMapG1, impMapB1, impMapRGB1, algoColor);
+		int[] colorRGB5 = { 30, 30, 30 };
+
+		 MySphere.addSphereFilling(impMapR1, impMapG1, impMapB1, sphereA,
+		 bounds, colorRGB5);
+		 MySphere.compilaMappazzaCombinata(impMapR1, impMapG1, impMapB1,
+		 impMapRGB1, algoColor);
 
 		long time4 = System.nanoTime();
 		String tempo2 = MyTimeUtils.stringNanoTime(time4 - time3);
