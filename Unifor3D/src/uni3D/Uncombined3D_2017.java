@@ -174,7 +174,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		int minValue = 1;
 		int maxValue = 12;
 		int defaultValue = 5;
-		gd.addSlider("livelli", minValue, maxValue, defaultValue);
+		gd.addSlider("colori simulata (i livelli di calcolo saranno comunque 12", minValue, maxValue, defaultValue);
 		// String[] items = { "5 livelli", "12 livelli" };
 		// gd.addRadioButtonGroup("SIMULATE", items, 2, 2, "5 livelli");
 		gd.showDialog();
@@ -183,6 +183,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		}
 		// String level = gd.getNextRadioButton();
 		int livelli = (int) gd.getNextNumber();
+		int livelli3 = 12;
 		// int livelli = 0;
 		// if (level.equals("5 livelli")) {
 		// livelli = 5;
@@ -191,7 +192,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		// }
 
 		int gridWidth = 2;
-		int gridHeight = livelli;
+		int gridHeight = livelli3;
 		int gridSize = gridWidth * gridHeight;
 		TextField[] tf2 = new TextField[gridSize]; // String[]
 		String[] lab2 = { "min% classe 1", "max% classe 1", "min% classe 2", "max% classe 2", "min% classe 3",
@@ -211,7 +212,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		}
 
 		int decimals = 0;
-		String title2 = "LIMITI CLASSI PIXELS";
+		String title2 = "LIMITI CLASSI PIXELS (sempre 12)";
 		if (mgdg.showDialog3(gridWidth, gridHeight, tf2, lab2, value2, value3, title2, decimals)) {
 		}
 
@@ -219,52 +220,26 @@ public class Uncombined3D_2017 implements PlugIn {
 			Prefs.set("prefer.Uncombined3D_MAPPAZZA_classi_" + i1, value2[i1]);
 		}
 
-		int[] minimi = new int[livelli];
-		int[] massimi = new int[livelli];
+		int[] minimi = new int[livelli3];
+		int[] massimi = new int[livelli3];
 		int conta = 0;
 		boolean buco = false;
-		for (int i1 = 0; i1 < livelli; i1++) {
+		for (int i1 = 0; i1 < livelli3; i1++) {
 			minimi[i1] = (int) value2[conta++];
 			massimi[i1] = (int) value2[conta++];
 		}
 
-		for (int i1 = 0; i1 < livelli - 1; i1++) {
+		for (int i1 = 0; i1 < livelli3 - 1; i1++) {
 			if (minimi[i1] != massimi[i1 + 1])
 				buco = true;
 		}
 		if (buco)
 			MyLog.waitHere("WHY MAKE AN UGLY HOLE IN YOUR CLASSES ??");
 
-		// int[][] myColor = new int[12][3];
-		// myColor[0][0] = 255;
-		// myColor[0][1] = 0;
-		// myColor[0][2] = 0;
-		// myColor[1][0] = 255;
-		// myColor[1][1] = 128;
-		// myColor[1][2] = 0;
-		// myColor[2][0] = 255;
-		// myColor[2][1] = 255;
-		// myColor[2][2] = 0;
-		// myColor[3][0] = 128;
-		// myColor[3][1] = 255;
-		// myColor[3][2] = 0;
-		// myColor[4][0] = 0;
-		// myColor[4][1] = 255;
-		// myColor[4][2] = 255;
-		// myColor[5][0] = 0;
-		// myColor[5][1] = 0;
-		// myColor[5][2] = 255;
-		// myColor[6][0] = 127;
-		// myColor[6][1] = 0;
-		// myColor[6][2] = 255;
-		// myColor[7][0] = 255;
-		// myColor[7][1] = 0;
-		// myColor[7][2] = 127;
-
-		String[] myLabels = new String[livelli];
+		String[] myLabels = new String[livelli3];
 		String sigmin = "";
 		String sigmax = "";
-		for (int i1 = 0; i1 < livelli; i1++) {
+		for (int i1 = 0; i1 < livelli3; i1++) {
 			if (minimi[i1] < 0) {
 				sigmin = "";
 			} else {
@@ -321,6 +296,9 @@ public class Uncombined3D_2017 implements PlugIn {
 		ImagePlus impMapB2 = null;
 		ImagePlus impMapRGB2 = null;
 		ImageStack stackRGB2 = null;
+		ImagePlus impMapR3 = null;
+		ImagePlus impMapG3 = null;
+		ImagePlus impMapB3 = null;
 
 		int width = impCombined.getWidth();
 		int height = impCombined.getHeight();
@@ -340,6 +318,9 @@ public class Uncombined3D_2017 implements PlugIn {
 			impMapB2 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB");
 			stackRGB2 = ImageStack.create(width, height, depth, bitdepth);
 			impMapRGB2 = new ImagePlus("mapRGB2", stackRGB2);
+			impMapR3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR");
+			impMapG3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG");
+			impMapB3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB");
 			generate = false;
 		}
 
@@ -369,7 +350,8 @@ public class Uncombined3D_2017 implements PlugIn {
 		while (count0 < num1) {
 			long time1 = System.nanoTime();
 			int[] vetClassi = null;
-			int[] vetTotClassi = new int[livelli + 1];
+			int[] vetClassi3 = null;
+			int[] vetTotClassi = new int[livelli3 + 1];
 
 			if (auto) {
 				pathUncombined1 = dir1 + dir1a[count0];
@@ -507,7 +489,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			rt1.addValue("peak/2", outFwhm2[2] / 2);
 
 			// ================================================
-			// SIMULATE
+			// SIMULATA X IMMAGINE
 			// ================================================
 			int slice = 0;
 			if (true) {
@@ -518,7 +500,7 @@ public class Uncombined3D_2017 implements PlugIn {
 				// =========================
 				// SFERA ESTERNA GRIGIA
 				// =========================
-				int[] colorRGB44 = { 8, 8, 8 };
+				int[] colorRGB44 = { 6, 6, 6 };
 				surfaceonly = true;
 				int[] bounds2 = new int[3];
 				bounds2[0] = width;
@@ -545,15 +527,45 @@ public class Uncombined3D_2017 implements PlugIn {
 					// impMapR2, impMapG2, impMapB2, slice, livelli,
 					// minimi, massimi, colorCoil, algoColor, puntatore,
 					// debuglevel);
-					for (int i2 = 0; i2 < vetClassi.length; i2++) {
-						vetTotClassi[i2] = vetTotClassi[i2] + vetClassi[i2];
-					}
+					// for (int i2 = 0; i2 < vetClassi.length; i2++) {
+					// vetTotClassi[i2] = vetTotClassi[i2] + vetClassi[i2];
+					// }
 					impMapR2.updateAndDraw();
 					impMapG2.updateAndDraw();
 					impMapB2.updateAndDraw();
 					MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
 				}
 			}
+
+			// ================================================
+			// SIMULATA 12 LIVELLI X REPORT
+			// ================================================
+			int slice1 = 0;
+			if (true) {
+
+				debuglevel = 2;
+				for (int i1 = 0; i1 < depth; i1++) {
+					slice1 = i1 + 1;
+					ImagePlus imp20 = MyStackUtils.imageFromStack(impUncombined1, slice1);
+					double[] circle = new double[3];
+					circle[0] = sphereA[0];
+					circle[1] = sphereA[1];
+					double diam1 = MySphere.projectedDiameter(sphereA, slice1);
+					circle[2] = diam1;
+					vetClassi3 = MySphere.simulataGrigio16(sMROI, imp20, circle, impMapR3, impMapG3, impMapB3, slice1,
+							livelli3, minimi, massimi, colorCoil, puntatore, debuglevel, sphereC);
+					debuglevel = 0;
+
+					// vetClassi = MySphere.simulataGrigio16(sMROI, imp20,
+					// impMapR2, impMapG2, impMapB2, slice, livelli,
+					// minimi, massimi, colorCoil, algoColor, puntatore,
+					// debuglevel);
+					for (int i2 = 0; i2 < vetClassi3.length; i2++) {
+						vetTotClassi[i2] = vetTotClassi[i2] + vetClassi3[i2];
+					}
+				}
+			}
+
 			long time2 = System.nanoTime();
 			String tempo1 = MyTimeUtils.stringNanoTime(time2 - time1);
 			IJ.log("Tempo calcolo sfera " + count0 + "   hh:mm:ss.ms " + tempo1);
@@ -570,7 +582,7 @@ public class Uncombined3D_2017 implements PlugIn {
 				rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2], vetTotClassi[i2]);
 			}
 			double[] matPercClassi = new double[vetTotClassi.length - 1];
-			for (int i1 = 0; i1 < vetTotClassi.length - 1; i1++) {
+			for (int i1 = 0; i1 < 12; i1++) {
 				matPercClassi[i1] = (vetTotClassi[i1] / (totColorati + totFondo)) * 100;
 			}
 			rt1.addValue("Voxels sfera colorati [%]", totColorati * 100 / (totColorati + totFondo));
@@ -589,12 +601,10 @@ public class Uncombined3D_2017 implements PlugIn {
 			if (iw1 != null)
 				iw1.close();
 		}
-		int[] colorRGB5 = { 30, 30, 30 };
+		int[] colorRGB5 = { 24, 24, 24 };
 
-		 MySphere.addSphereFilling(impMapR1, impMapG1, impMapB1, sphereA,
-		 bounds, colorRGB5);
-		 MySphere.compilaMappazzaCombinata(impMapR1, impMapG1, impMapB1,
-		 impMapRGB1, algoColor);
+		MySphere.addSphereFilling(impMapR1, impMapG1, impMapB1, sphereA, bounds, colorRGB5);
+		MySphere.compilaMappazzaCombinata(impMapR1, impMapG1, impMapB1, impMapRGB1, algoColor);
 
 		long time4 = System.nanoTime();
 		String tempo2 = MyTimeUtils.stringNanoTime(time4 - time3);

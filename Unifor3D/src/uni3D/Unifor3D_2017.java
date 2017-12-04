@@ -174,7 +174,7 @@ public class Unifor3D_2017 implements PlugIn {
 		}
 
 		if (buco)
-			MyLog.waitHere("LO SAI CHE LE CLASSI IMPOSTATE HANNO UN BUCO ?");
+			MyLog.waitHere("LO SAI CHE LE CLASSI IMPOSTATE HANNO UN BUCOBUCONE?");
 
 		// =================================================================
 		// Utilizzo di ORTHOGONAL VIEWS per ricostruire le proiezioni nelle due
@@ -187,23 +187,56 @@ public class Unifor3D_2017 implements PlugIn {
 
 		impCombined1.show();
 		IJ.run(impCombined1, "Orthogonal Views", "");
+
 		Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
-		IJ.wait(10);
+
+		// grazie alle coordinate centro sfera gia' calcolate da
+		// MySphere.centerSphere posso impostare OrtogonalViews in modo che mi
+		// dia le reali slice centrali delle tre direzioni. In questo modo mi
+		// restano a disposizione per un eventuale calcolo in modalita' 2D
+		// effettuato sulle immagini centrali della sfera.
+
+		int crossx = (int) sphereA[0];
+		int crossy = (int) sphereA[1];
+		int crossz = (int) sphereA[2];
+		ort1.setCrossLoc(crossx, crossy, crossz);
+		IJ.wait(100);
 		ImagePlus imp102 = ort1.getXZImage();
-		ImagePlus impXZ = new Duplicator().run(imp102);
-		IJ.wait(10);
+		ImagePlus impXZ1 = new Duplicator().run(imp102);
+		IJ.wait(100);
 		ImagePlus imp103 = ort1.getYZImage();
-		ImagePlus impYZ = new Duplicator().run(imp103);
-		IJ.wait(10);
+		ImagePlus impYZ1 = new Duplicator().run(imp103);
+		IJ.wait(100);
+		ImagePlus impXY1 = MyStackUtils.imageFromStack(impCombined1, crossz);
+		impXY1.setTitle("XY1");
+
 		Orthogonal_Views.stop();
 
 		Overlay overXZ = new Overlay();
-		impXZ.setOverlay(overXZ);
-		impXZ.show();
+		impXZ1.setOverlay(overXZ);
+		impXZ1.show();
 
 		Overlay overYZ = new Overlay();
-		impYZ.setOverlay(overYZ);
-		impYZ.show();
+		impYZ1.setOverlay(overYZ);
+		impYZ1.show();
+
+		impCombined2.show();
+		IJ.run(impCombined2, "Orthogonal Views", "");
+		Orthogonal_Views ort2 = Orthogonal_Views.getInstance();
+		ort1.setCrossLoc(crossx, crossy, crossz);
+		IJ.wait(100);
+
+		ImagePlus imp1022 = ort2.getXZImage();
+		ImagePlus impXZ2 = new Duplicator().run(imp1022);
+		IJ.wait(100);
+		closeImageWindow(impXZ2);
+		ImagePlus imp1032 = ort2.getYZImage();
+		ImagePlus impYZ2 = new Duplicator().run(imp1032);
+		IJ.wait(100);
+		ImagePlus impXY2 = MyStackUtils.imageFromStack(impCombined2, crossz);
+		impXY2.setTitle("XY2");
+		Orthogonal_Views.stop();
+		closeImageWindow(impXY2);
 
 		// ImagePlus imp20 = MyStackUtils.imagesToStack16(sortedList2);
 
@@ -217,10 +250,16 @@ public class Unifor3D_2017 implements PlugIn {
 		// ImagePlus stackDiff = stackDiffCalculation(imp10, imp20);
 		impDiff.show();
 
-		double diamMROI = sphereA[2] * MyConst.P3_AREA_PERC_80_DIAM;
+		double diamMROI = sphereA[3] * MyConst.P3_AREA_PERC_80_DIAM;
 		//
+		// decido quali saranno le slice di start ed end per i calcoli di
+		// uniformita'eccetera utilizzo la coordinata Z del centro sfera
+		// (sphereA(2)) a cui tolgo e aggiungo il diametroMROI/2 il 3 aggiunto
+		// alla endslice è trovato sperimentalmente (forse compensa
+		// arrotondamenti & troncamenti vari, BOH?)
+
 		int startSlice = (int) sphereA[2] - (int) (diamMROI / 2);
-		int endSlice = (int) sphereA[2] + (int) (diamMROI / 2) + 3;
+		int endSlice = startSlice + (int) diamMROI + 1;
 
 		ImagePlus imp00 = MyStackUtils.imageFromStack(impCombined1, (int) sphereA[3]);
 		double centerPos = ReadDicom.readDouble(
@@ -262,36 +301,40 @@ public class Unifor3D_2017 implements PlugIn {
 
 			start = sphereA[0] - radius1;
 			stop = sphereA[0] - radius2;
-			impXZ.setRoi(new Line(start, plotPos, stop, plotPos));
-			impXZ.getRoi().setStrokeColor(verde);
-			impXZ.getRoi().setStrokeWidth(1.5);
-			overXZ.addElement(impXZ.getRoi());
+			impXZ1.setRoi(new Line(start, plotPos, stop, plotPos));
+			impXZ1.getRoi().setStrokeColor(verde);
+			impXZ1.getRoi().setStrokeWidth(1.5);
+			overXZ.addElement(impXZ1.getRoi());
 
-			impXZ.setRoi(new Line(sphereA[0] - diamMROI2 / 2, plotPos, sphereA[0] + diamMROI2 / 2, plotPos));
-			impXZ.getRoi().setStrokeColor(rosa);
-			overXZ.addElement(impXZ.getRoi());
+			impXZ1.setRoi(new Line(sphereA[0] - radius2, plotPos, sphereA[0] + radius2, plotPos));
+			impXZ1.getRoi().setStrokeColor(rosa);
+			overXZ.addElement(impXZ1.getRoi());
 
 			start = sphereA[0] + radius2;
 			stop = sphereA[0] + radius1;
-			impXZ.setRoi(new Line(start, plotPos, stop, plotPos));
-			impXZ.getRoi().setStrokeColor(verde);
-			overXZ.addElement(impXZ.getRoi());
+			impXZ1.setRoi(new Line(start, plotPos, stop, plotPos));
+			impXZ1.getRoi().setStrokeColor(verde);
+			overXZ.addElement(impXZ1.getRoi());
 			// ===================
 			start = sphereA[1] - radius1;
 			stop = sphereA[1] - radius2;
-			impYZ.setRoi(new Line(plotPos, start, plotPos, stop));
-			impYZ.getRoi().setStrokeColor(verde);
-			overYZ.addElement(impYZ.getRoi());
+			impYZ1.setRoi(new Line(plotPos, start, plotPos, stop));
+			impYZ1.getRoi().setStrokeColor(verde);
+			overYZ.addElement(impYZ1.getRoi());
 			// --
-			impYZ.setRoi(new Line(plotPos, sphereA[1] - diamMROI2 / 2, plotPos, sphereA[1] + diamMROI2 / 2));
-			impYZ.getRoi().setStrokeColor(rosa);
-			overYZ.addElement(impYZ.getRoi());
+			impYZ1.setRoi(new Line(plotPos, sphereA[1] - radius2, plotPos, sphereA[1] + radius2));
+			impYZ1.getRoi().setStrokeColor(rosa);
+			overYZ.addElement(impYZ1.getRoi());
 			// --
 			start = sphereA[1] + radius2;
 			stop = sphereA[1] + radius1;
-			impYZ.setRoi(new Line(plotPos, start, plotPos, stop));
-			impYZ.getRoi().setStrokeColor(verde);
-			overYZ.addElement(impYZ.getRoi());
+			impYZ1.setRoi(new Line(plotPos, start, plotPos, stop));
+			impYZ1.getRoi().setStrokeColor(verde);
+			overYZ.addElement(impYZ1.getRoi());
+			// IJ.log("zslice= " + zslice + " distanceFromCenter= " +
+			// distanceFromCenter + " diamEXT2= " + diamEXT2
+			// + " diamMROI2= " + diamMROI2);
+
 			impSliceCombined1 = MyStackUtils.imageFromStack(impCombined1, zslice);
 			impSliceCombined2 = MyStackUtils.imageFromStack(impCombined2, zslice);
 
@@ -317,8 +360,8 @@ public class Unifor3D_2017 implements PlugIn {
 			impSliceDiff.close();
 		}
 
-		impXZ.deleteRoi();
-		impYZ.deleteRoi();
+		impXZ1.deleteRoi();
+		impYZ1.deleteRoi();
 
 		int[] pixListSignal = ArrayUtils.arrayListToArrayInt(pixListSignal11);
 		double meanMROI = ArrayUtils.vetMean(pixListSignal);
@@ -334,7 +377,6 @@ public class Unifor3D_2017 implements PlugIn {
 		double uiPerc1 = uiPercCalculation(maxSignal, minSignal);
 		double uiNew = naadCalculation(pixListSignal);
 
-		/// IMMAGINI SIMULATE
 		int countS = -1;
 		int[][] matClassi = new int[6][2];
 		int[] myColor = new int[livello];
@@ -348,52 +390,65 @@ public class Unifor3D_2017 implements PlugIn {
 		ImageStack stackSimulata = new ImageStack(impCombined1.getWidth(), impCombined1.getHeight());
 		ImagePlus impSimulata = null;
 		ImageProcessor ipSimulata = null;
+		double thisPosS;
+		double projectS;
+		double radius1S;
+		double diamEXT2S;
+		double radius2S;
+		double diamMROI2S;
+		String sliceInfo1;
+		String sliceInfo2;
+		ImageWindow iwSimulata;
 
-		for (int i1 = startSlice - 1; i1 < endSlice + 1; i1++) {
+		// =============================================
+		/// IMMAGINI SIMULATE SECONDO SANTA ROMANA NEMA
+		// =============================================
+
+		for (int i1 = 0; i1 < impCombined1.getNSlices(); i1++) {
 			IJ.showStatus("" + i1 + " / " + endSlice);
 
 			// ===============================================
-			impSliceCombined1 = MyStackUtils.imageFromStack(impCombined1, i1);
-			double thisPosS = ReadDicom.readDouble(ReadDicom
+			impSliceCombined1 = MyStackUtils.imageFromStack(impCombined1, i1 + 1);
+			thisPosS = ReadDicom.readDouble(ReadDicom
 					.readSubstring(ReadDicom.readDicomParameter(impSliceCombined1, MyConst.DICOM_IMAGE_POSITION), 1));
 
 			countS++;
 
-			Overlay over111S = new Overlay();
-			impSliceCombined1.setOverlay(over111S);
+			// Overlay over111S = new Overlay();
+			// impSliceCombined1.setOverlay(over111S);
 
 			// ====================================================================
-			// CALCOLO CON PITAGORA (QUELLO DE "IL TEOREMA") IL DIAMETRO ESTERNO
+			// CALCOLO CON PITAGORA (QUELLO DE "IL TEOREMA") IL DIAMETRO
+			// ESTERNO
 			// E DELLA MROI PER LO STRATO ATTUALE
 			// ====================================================================
 
-			double projectS = Math.abs(centerPos - thisPosS);
-			double radius1S = sphereA[3] / 2;
-			double diamEXT2S = Math.sqrt(radius1S * radius1S - projectS * projectS) * 2;
+			projectS = Math.abs(centerPos - thisPosS);
+			radius1S = sphereA[3] / 2;
+			diamEXT2S = Math.sqrt(radius1S * radius1S - projectS * projectS) * 2;
 			if (UtilAyv.isNaN(diamEXT2S))
 				diamEXT2S = 0;
 
-			double radius2S = diamMROI / 2;
-			double diamMROI2S = Math.sqrt(radius2S * radius2S - projectS * projectS) * 2;
+			radius2S = diamMROI / 2;
+			diamMROI2S = Math.sqrt(radius2S * radius2S - projectS * projectS) * 2;
 			if (UtilAyv.isNaN(diamMROI2S))
 				diamMROI2S = 0;
 
 			// demo0, test);
-
 			impSimulata = ImageUtils.generaSimulataMultiColori(meanMROI, impSliceCombined1, minimi, massimi, myColor);
 
 			// impSimulata.show();
 			ipSimulata = impSimulata.getProcessor();
 			if (countS == 0)
 				stackSimulata.update(ipSimulata);
-			String sliceInfo1 = impSimulata.getTitle();
-			String sliceInfo2 = (String) impSimulata.getProperty("Info");
+			sliceInfo1 = impSimulata.getTitle();
+			sliceInfo2 = (String) impSimulata.getProperty("Info");
 			// aggiungo i dati header alle singole immagini dello stack
 			if (sliceInfo2 != null)
 				sliceInfo1 = sliceInfo1 + "\n" + sliceInfo2;
 			stackSimulata.addSlice(sliceInfo2, ipSimulata);
 
-			ImageWindow iwSimulata = impSimulata.getWindow();
+			iwSimulata = impSimulata.getWindow();
 			if (iwSimulata != null)
 				iwSimulata.dispose();
 
@@ -457,6 +512,57 @@ public class Unifor3D_2017 implements PlugIn {
 		IJ.run(impz, "Histogram", "bins=256 use x_min=-96 x_max=136 y_max=Auto");
 		// IJ.run(impz, "Histogram", "");
 		// MyLog.waitHere();
+
+		// ===========================================================
+		// CALCOLO UNIFORMIT A' 2D ( E TE PAREVA, TRA UN PO' ARRIVIAMO AI 5D )
+		// ===========================================================
+
+		int direction = 1;
+		double maxFitError = 20.0;
+		double maxBubbleGapLimit = 2.0;
+		boolean demo1 = false;
+		double[] circleXY = MySphere.centerCircleCannyEdge(impXY1, direction, maxFitError, maxBubbleGapLimit, demo1);
+		double[] circleYZ = MySphere.centerCircleCannyEdge(impYZ1, direction, maxFitError, maxBubbleGapLimit, demo1);
+		double[] circleXZ = MySphere.centerCircleCannyEdge(impXZ1, direction, maxFitError, maxBubbleGapLimit, demo1);
+
+		Overlay overXY = new Overlay();
+		impXY1.setOverlay(overXY);
+		impXY1.setRoi(
+				new OvalRoi(circleXY[0] - circleXY[2] / 2, circleXY[1] - circleXY[2] / 2, circleXY[2], circleXY[2]));
+		impXY1.getRoi().setStrokeColor(Color.green);
+		overXY.addElement(impXY1.getRoi());
+		impXY1.deleteRoi();
+		impXY1.show();
+		int diamMROIXY = (int) Math.round(circleXY[2] * MyConst.P3_AREA_PERC_80_DIAM);
+		impXY1.setRoi(new OvalRoi(circleXY[0] - diamMROIXY / 2, circleXY[1] - diamMROIXY / 2, diamMROIXY, diamMROIXY));
+		impXY1.getRoi().setStrokeColor(Color.red);
+		overXY.addElement(impXY1.getRoi());
+		impXY1.deleteRoi();
+		ImageStatistics statXY1 = impXY1.getStatistics();
+		double meanXY1 = statXY1.mean;
+		double uiPercXY1 = uiPercCalculation(statXY1.max, statXY1.min);
+		ImagePlus impDiff1 = UtilAyv.genImaDifference(impXY1, impXY2);
+		Overlay overDiff1 = new Overlay();
+		overDiff1.setStrokeColor(Color.red);
+		impDiff1.setOverlay(overDiff1);
+		impDiff1.setRoi(
+				new OvalRoi(circleXY[0] - diamMROIXY / 2, circleXY[1] - diamMROIXY / 2, diamMROIXY, diamMROIXY));
+		impDiff1.getRoi().setStrokeColor(Color.red);
+		overDiff1.addElement(impDiff1.getRoi());
+		impDiff1.deleteRoi();
+		ImageStatistics statImaDiff1 = impDiff1.getStatistics();
+		// double meanImaDiff = statImaDiff.mean;
+		double stdDevImaDiff1 = statImaDiff1.stdDev;
+		double noiseImaDiff1 = stdDevImaDiff1 / Math.sqrt(2);
+		double snRatio1 = Math.sqrt(2) * meanXY1 / stdDevImaDiff1;
+		ArrayList<Integer> pixListSignalXY1 = new ArrayList<Integer>();
+		pixVectorize1(impXY1, circleXY[0], circleXY[1], diamMROIXY, pixListSignalXY1);
+		int[] pixListSignalXY = ArrayUtils.arrayListToArrayInt(pixListSignal11);
+		double uiNewXY1 = naadCalculation(pixListSignalXY);
+		IJ.log("stdDevImaDiff1= " + stdDevImaDiff1 + "noiseImaDiff1= " + noiseImaDiff1 + " snRatio1= " + snRatio1
+				+ " uiNewXY1= " + uiNewXY1);
+
+		MyLog.waitHere("aaaaaaaaaaaaaaa");
 
 		ResultsTable rt1 = ResultsTable.getResultsTable();
 		rt1.incrementCounter();
@@ -700,5 +806,12 @@ public class Unifor3D_2017 implements PlugIn {
 		return (vetClassi);
 
 	} // classi
+
+	public static void closeImageWindow(ImagePlus imp1) {
+		if (imp1.isVisible()) {
+			ImageWindow iw1 = imp1.getWindow();
+			iw1.close();
+		}
+	}
 
 } // ultima
