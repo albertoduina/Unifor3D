@@ -226,18 +226,17 @@ public class Unifor3D_2017 implements PlugIn {
 		Orthogonal_Views ort2 = Orthogonal_Views.getInstance();
 		ort1.setCrossLoc(crossx, crossy, crossz);
 		IJ.wait(100);
-
 		ImagePlus imp1022 = ort2.getXZImage();
 		ImagePlus impXZ2 = new Duplicator().run(imp1022);
 		IJ.wait(100);
-		closeImageWindow(impXZ2);
+		ImageUtils.closeImageWindow(impXZ2);
 		ImagePlus imp1032 = ort2.getYZImage();
 		ImagePlus impYZ2 = new Duplicator().run(imp1032);
 		IJ.wait(100);
 		ImagePlus impXY2 = MyStackUtils.imageFromStack(impCombined2, crossz);
 		impXY2.setTitle("XY2");
 		Orthogonal_Views.stop();
-		closeImageWindow(impXY2);
+		ImageUtils.closeImageWindow(impXY2);
 
 		// ImagePlus imp20 = MyStackUtils.imagesToStack16(sortedList2);
 
@@ -523,6 +522,8 @@ public class Unifor3D_2017 implements PlugIn {
 		rt1.addValue("SEGNALE", meanMROI);
 		rt1.addValue("RUMORE", sd_diff);
 		rt1.addValue("SNR", snrMROI);
+		rt1.addValue("MAX", maxSignal);
+		rt1.addValue("MIN", minSignal);
 		rt1.addValue("UI%", uiPerc1);
 		rt1.addValue("NAAD", uiNew);
 		rt1.addValue("Voxels colorati", totColorati);
@@ -539,7 +540,7 @@ public class Unifor3D_2017 implements PlugIn {
 		}
 
 		// ===========================================================
-		// CALCOLO UNIFORMIT A' 2D ( E TE PAREVA CHE CE LA FACEVAMO MANCARE )
+		// CALCOLO UNIFORMITA' 2D ( E TE PAREVA CHE CE LA FACEVAMO MANCARE )
 		// ===========================================================
 
 		int direction = 1;
@@ -565,11 +566,9 @@ public class Unifor3D_2017 implements PlugIn {
 				impDIR1 = impXZ1;
 				impDIR2 = impXZ2;
 			}
-			double[] circleDIR = MySphere.centerCircleCannyEdge(impDIR1, direction, maxFitError, maxBubbleGapLimit,
-					demo1);
-
-			circleDIR[2] = sphereA[3]; // forzo il diametro, per prevenire
-										// differenze
+			impDIR1.show();
+			double[] circleDIR = MySphere.centerCircleCannyEdge(impDIR1, direction, maxFitError, maxBubbleGapLimit, demo1);
+			circleDIR[2] = sphereA[3];
 
 			Overlay overDIR = new Overlay();
 			impDIR1.setOverlay(overDIR);
@@ -601,7 +600,7 @@ public class Unifor3D_2017 implements PlugIn {
 			overDiffDIR.addElement(impDiffDIR.getRoi());
 			ImageStatistics statImaDiffDIR = impDiffDIR.getStatistics();
 			impDiffDIR.deleteRoi();
-			// double meanImaDiff = statImaDiff.mean;
+			double meanImaDiffDIR = statImaDiffDIR.mean;
 			double sd_ImaDiffDIR = statImaDiffDIR.stdDev;
 			double noiseImaDiffDIR = sd_ImaDiffDIR / Math.sqrt(2);
 			double snRatioDIR = Math.sqrt(2) * meanDIR / sd_ImaDiffDIR;
@@ -641,8 +640,10 @@ public class Unifor3D_2017 implements PlugIn {
 					+ ":" + IJ.d2s(circleDIR[2], 0));
 
 			rt1.addValue("SEGNALE", meanDIR);
-			rt1.addValue("RUMORE", sd_ImaDiffDIR);
+			rt1.addValue("RUMORE", noiseImaDiffDIR);
 			rt1.addValue("SNR", snRatioDIR);
+			rt1.addValue("MAX", statDIR.max);
+			rt1.addValue("MIN", statDIR.min);
 			rt1.addValue("UI%", uiPercDIR);
 			rt1.addValue("NAAD", naadDIR);
 
@@ -788,8 +789,6 @@ public class Unifor3D_2017 implements PlugIn {
 		}
 	}
 
-
-
 	// ############################################################################
 
 	/**
@@ -878,13 +877,5 @@ public class Unifor3D_2017 implements PlugIn {
 		return (vetClassi);
 
 	} // classi
-
-	public static void closeImageWindow(ImagePlus imp1) {
-		if (imp1.isVisible()) {
-			ImageWindow iw1 = imp1.getWindow();
-			iw1.close();
-		}
-	}
-
 
 } // ultima
