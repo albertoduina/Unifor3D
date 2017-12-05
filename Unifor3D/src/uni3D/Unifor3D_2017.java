@@ -14,6 +14,7 @@ import ij.Prefs;
 import ij.WindowManager;
 import ij.gui.ImageWindow;
 import ij.gui.Line;
+import ij.gui.NewImage;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.Plot;
@@ -513,79 +514,153 @@ public class Unifor3D_2017 implements PlugIn {
 		// IJ.run(impz, "Histogram", "");
 		// MyLog.waitHere();
 
+		ResultsTable rt1 = ResultsTable.getResultsTable();
+		rt1.incrementCounter();
+		rt1.addValue("TIPO ", "ANALISI 3D VOLUME SFERA");
+
+		rt1.addValue("Fantoccio [x:y:z:d] ", IJ.d2s(sphereA[0], 0) + ":" + IJ.d2s(sphereA[1], 0) + ":"
+				+ IJ.d2s(sphereA[2], 0) + ":" + IJ.d2s(sphereA[3], 0));
+		rt1.addValue("SEGNALE", meanMROI);
+		rt1.addValue("RUMORE", sd_diff);
+		rt1.addValue("SNR", snrMROI);
+		rt1.addValue("UI%", uiPerc1);
+		rt1.addValue("NAAD", uiNew);
+		rt1.addValue("Voxels colorati", totColorati);
+		rt1.addValue("Voxels fondo", totFondo);
+		for (int i2 = 0; i2 < minimi.length; i2++) {
+			rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2], matClassi[i2][1]);
+		}
+
+		rt1.addValue("Voxels colorati [%]", ResultsTable.d2s(totColorati * 100 / (totColorati + totFondo), 2));
+		rt1.addValue("Voxels fondo [%]",
+				ResultsTable.d2s(matClassi[matClassi.length - 1][1] * 100 / (totColorati + totFondo), 2));
+		for (int i2 = 0; i2 < minimi.length; i2++) {
+			rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2] + "[%]", ResultsTable.d2s(matPercClassi[i2], 2));
+		}
+
 		// ===========================================================
-		// CALCOLO UNIFORMIT A' 2D ( E TE PAREVA, TRA UN PO' ARRIVIAMO AI 5D )
+		// CALCOLO UNIFORMIT A' 2D ( E TE PAREVA CHE CE LA FACEVAMO MANCARE )
 		// ===========================================================
 
 		int direction = 1;
 		double maxFitError = 20.0;
 		double maxBubbleGapLimit = 2.0;
 		boolean demo1 = false;
-		double[] circleXY = MySphere.centerCircleCannyEdge(impXY1, direction, maxFitError, maxBubbleGapLimit, demo1);
-		double[] circleYZ = MySphere.centerCircleCannyEdge(impYZ1, direction, maxFitError, maxBubbleGapLimit, demo1);
-		double[] circleXZ = MySphere.centerCircleCannyEdge(impXZ1, direction, maxFitError, maxBubbleGapLimit, demo1);
+		String[] tit1 = { "ANALISI 2D PROIEZ.XY", "ANALISI 2D PROIEZ.YZ", "ANALISI 2D PROIEZ.XZ" };
+		String[] tit2 = { "coloriSimulataXY", "coloriSimulataYZ", "coloriSimulataXZ" };
+		int[][] matClassiDIR = new int[6][2];
 
-		Overlay overXY = new Overlay();
-		impXY1.setOverlay(overXY);
-		impXY1.setRoi(
-				new OvalRoi(circleXY[0] - circleXY[2] / 2, circleXY[1] - circleXY[2] / 2, circleXY[2], circleXY[2]));
-		impXY1.getRoi().setStrokeColor(Color.green);
-		overXY.addElement(impXY1.getRoi());
-		impXY1.deleteRoi();
-		impXY1.show();
-		int diamMROIXY = (int) Math.round(circleXY[2] * MyConst.P3_AREA_PERC_80_DIAM);
-		impXY1.setRoi(new OvalRoi(circleXY[0] - diamMROIXY / 2, circleXY[1] - diamMROIXY / 2, diamMROIXY, diamMROIXY));
-		impXY1.getRoi().setStrokeColor(Color.red);
-		overXY.addElement(impXY1.getRoi());
-		impXY1.deleteRoi();
-		ImageStatistics statXY1 = impXY1.getStatistics();
-		double meanXY1 = statXY1.mean;
-		double uiPercXY1 = uiPercCalculation(statXY1.max, statXY1.min);
-		ImagePlus impDiff1 = UtilAyv.genImaDifference(impXY1, impXY2);
-		Overlay overDiff1 = new Overlay();
-		overDiff1.setStrokeColor(Color.red);
-		impDiff1.setOverlay(overDiff1);
-		impDiff1.setRoi(
-				new OvalRoi(circleXY[0] - diamMROIXY / 2, circleXY[1] - diamMROIXY / 2, diamMROIXY, diamMROIXY));
-		impDiff1.getRoi().setStrokeColor(Color.red);
-		overDiff1.addElement(impDiff1.getRoi());
-		impDiff1.deleteRoi();
-		ImageStatistics statImaDiff1 = impDiff1.getStatistics();
-		// double meanImaDiff = statImaDiff.mean;
-		double stdDevImaDiff1 = statImaDiff1.stdDev;
-		double noiseImaDiff1 = stdDevImaDiff1 / Math.sqrt(2);
-		double snRatio1 = Math.sqrt(2) * meanXY1 / stdDevImaDiff1;
-		ArrayList<Integer> pixListSignalXY1 = new ArrayList<Integer>();
-		pixVectorize1(impXY1, circleXY[0], circleXY[1], diamMROIXY, pixListSignalXY1);
-		int[] pixListSignalXY = ArrayUtils.arrayListToArrayInt(pixListSignal11);
-		double uiNewXY1 = naadCalculation(pixListSignalXY);
-		IJ.log("stdDevImaDiff1= " + stdDevImaDiff1 + "noiseImaDiff1= " + noiseImaDiff1 + " snRatio1= " + snRatio1
-				+ " uiNewXY1= " + uiNewXY1);
+		ImagePlus impDIR1 = null;
+		ImagePlus impDIR2 = null;
+		for (int i1 = 0; i1 < 3; i1++) {
+			if (i1 == 0) {
+				impDIR1 = impXY1;
+				impDIR2 = impXY2;
+			}
+			if (i1 == 1) {
+				impDIR1 = impYZ1;
+				impDIR2 = impYZ2;
+			}
+			if (i1 == 2) {
+				impDIR1 = impXZ1;
+				impDIR2 = impXZ2;
+			}
+			double[] circleDIR = MySphere.centerCircleCannyEdge(impDIR1, direction, maxFitError, maxBubbleGapLimit,
+					demo1);
 
-		MyLog.waitHere("aaaaaaaaaaaaaaa");
+			circleDIR[2] = sphereA[3]; // forzo il diametro, per prevenire
+										// differenze
 
-		ResultsTable rt1 = ResultsTable.getResultsTable();
-		rt1.incrementCounter();
-		rt1.addValue("Fantoccio [x:y:z:d] ", IJ.d2s(sphereA[0], 0) + ":" + IJ.d2s(sphereA[1], 0) + ":"
-				+ IJ.d2s(sphereA[2], 0) + ":" + IJ.d2s(sphereA[3], 0));
-		rt1.addValue("SEGNALE_3D", meanMROI);
-		rt1.addValue("RUMORE_3D", sd_diff);
-		rt1.addValue("SNR_3D", snrMROI);
-		rt1.addValue("UI%_3D", uiPerc1);
-		rt1.addValue("NAAD_3D", uiNew);
-		rt1.addValue("Voxels sfera colorati", totColorati);
-		rt1.addValue("Voxels sfera fondo", totFondo);
-		for (int i2 = 0; i2 < minimi.length; i2++) {
-			rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2], matClassi[i2][1]);
+			Overlay overDIR = new Overlay();
+			impDIR1.setOverlay(overDIR);
+			impDIR1.setRoi(new OvalRoi(circleDIR[0] - circleDIR[2] / 2, circleDIR[1] - circleDIR[2] / 2, circleDIR[2],
+					circleDIR[2]));
+			impDIR1.getRoi().setStrokeColor(Color.green);
+			overDIR.addElement(impDIR1.getRoi());
+			impDIR1.deleteRoi();
+			impDIR1.show();
+			int diamMROIDIR = (int) Math.round(circleDIR[2] * MyConst.P3_AREA_PERC_80_DIAM);
+			impDIR1.setRoi(new OvalRoi(circleDIR[0] - diamMROIDIR / 2, circleDIR[1] - diamMROIDIR / 2, diamMROIDIR,
+					diamMROIDIR));
+			impDIR1.getRoi().setStrokeColor(Color.red);
+			overDIR.addElement(impDIR1.getRoi());
+			impDIR1.deleteRoi();
+			impDIR1.setRoi(new OvalRoi(circleDIR[0] - diamMROIDIR / 2, circleDIR[1] - diamMROIDIR / 2, diamMROIDIR,
+					diamMROIDIR));
+			ImageStatistics statDIR = impDIR1.getStatistics();
+			double meanDIR = statDIR.mean;
+
+			double uiPercDIR = uiPercCalculation(statDIR.max, statDIR.min);
+			ImagePlus impDiffDIR = UtilAyv.genImaDifference(impDIR1, impDIR2);
+			Overlay overDiffDIR = new Overlay();
+			overDiffDIR.setStrokeColor(Color.red);
+			impDiffDIR.setOverlay(overDiffDIR);
+			impDiffDIR.setRoi(new OvalRoi(circleDIR[0] - diamMROIDIR / 2, circleDIR[1] - diamMROIDIR / 2, diamMROIDIR,
+					diamMROIDIR));
+			impDiffDIR.getRoi().setStrokeColor(Color.red);
+			overDiffDIR.addElement(impDiffDIR.getRoi());
+			ImageStatistics statImaDiffDIR = impDiffDIR.getStatistics();
+			impDiffDIR.deleteRoi();
+			// double meanImaDiff = statImaDiff.mean;
+			double sd_ImaDiffDIR = statImaDiffDIR.stdDev;
+			double noiseImaDiffDIR = sd_ImaDiffDIR / Math.sqrt(2);
+			double snRatioDIR = Math.sqrt(2) * meanDIR / sd_ImaDiffDIR;
+			ArrayList<Integer> pixListSignalXY1 = new ArrayList<Integer>();
+			pixVectorize1(impDIR1, circleDIR[0], circleDIR[1], diamMROIDIR, pixListSignalXY1);
+			int[] pixListSignalDIR = ArrayUtils.arrayListToArrayInt(pixListSignalXY1);
+			double naadDIR = naadCalculation(pixListSignalDIR);
+
+			ImagePlus imaDIRsimulata = ImageUtils.generaSimulataMultiColori(meanDIR, impDIR1, minimi, massimi, myColor);
+			imaDIRsimulata.setTitle(tit2[i1]);
+
+			imaDIRsimulata.show();
+
+			matClassiDIR = numeroPixelsColori(imaDIRsimulata, myColor);
+
+			double totColoratiDIR = 0;
+			for (int i2 = 0; i2 < matClassiDIR.length - 1; i2++) {
+				totColoratiDIR = totColoratiDIR + matClassiDIR[i2][1];
+			}
+			double totFondoDIR = matClassiDIR[matClassiDIR.length - 1][1];
+
+			double[] matPercClassiDIR = new double[matClassiDIR.length - 1];
+			for (int i2 = 0; i2 < matClassiDIR.length - 1; i2++) {
+				matPercClassiDIR[i2] = matClassiDIR[i2][1] * 100 / (totColoratiDIR + totFondoDIR);
+			}
+
+			// boolean verbose = false;
+			// boolean test = false;
+			// int[][] classiSimulata = generaSimulata((int) (circleDIR[0] -
+			// diamMROIDIR / 2),
+			// (int) (circleDIR[1] - diamMROIDIR / 2), diamMROIDIR, impDIR1,
+			// "ASSIALE", step, verbose, test);
+
+			rt1.incrementCounter();
+			rt1.addValue("TIPO ", tit1[i1]);
+			rt1.addValue("Fantoccio [x:y:z:d] ", IJ.d2s(circleDIR[0], 0) + ":" + IJ.d2s(circleDIR[1], 0) + ":" + "___"
+					+ ":" + IJ.d2s(circleDIR[2], 0));
+
+			rt1.addValue("SEGNALE", meanDIR);
+			rt1.addValue("RUMORE", sd_ImaDiffDIR);
+			rt1.addValue("SNR", snRatioDIR);
+			rt1.addValue("UI%", uiPercDIR);
+			rt1.addValue("NAAD", naadDIR);
+
+			rt1.addValue("Voxels colorati", totColoratiDIR);
+			rt1.addValue("Voxels fondo", totFondoDIR);
+			for (int i2 = 0; i2 < minimi.length; i2++) {
+				rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2], matClassiDIR[i2][1]);
+			}
+
+			rt1.addValue("Voxels colorati [%]",
+					ResultsTable.d2s(totColoratiDIR * 100 / (totColoratiDIR + totFondoDIR), 2));
+			rt1.addValue("Voxels fondo [%]",
+					ResultsTable.d2s(matClassi[matClassiDIR.length - 1][1] * 100 / (totColoratiDIR + totFondoDIR), 2));
+			for (int i2 = 0; i2 < minimi.length; i2++) {
+				rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2] + "[%]",
+						ResultsTable.d2s(matPercClassiDIR[i2], 2));
+			}
 		}
-
-		rt1.addValue("Voxels sfera colorati [%]", ResultsTable.d2s(totColorati * 100 / (totColorati + totFondo), 2));
-		rt1.addValue("Voxels sfera fondo [%]",
-				ResultsTable.d2s(matClassi[matClassi.length - 1][1] * 100 / (totColorati + totFondo), 2));
-		for (int i2 = 0; i2 < minimi.length; i2++) {
-			rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2] + "[%]", ResultsTable.d2s(matPercClassi[i2], 2));
-		}
-
 		rt1.show("Result");
 
 		IJ.log("***********************************************************"
@@ -713,34 +788,7 @@ public class Unifor3D_2017 implements PlugIn {
 		}
 	}
 
-	public static int[] pixClassi(int[] vetPix) {
 
-		int value;
-		// per le prove utilizzo un vettore da 0 a 4095
-		int[] vetClassi = new int[4096];
-		for (int i1 = 0; i1 < vetPix.length; i1++) {
-			value = vetPix[i1];
-			vetClassi[value]++;
-		}
-		return vetClassi;
-	}
-
-	public static int[] getMinMax(int[] a) {
-		int min = Integer.MAX_VALUE;
-		int max = -Integer.MAX_VALUE;
-		int value;
-		for (int i = 0; i < a.length; i++) {
-			value = a[i];
-			if (value < min)
-				min = value;
-			if (value > max)
-				max = value;
-		}
-		int[] minAndMax = new int[2];
-		minAndMax[0] = min;
-		minAndMax[1] = max;
-		return minAndMax;
-	}
 
 	// ############################################################################
 
@@ -772,26 +820,50 @@ public class Unifor3D_2017 implements PlugIn {
 			return (null);
 		}
 		int width = imp1.getWidth();
+		int height = imp1.getHeight();
 		int offset = 0;
 		int[][] vetClassi = new int[myColor.length + 1][2];
 		boolean manca = true;
 		for (int i1 = 0; i1 < myColor.length; i1++) {
 			vetClassi[i1][0] = myColor[i1];
 		}
-		for (int z1 = 0; z1 < imp1.getImageStackSize(); z1++) {
-			ImagePlus imp2 = MyStackUtils.imageFromStack(imp1, z1 + 1);
-			if (imp2 == null)
-				continue;
-			ImageProcessor ip2 = imp2.getProcessor();
-			int[] pixels2 = (int[]) ip2.getPixels();
-			int pix2 = 0;
-			for (int y1 = 0; y1 < width; y1++) {
-				for (int x1 = 0; x1 < (width); x1++) {
+		if (imp1.getImageStackSize() > 1) {
+			for (int z1 = 0; z1 < imp1.getImageStackSize(); z1++) {
+				ImagePlus imp2 = MyStackUtils.imageFromStack(imp1, z1 + 1);
+				if (imp2 == null)
+					continue;
+				ImageProcessor ip2 = imp2.getProcessor();
+				int[] pixels2 = (int[]) ip2.getPixels();
+				int pix2 = 0;
+				for (int y1 = 0; y1 < height; y1++) {
+					for (int x1 = 0; x1 < width; x1++) {
+						offset = y1 * width + x1;
+						pix2 = pixels2[offset];
+						manca = true;
+						for (int i1 = 0; i1 < myColor.length; i1++)
+							if (pix2 == vetClassi[i1][0]) {
+								vetClassi[i1][1] = vetClassi[i1][1] + 1;
+								manca = false;
+								break;
+							}
+						if (manca) {
+							vetClassi[5][1] = vetClassi[5][1] + 1;
+							manca = false;
+						}
+					}
+				}
+			}
+		} else {
+			ImageProcessor ip1 = imp1.getProcessor();
+			int[] pixels1 = (int[]) ip1.getPixels();
+			int pix1 = 0;
+			for (int y1 = 0; y1 < height; y1++) {
+				for (int x1 = 0; x1 < width; x1++) {
 					offset = y1 * width + x1;
-					pix2 = pixels2[offset];
+					pix1 = pixels1[offset];
 					manca = true;
 					for (int i1 = 0; i1 < myColor.length; i1++)
-						if (pix2 == vetClassi[i1][0]) {
+						if (pix1 == vetClassi[i1][0]) {
 							vetClassi[i1][1] = vetClassi[i1][1] + 1;
 							manca = false;
 							break;
@@ -813,5 +885,6 @@ public class Unifor3D_2017 implements PlugIn {
 			iw1.close();
 		}
 	}
+
 
 } // ultima
