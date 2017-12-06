@@ -562,7 +562,7 @@ public class Uncombined3D_2017 implements PlugIn {
 				MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
 				impMapRGB2.show();
 
-				debuglevel = 2;
+				debuglevel = 0;
 				for (int i1 = 0; i1 < depth; i1++) {
 					slice = i1 + 1;
 					ImagePlus imp20 = MyStackUtils.imageFromStack(impUncombined1, slice);
@@ -595,7 +595,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			int slice1 = 0;
 			if (true) {
 
-				debuglevel = 2;
+				debuglevel = 0;
 				for (int i1 = 0; i1 < depth; i1++) {
 					slice1 = i1 + 1;
 					ImagePlus imp20 = MyStackUtils.imageFromStack(impUncombined1, slice1);
@@ -650,16 +650,16 @@ public class Uncombined3D_2017 implements PlugIn {
 			// CALCOLO UNIFORMITA' 2D PURE QUI OBVIOUSLY !
 			// ===========================================================
 
-			int direction = 1;
-			double maxFitError = 20.0;
-			double maxBubbleGapLimit = 2.0;
+			// int direction = 1;
+			// double maxFitError = 20.0;
+			// double maxBubbleGapLimit = 2.0;
 			double profond = 10; // usavamo 30
-			double angle = Double.NaN;
+			// double angle = Double.NaN;
 
 			boolean demo1 = false;
 			String[] tit1 = { "ANALISI 2D PROIEZ.XY", "ANALISI 2D PROIEZ.YZ", "ANALISI 2D PROIEZ.XZ" };
 			String[] tit2 = { "coloriSimulataXY", "coloriSimulataYZ", "coloriSimulataXZ" };
-			int[][] matClassiDIR = new int[6][2];
+			// int[][] matClassiDIR = new int[6][2];
 
 			ImagePlus impDIR1 = null;
 			ImagePlus impDIR2 = null;
@@ -698,7 +698,21 @@ public class Uncombined3D_2017 implements PlugIn {
 				String info10 = "";
 				int mode = 2;
 				// ====================================
-				double out2[] = positionSearch(impDIR1, profond, info10, mode, timeout);
+
+				// pisquano, serve per cerchio esterno !!!
+				// out2[0] = xCenterRoi;
+				// out2[1] = yCenterRoi;
+				// out2[2] = xCenterCircle;
+				// out2[3] = yCenterCircle;
+				//
+				// out2[4] = xMaxima;
+				// out2[5] = yMaxima;
+				// out2[6] = angle11;
+				// out2[7] = xBordo;
+				// out2[8] = yBordo;
+				// out2[9] = diamCircle;
+
+				double out2[] = positionSearch55(impDIR1, profond, info10, mode, timeout, circleDIR);
 
 				// ====================================
 				Overlay overDIR = new Overlay();
@@ -734,14 +748,15 @@ public class Uncombined3D_2017 implements PlugIn {
 				int yCenterRoi = (int) out2[1];
 				int xCenterCircle = (int) out2[2];
 				int yCenterCircle = (int) out2[3];
+
 				// int xMaxima = (int) out2[4];
 				// int yMaxima = (int) out2[5];
-				angle = out2[6];
+				// angle = out2[6];
 				int xBordo = (int) out2[7];
 				int yBordo = (int) out2[8];
 
-				int width1 = impDIR1.getWidth();
-				int height1 = impDIR1.getHeight();
+				// int width1 = impDIR1.getWidth();
+				// int height1 = impDIR1.getHeight();
 
 				if (true) {
 					// MyLog.waitHere();
@@ -980,8 +995,8 @@ public class Uncombined3D_2017 implements PlugIn {
 				rt1.addValue("TIPO ", tit1[i1]);
 
 				rt1.addValue("subCOIL", subCoil);
-				rt1.addValue("Fantoccio [x:y:z:d] ", IJ.d2s(sphereA[0], 0) + ":" + IJ.d2s(sphereA[1], 0) + ":"
-						+ IJ.d2s(sphereA[2], 0) + ":" + IJ.d2s(sphereA[3], 0));
+				rt1.addValue("Fantoccio [x:y:z:d] ", IJ.d2s(circleDIR[0], 0) + ":" + IJ.d2s(circleDIR[1], 0) + ":"
+						+ "___" + ":" + IJ.d2s(circleDIR[2], 0));
 
 				// rt1.addValue("hotSphere [x:y:z:d] ", IJ.d2s(sphereB[0], 0) +
 				// ":" + IJ.d2s(sphereB[1], 0) + ":"
@@ -992,42 +1007,54 @@ public class Uncombined3D_2017 implements PlugIn {
 				rt1.addValue("SNR", snRatioDIR);
 				rt1.addValue("FWHM ", outFwhmDIR2[0]);
 				rt1.addValue("peak/2", outFwhmDIR2[2] / 2);
-				rt1.addValue("NAAD", naadDIR);
+				// rt1.addValue("NAAD", naadDIR);
 
-				int[][] classiSimulata = ImageUtils.generaSimulata12classi((int) circleDIR[0], (int) circleDIR[1],
+				// circleDIR[0] = sphereA[0];
+				// circleDIR[1] = sphereA[1];
+
+				// mode = 10;
+				int[][] matClassiDIR = ImageUtils.generaSimulata12classi((int) circleDIR[0], (int) circleDIR[1],
 						(int) circleDIR[2], impDIR1, "", mode, yEndProfile);
 
-				MyLog.waitHere();
+				// MyLog.logMatrix(matClassiDIR, "classi simulata");
+				// MyLog.waitHere("simulata colori " + minimi.length);
 
 				double totColoratiDIR = 0;
-				for (int i2 = 0; i2 < matClassiDIR.length - 1; i2++) {
+				for (int i2 = 0; i2 < matClassiDIR.length; i2++) {
 					totColoratiDIR = totColoratiDIR + matClassiDIR[i2][1];
 				}
 				double totFondoDIR = matClassiDIR[matClassiDIR.length - 1][1];
 
-				double[] matPercClassiDIR = new double[matClassiDIR.length - 1];
-				for (int i2 = 0; i2 < matClassiDIR.length - 1; i2++) {
+				double[] matPercClassiDIR = new double[matClassiDIR.length];
+				for (int i2 = 0; i2 < matClassiDIR.length; i2++) {
 					matPercClassiDIR[i2] = matClassiDIR[i2][1] * 100 / (totColoratiDIR + totFondoDIR);
 				}
 
 				// rt1.addValue("Voxels colorati", totColoratiDIR);
 				// rt1.addValue("Voxels fondo", totFondoDIR);
-				// for (int i2 = 0; i2 < minimi.length; i2++) {
-				// rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2],
-				// matClassiDIR[i2][1]);
-				// }
-				//
+				// IJ.log("lunghezze");
+				// IJ.log("min= " + minimi.length);
+				// IJ.log("max= " + massimi.length);
+				// IJ.log("matClassiDIR= " + matClassiDIR.length);
+
+				for (int i2 = 0; i2 < minimi.length; i2++) {
+					// IJ.log(i2 + "min " + minimi[i2] + " max " + massimi[i2] +
+					// " classi " + matClassiDIR[i2][1]);
+					rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2], matClassiDIR[i2][1]);
+				}
+
+				// MyLog.waitHere();
+
 				// rt1.addValue("Voxels colorati [%]",
 				// ResultsTable.d2s(totColoratiDIR * 100 / (totColoratiDIR +
 				// totFondoDIR), 2));
-				// // rt1.addValue("Voxels fondo [%]", ResultsTable
-				// // .d2s(matClassi[matClassiDIR.length - 1][1] * 100 /
-				// // (totColoratiDIR + totFondoDIR), 2));
-				// for (int i2 = 0; i2 < minimi.length; i2++) {
-				// rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2] +
-				// "[%]",
-				// ResultsTable.d2s(matPercClassiDIR[i2], 2));
-				// }
+				// rt1.addValue("Voxels fondo [%]", ResultsTable
+				// .d2s(matClassiDIR[matClassiDIR.length - 1][1] * 100 /
+				// (totColoratiDIR + totFondoDIR), 2));
+				for (int i2 = 0; i2 < minimi.length; i2++) {
+					rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2] + "[%]",
+							ResultsTable.d2s(matPercClassiDIR[i2], 2));
+				}
 				ImageUtils.closeImageWindow(impDIR1);
 				ImageUtils.closeImageWindow(impDiffDIR);
 
@@ -1194,8 +1221,9 @@ public class Uncombined3D_2017 implements PlugIn {
 			myPeaks = profileAnalyzer(imp12, dimPixel, vetTitle[i1], showProfiles, vertical, timeout);
 
 			valido = true;
-			String direction1 = ReadDicom.readDicomParameter(imp11, MyConst.DICOM_IMAGE_ORIENTATION);
-			String direction2 = "1\0\0\01\0";
+			// String direction1 = ReadDicom.readDicomParameter(imp11,
+			// MyConst.DICOM_IMAGE_ORIENTATION);
+			// String direction2 = "1\0\0\01\0";
 
 			if (myPeaks != null) {
 
@@ -1391,6 +1419,489 @@ public class Uncombined3D_2017 implements PlugIn {
 		xCenterCircle = boundRec.x + boundRec.width / 2;
 		yCenterCircle = boundRec.y + boundRec.height / 2;
 		diamCircle = boundRec.width;
+		MyCircleDetector.drawCenter(imp11, over12, xCenterCircle, yCenterCircle, Color.red);
+
+		// ----------------------------------------------------------
+		// disegno la ROI del maxima, a solo scopo dimostrativo !
+		// ----------------------------------------------------------
+		//
+
+		// x1 ed y1 sono le due coordinate del punto di maxima
+		double[] out10 = MyFilter.maxPosition11x11(imp11);
+		xMaxima = out10[0];
+		yMaxima = out10[1];
+
+		imp12.killRoi();
+
+		// ===============================================================
+		// intersezioni retta - circonferenza
+		// ===============================================================
+
+		double[] out11 = ImageUtils.getCircleLineCrossingPoints(xCenterCircle, yCenterCircle, xMaxima, yMaxima,
+				xCenterCircle, yCenterCircle, diamCircle / 2);
+
+		// il punto che ci interesasa sara' quello con minor distanza dal
+		// maxima
+		double dx1 = xMaxima - out11[0];
+		double dx2 = xMaxima - out11[2];
+		double dy1 = yMaxima - out11[1];
+		double dy2 = yMaxima - out11[3];
+		double lun1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+		double lun2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+		double xBordo = 0;
+		double yBordo = 0;
+		if (lun1 < lun2) {
+			xBordo = out11[0];
+			yBordo = out11[1];
+		} else {
+			xBordo = out11[2];
+			yBordo = out11[3];
+		}
+
+		if (demo)
+			MyCircleDetector.drawCenter(imp11, over12, (int) xBordo, (int) yBordo, Color.pink);
+
+		//
+		// -----------------------------------------------------------
+		// Calcolo delle effettive coordinate del segmento
+		// centro-circonferenza
+		// ----------------------------------------------------------
+		//
+		double xStartRefLine = (double) xCenterCircle;
+		double yStartRefLine = (double) yCenterCircle;
+		double xEndRefLine = xBordo;
+		double yEndRefLine = yBordo;
+
+		imp11.setRoi(new Line(xCenterCircle, yCenterCircle, (int) xBordo, (int) yBordo));
+		angle11 = imp11.getRoi().getAngle(xCenterCircle, yCenterCircle, (int) xBordo, (int) yBordo);
+
+		over12.addElement(imp11.getRoi());
+		over12.setStrokeColor(Color.red);
+		//
+		// -----------------------------------------------------------
+		// Calcolo coordinate centro della MROI
+		// ----------------------------------------------------------
+		//
+
+		double[] out1 = interpolaProfondCentroROI(xEndRefLine, yEndRefLine, xStartRefLine, yStartRefLine,
+				profond / dimPixel);
+		ax = out1[0];
+		ay = out1[1];
+
+		int sqNEA = MyConst.P10_NEA_11X11_PIXEL;
+
+		imp11.setRoi((int) ax - sqNEA / 2, (int) ay - sqNEA / 2, sqNEA, sqNEA);
+		imp11.updateAndDraw();
+		over12.addElement(imp11.getRoi());
+		over12.setStrokeColor(Color.red);
+
+		//
+		// Se non necessito di un intervento manuale, mi limito a leggere le
+		// coordinate della ROI determinata in automatico.
+		//
+
+		Rectangle boundRec4 = imp11.getProcessor().getRoi();
+		xCenterRoi = boundRec4.getCenterX();
+		yCenterRoi = boundRec4.getCenterY();
+		imp12.hide();
+
+		// MyLog.waitHere("ax= " + ax + " ay= " + ay + " xCenterRoi= "
+		// + xCenterRoi + " yCenterRoi= " + yCenterRoi);
+		// }
+
+		if (demo && manual) {
+
+			ImageUtils.imageToFront(iw11);
+
+			// UtilAyv.showImageMaximized(imp11);
+			imp11.setOverlay(over12);
+			imp11.setRoi((int) ax - sqNEA / 2, (int) ay - sqNEA / 2, sqNEA, sqNEA);
+			imp11.updateAndDraw();
+			// if (demo)
+			MyLog.waitHere(info1 + "\n \nMODIFICA MANUALE POSIZIONE ROI", true, timeout);
+			//
+			// Vado a rileggere solo le coordinate della ROI, quelle del
+			// cerchio,
+			// del punto di maxima e dell'angolo resteranno quelle determinate
+			// in
+			// precedenza (anche perche' non vengono comunque piu' utilizzate
+			// per
+			// i
+			// calcoli)
+			//
+			Rectangle boundRec3 = imp11.getProcessor().getRoi();
+			xCenterRoi = boundRec3.getCenterX();
+			yCenterRoi = boundRec3.getCenterY();
+
+		}
+
+		double[] out2 = new double[10];
+		out2[0] = xCenterRoi;
+		out2[1] = yCenterRoi;
+		out2[2] = xCenterCircle;
+		out2[3] = yCenterCircle;
+
+		out2[4] = xMaxima;
+		out2[5] = yMaxima;
+		out2[6] = angle11;
+		out2[7] = xBordo;
+		out2[8] = yBordo;
+		out2[9] = diamCircle;
+		return out2;
+	}
+
+	public static double[] positionSearch55(ImagePlus imp11, double profond, String info1, int mode, int timeout,
+			double[] circle) {
+
+		boolean demo = false;
+		Color colore1 = Color.red;
+		Color colore2 = Color.green;
+		Color colore3 = Color.red;
+
+		if (mode == 10 || mode == 3)
+			demo = true;
+		// ================================================================================
+		// Inizio calcoli geometrici
+		// ================================================================================
+		//
+		boolean manual = false;
+		double ax = 0;
+		double ay = 0;
+		int xCenterCircle = 0;
+		int yCenterCircle = 0;
+		int diamCircle = 0;
+		double xMaxima = 0;
+		double yMaxima = 0;
+		double angle11 = 0;
+		double xCenterRoi = 0;
+		double yCenterRoi = 0;
+		double maxFitError = 30;
+		Overlay over12 = new Overlay();
+		if (imp11 == null)
+			MyLog.waitHere("imp11==null");
+
+		double dimPixel = 1;
+		ImageWindow iw11 = null;
+		if (demo)
+			iw11 = imp11.getWindow();
+
+		int width = imp11.getWidth();
+		int height = imp11.getHeight();
+		ImagePlus imp12 = imp11.duplicate();
+		imp12.setTitle("DUP");
+		// -------------------------------------------------
+		// Determinazione del cerchio
+		// -------------------------------------------------
+		// ImageProcessor ip12 = imp12.getProcessor();
+		// RankFilters rk1 = new RankFilters();
+		// double radius = 0.1;
+		// int filterType = RankFilters.VARIANCE;
+		// rk1.rank(ip12, radius, filterType);
+		// imp12.updateAndDraw();
+		// double max1 = imp12.getStatistics().max;
+		// ip12.subtract(max1 / 30);
+		// imp12.updateAndDraw();
+		// imp12.setOverlay(over12);
+		// double[][] myPeaks = new double[4][1];
+		// int[] myXpoints = new int[16];
+		// int[] myYpoints = new int[16];
+		// int[] xcoord = new int[2];
+		// int[] ycoord = new int[2];
+		// boolean manualOverride = false;
+		// int[] vetx0 = new int[8];
+		// int[] vetx1 = new int[8];
+		// int[] vety0 = new int[8];
+		// int[] vety1 = new int[8];
+		//
+		// vetx0[0] = 0;
+		// vety0[0] = height / 2;
+		// vetx1[0] = width;
+		// vety1[0] = height / 2;
+		// // ----
+		// vetx0[1] = width / 2;
+		// vety0[1] = 0;
+		// vetx1[1] = width / 2;
+		// vety1[1] = height;
+		// // ----
+		// vetx0[2] = 0;
+		// vety0[2] = 0;
+		// vetx1[2] = width;
+		// vety1[2] = height;
+		// // -----
+		// vetx0[3] = width;
+		// vety0[3] = 0;
+		// vetx1[3] = 0;
+		// vety1[3] = height;
+		// // -----
+		// vetx0[4] = width / 4;
+		// vety0[4] = 0;
+		// vetx1[4] = width * 3 / 4;
+		// vety1[4] = height;
+		// // ----
+		// vetx0[5] = width * 3 / 4;
+		// vety0[5] = 0;
+		// vetx1[5] = width / 4;
+		// vety1[5] = height;
+		// // ----
+		// vetx0[6] = width;
+		// vety0[6] = height * 1 / 4;
+		// vetx1[6] = 0;
+		// vety1[6] = height * 3 / 4;
+		// // ----
+		// vetx0[7] = 0;
+		// vety0[7] = height * 1 / 4;
+		// vetx1[7] = width;
+		// vety1[7] = height * 3 / 4;
+		//
+		// String[] vetTitle = { "orizzontale", "verticale", "diagonale
+		// sinistra", "diagonale destra", "inclinata 1",
+		// "inclinata 2", "inclinata 3", "inclinata 4" };
+		//
+		// // multipurpose line analyzer
+		//
+		// int count = -1;
+		//
+		// int[] xPoints3 = null;
+		// int[] yPoints3 = null;
+		// boolean vertical = false;
+		// boolean valido = true;
+		// for (int i1 = 0; i1 < 8; i1++) {
+		// xcoord[0] = vetx0[i1];
+		// ycoord[0] = vety0[i1];
+		// xcoord[1] = vetx1[i1];
+		// ycoord[1] = vety1[i1];
+		// imp12.setRoi(new Line(xcoord[0], ycoord[0], xcoord[1], ycoord[1]));
+		// if (demo) {
+		// imp12.getRoi().setStrokeColor(colore2);
+		// over12.addElement(imp12.getRoi());
+		// imp12.updateAndDraw();
+		// }
+		// if (i1 == 1)
+		// vertical = true;
+		// else
+		// vertical = false;
+		//
+		// boolean showProfiles = false;
+		//
+		// if (demo && i1 == 0)
+		// showProfiles = true;
+		//
+		// myPeaks = profileAnalyzer(imp12, dimPixel, vetTitle[i1],
+		// showProfiles, vertical, timeout);
+		//
+		// valido = true;
+		// // String direction1 = ReadDicom.readDicomParameter(imp11,
+		// // MyConst.DICOM_IMAGE_ORIENTATION);
+		// // String direction2 = "1\0\0\01\0";
+		//
+		// if (myPeaks != null) {
+		//
+		// // per evitare le bolle d'aria escluderò il punto in alto per
+		// // l'immagine assiale ed il punto a sinistra dell'immagine
+		// // sagittale. Considero punto in alto quello con coordinata y <
+		// // mat/2 e come punto a sinistra quello con coordinata x < mat/2
+		//
+		// for (int i2 = 0; i2 < myPeaks[0].length; i2++) {
+		//
+		// // if ((direction1.compareTo("0\\1\\0\\0\\0\\-1") == 0) &&
+		// // (i1 == 0)) {
+		// // if (((int) (myPeaks[0][i2]) < width / 2)) {
+		// // valido = false;
+		// // } else
+		// // ;
+		// // }
+		// //
+		// // if ((direction1.compareTo("1\\0\\0\\1\\0") == 0) && (i1
+		// // == 1)) {
+		// // if (((int) (myPeaks[1][i2]) < height / 2)) {
+		// // valido = false;
+		// // } else
+		// // ;
+		// // }
+		//
+		// if (valido) {
+		// count++;
+		// myXpoints[count] = (int) (myPeaks[0][i2]);
+		// myYpoints[count] = (int) (myPeaks[1][i2]);
+		// ImageUtils.plotPoints(imp12, over12, (int) (myPeaks[0][i2]), (int)
+		// (myPeaks[1][i2]), colore1);
+		// imp12.updateAndDraw();
+		// ImageUtils.imageToFront(imp12);
+		// }
+		// }
+		// }
+		//
+		// // devo compattare i vettori myXpoints e myYpoints, ovviamente a
+		// // patto che count >=0;
+		// }
+		//
+		// if (count >= 0) {
+		// count++;
+		// xPoints3 = new int[count];
+		// yPoints3 = new int[count];
+		//
+		// for (int i3 = 0; i3 < count; i3++) {
+		// xPoints3[i3] = myXpoints[i3];
+		// yPoints3[i3] = myYpoints[i3];
+		// }
+		// } else {
+		// xPoints3 = null;
+		// yPoints3 = null;
+		// }
+		// // qui di seguito pulisco l'overlay, dovrò preoccuparmi di
+		// ridisegnare i
+		// // punti
+		// imp12.deleteRoi();
+		// over12.clear();
+		// imp12.updateAndDraw();
+		//
+		// //
+		// ----------------------------------------------------------------------
+		// // Verifica di avere trovato almeno 3 punti, altrimenti chiede la
+		// // selezione manuale del cerchio
+		// //
+		// -------------------------------------------------------------------
+		//
+		// if (xPoints3 == null || xPoints3.length < 3) {
+		// UtilAyv.showImageMaximized(imp11);
+		//
+		// // MyLog.waitHere(listaMessaggi(19), debug);
+		// manual = true;
+		// }
+		//
+		// if (!manual) {
+		// // reimposto i punti trovati
+		// PointRoi pr12 = new PointRoi(xPoints3, yPoints3, xPoints3.length);
+		// pr12.setPointType(2);
+		// pr12.setSize(4);
+		// imp12.setRoi(pr12);
+		//
+		// if (demo) {
+		// // ridisegno i punti sull'overlay
+		// imp12.getRoi().setStrokeColor(colore1);
+		// over12.addElement(imp12.getRoi());
+		// imp12.setOverlay(over12);
+		// }
+		// // ---------------------------------------------------
+		// // eseguo ora fitCircle per trovare centro e dimensione del
+		// // fantoccio
+		// // ---------------------------------------------------
+		// ImageUtils.fitCircle(imp12);
+		// if (demo) {
+		// imp12.getRoi().setStrokeColor(colore3);
+		// over12.addElement(imp12.getRoi());
+		// }
+		//
+		// Rectangle boundRec = imp12.getProcessor().getRoi();
+		// xCenterCircle = Math.round(boundRec.x + boundRec.width / 2);
+		// yCenterCircle = Math.round(boundRec.y + boundRec.height / 2);
+		// diamCircle = boundRec.width;
+		// if (!manualOverride)
+		// writeStoredRoiData(boundRec);
+		// MyCircleDetector.drawCenter(imp12, over12, xCenterCircle,
+		// yCenterCircle, colore3);
+		// // ----------------------------------------------------------
+		// // Misuro l'errore sul fit rispetto ai punti imposti
+		// // -----------------------------------------------------------
+		// double[] vetDist = new double[xPoints3.length];
+		// double sumError = 0;
+		// for (int i1 = 0; i1 < xPoints3.length; i1++) {
+		// vetDist[i1] = ImageUtils.pointCirconferenceDistance(xPoints3[i1],
+		// yPoints3[i1], xCenterCircle,
+		// yCenterCircle, diamCircle / 2);
+		// sumError += Math.abs(vetDist[i1]);
+		// }
+		// if (sumError > maxFitError) {
+		// // MyLog.waitHere("maxFitError");
+		// // -------------------------------------------------------------
+		// // disegno il cerchio ed i punti, in modo da date un feedback
+		// // grafico al messaggio di eccessivo errore nel fit
+		// // -------------------------------------------------------------
+		// UtilAyv.showImageMaximized(imp12);
+		// over12.remove(pr12);
+		// imp12.setOverlay(over12);
+		// imp12.setRoi(new OvalRoi(xCenterCircle - diamCircle / 2,
+		// yCenterCircle - diamCircle / 2, diamCircle,
+		// diamCircle));
+		// imp12.getRoi().setStrokeColor(colore2);
+		// over12.addElement(imp12.getRoi());
+		// PointRoi pr1 = new PointRoi(xPoints3, yPoints3, xPoints3.length);
+		// pr1.setSize(4);
+		// pr1.setPointType(1);
+		// imp12.setRoi(pr1);
+		// imp12.getRoi().setStrokeColor(Color.red);
+		// over12.addElement(imp12.getRoi());
+		// imp12.deleteRoi();
+		// manual = true;
+		// }
+		//
+		// }
+		//
+		// Rectangle boundRec = null;
+		// //
+		// ----------------------------------------------------------------------
+		// // Verifica di avere trovato almeno 3 punti, altrimenti chiede la
+		// // selezione manuale del cerchio
+		// //
+		// -------------------------------------------------------------------
+		// if (xPoints3 != null && xPoints3.length >= 3 && !manual) {
+		// imp12.setRoi(new PointRoi(xPoints3, yPoints3, xPoints3.length));
+		// ImageUtils.fitCircle(imp12);
+		// if (demo) {
+		// over12.addElement(imp12.getRoi());
+		// over12.setStrokeColor(Color.red);
+		// }
+		// boundRec = imp12.getProcessor().getRoi();
+		//
+		// } else {
+		//
+		// // NON SI SONO DETERMINATI 3 PUNTI DEL CERCHIO, SELEZIONE MANUALE
+		//
+		// if (!imp11.isVisible())
+		// UtilAyv.showImageMaximized(imp11);
+		// imp11.setRoi(new OvalRoi((width / 2) - 100, (height / 2) - 100, 180,
+		// 180));
+		// imp11.updateAndDraw();
+		// imp11.getRoi().setStrokeColor(Color.red);
+		// imp11.getRoi().setStrokeWidth(1.1);
+		// MyLog.waitHere(
+		// "imp11= " + imp11.getTitle() + "\nNon si riescono a determinare le
+		// coordinate corrette del cerchio"
+		// + "\nRichiesto ridimensionamennto e riposizionamento della ROI
+		// indicata in rosso, attorno al fantoccio\n"
+		// + "POI premere OK");
+		//
+		// boundRec = imp11.getProcessor().getRoi();
+		// xCenterCircle = boundRec.x + boundRec.width / 2;
+		// yCenterCircle = boundRec.y + boundRec.height / 2;
+		// diamCircle = boundRec.width;
+		//
+		// imp11.setRoi(new OvalRoi(xCenterCircle - diamCircle / 2,
+		// yCenterCircle - diamCircle / 2, diamCircle,
+		// diamCircle));
+		// imp11.updateAndDraw();
+		// imp11.getRoi().setStrokeColor(Color.green);
+		// imp11.getRoi().setStrokeWidth(0);
+		// over12.clear();
+		// over12.add(imp11.getRoi());
+		// //
+		// // Ho cosi' risolto la mancata localizzazione automatica del
+		// // fantoccio (messaggi non visualizzati in junit)
+		// //
+		// }
+
+		// ==========================================================================
+		// ==========================================================================
+		// porto in primo piano l'immagine originale
+		ImageUtils.imageToFront(iw11);
+		// ==========================================================================
+		// ==========================================================================
+		imp11.setOverlay(over12);
+		imp12.close();
+		xCenterCircle = (int) circle[0];
+		yCenterCircle = (int) circle[1];
+		diamCircle = (int) circle[2];
 		MyCircleDetector.drawCenter(imp11, over12, xCenterCircle, yCenterCircle, Color.red);
 
 		// ----------------------------------------------------------
