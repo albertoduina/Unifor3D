@@ -72,8 +72,13 @@ public class Uncombined3D_2017 implements PlugIn {
 	static int puntatore = 0;
 
 	public void run(String arg) {
+
+		boolean step = false;
+		boolean paintPixels = false;
+
 		int diam7x7 = 16;
 		int diam11x11 = 20;
+		// int diam11x11 = 20;
 		boolean demo0 = false;
 		int debuglevel = 0;
 		ResultsTable rt1 = ResultsTable.getResultsTable();
@@ -378,6 +383,9 @@ public class Uncombined3D_2017 implements PlugIn {
 			int crossy = (int) sphereA[1];
 			int crossz = (int) sphereA[2];
 			impUncombined1.show();
+			String aux1 = impUncombined1.getTitle();
+			aux1 = aux1 + "_1";
+			impUncombined1.setTitle(aux1);
 			IJ.run(impUncombined1, "Orthogonal Views", "");
 			Orthogonal_Views ort1 = Orthogonal_Views.getInstance();
 			ort1.setCrossLoc(crossx, crossy, crossz);
@@ -393,6 +401,9 @@ public class Uncombined3D_2017 implements PlugIn {
 			Orthogonal_Views.stop();
 
 			impUncombined2.show();
+			String aux2 = impUncombined2.getTitle();
+			aux2 = aux2 + "_2";
+			impUncombined2.setTitle(aux2);
 			IJ.run(impUncombined2, "Orthogonal Views", "");
 			Orthogonal_Views ort2 = Orthogonal_Views.getInstance();
 			ort1.setCrossLoc(crossx, crossy, crossz);
@@ -457,7 +468,8 @@ public class Uncombined3D_2017 implements PlugIn {
 			double[] sphereC = sphereB.clone();
 			sphereC[3] = diam7x7;
 
-			double[] vetpixel_7x7 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereC);
+			double[] vetpixel_7x7 = MySphere.vectorizeSphericalSpot16(impUncombined1, sphereC, paintPixels);
+
 			int len1 = vetpixel_7x7.length;
 			double sMROI = ArrayUtils.vetMean(vetpixel_7x7);
 
@@ -469,7 +481,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
 			IJ.log("Mean sfera " + count0 + " = " + sMROI);
 			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
-			double[] vetpixel_11x11 = MySphere.vectorizeSphericalSpot(impUncombined1, sphereA, sphereB);
+			double[] vetpixel_11x11 = MySphere.vectorizeSphericalSpot16(impUncombined1, sphereB, paintPixels);
 			ImageStack imaStack2 = impUncombined2.getImageStack();
 			if (imaStack2 == null) {
 				IJ.log("imageFromStack.imaStack== null");
@@ -481,7 +493,13 @@ public class Uncombined3D_2017 implements PlugIn {
 			}
 			ImagePlus impDiff = MyStackUtils.stackDiff(impUncombined1, impUncombined2);
 			impDiff.setTitle("IMMAGINE DIFFERENZA");
-			double[] vetpixeldiff_11x11 = MySphere.vectorizeSphericalSpot(impDiff, sphereA, sphereB);
+			if (step) {
+				impDiff.show();
+				// MyLog.waitHere("immagine differenza");
+			}
+
+			double[] vetpixeldiff_11x11 = MySphere.vectorizeSphericalSpot32(impDiff, sphereB, paintPixels);
+
 			// ============================================
 			// INIZIO CALCOLO SNR
 			// ============================================
@@ -496,10 +514,12 @@ public class Uncombined3D_2017 implements PlugIn {
 			}
 			double[] vetpixok = ArrayUtils.arrayListToArrayDouble(pixlist_11x11OK);
 			double[] vetpixdiffok = ArrayUtils.arrayListToArrayDouble(pixlistdiff_11x11OK);
+			MyLog.logVector(vetpixdiffok, "vetpixdiffok");
 			IJ.log("pixel_TEST (>121)= " + vetpixok.length);
 			double sd_diff = ArrayUtils.vetSdKnuth(vetpixdiffok);
 			IJ.log("s_MROI= " + sMROI);
 			IJ.log("sd_diff= " + sd_diff);
+			// MyLog.waitHere("rumore sfera");
 			double snrMROI = 0;
 			if (vetpixok.length < 121) {
 				MyLog.waitHere("diametro ricerca troppo piccolo");
@@ -858,7 +878,6 @@ public class Uncombined3D_2017 implements PlugIn {
 
 				do {
 
-					boolean paintPixels = true;
 					// boolean paintPixels = true;
 
 					pixx = countPixOverLimitCentered(impDIR1, xCenterRoi, yCenterRoi, sqNEA, checkPixelsLimit,
@@ -899,6 +918,9 @@ public class Uncombined3D_2017 implements PlugIn {
 				} while (pixx < area11x11);
 
 				impDIR1.setRoi(xCenterRoi - sqNEA / 2, yCenterRoi - sqNEA / 2, sqNEA, sqNEA);
+				over3.addElement(impDIR1.getRoi());
+				over3.setStrokeColor(Color.green);
+
 				impDIR1.updateAndDraw();
 
 				ImageUtils.roiCenter(impDIR1);
@@ -909,17 +931,20 @@ public class Uncombined3D_2017 implements PlugIn {
 				// qui era il problema devStandardNema non era centered e quindi
 				// faceva il quadrato spostato
 
-				boolean paintPixels = true;
 				double[] out11 = devStandardNemaCentered(impDIR1, impDiff, xCenterRoi, yCenterRoi, sqNEA,
 						checkPixelsLimit, paintPixels, over2);
+				double background = out11[1] / Math.sqrt(2);
+				if (step)
+					MyLog.waitHere("vedi area");
 
 				// MyLog.waitHere("<<<<<<<<<<<<<<<<<< FINE CALCOLO DEVIAZIONE
 				// STANDARD NEMA >>>>>>>>>>>>>>>>>>>>>>");
 
+				double finalSnrNEMA = statMROI_7x7.mean / (out11[1] / Math.sqrt(2));
+
 				String simulataName = "SIMULATA";
 
 				double mean = 0;
-				boolean step = false;
 				boolean test = false;
 
 				ImagePlus impSimulata2 = ImageUtils.generaSimulata12colori(mean, impDIR1, step, verbose, test);
@@ -956,55 +981,67 @@ public class Uncombined3D_2017 implements PlugIn {
 				}
 
 				step = false;
-
+				verbose = step;
 				double[] profileDIR2 = getProfile(impDIR1, xStartProfile, yStartProfile, xEndProfile, yEndProfile,
 						dimPixel, step);
-				double[] outFwhmDIR2 = MyFwhm.analyzeProfile(profileDIR2, dimPixel, codice, false, verbose);
+				double[] outFwhmDIR2 = MyFwhm.analyzeProfile(profileDIR2, dimPixel, codice, step, verbose);
 
-				IJ.wait(MyConst.TEMPO_VISUALIZZ);
+				IJ.wait(MyConst.TEMPO_VISUALIZZ * 10);
 
-				// MyLog.waitHere("vedi che appare!!!");
+				if (step)
+					MyLog.waitHere("vedi profilo");
 
 				// ########################################################################################ààà
-				double meanDIR = statDIR.mean;
-				double uiPercDIR = uiPercCalculation(statDIR.max, statDIR.min);
-				// ImagePlus impDiffDIR = UtilAyv.genImaDifference(impDIR1,
-				// impDIR2);
-				Overlay overDiffDIR = new Overlay();
-				overDiffDIR.setStrokeColor(Color.red);
-				impDiffDIR.setOverlay(overDiffDIR);
-				impDiffDIR.setRoi(new OvalRoi(circleDIR[0] - diamMROIDIR / 2, circleDIR[1] - diamMROIDIR / 2,
-						diamMROIDIR, diamMROIDIR));
-				impDiffDIR.getRoi().setStrokeColor(Color.red);
-				overDiffDIR.addElement(impDiffDIR.getRoi());
-				ImageStatistics statImaDiffDIR = impDiffDIR.getStatistics();
-				impDiffDIR.deleteRoi();
-				// double meanImaDiff = statImaDiff.mean;
-				double sd_ImaDiffDIR = statImaDiffDIR.stdDev;
-				double noiseImaDiffDIR = sd_ImaDiffDIR / Math.sqrt(2);
-				double snRatioDIR = Math.sqrt(2) * meanDIR / sd_ImaDiffDIR;
-				ArrayList<Integer> pixListSignalXY1 = new ArrayList<Integer>();
-				pixVectorize1(impDIR1, circleDIR[0], circleDIR[1], diamMROIDIR, pixListSignalXY1);
-				int[] pixListSignalDIR = ArrayUtils.arrayListToArrayInt(pixListSignalXY1);
-				double naadDIR = naadCalculation(pixListSignalDIR);
+				// double meanDIR = statDIR.mean;
+				// double uiPercDIR = uiPercCalculation(statDIR.max,
+				// statDIR.min);
+				// // ImagePlus impDiffDIR = UtilAyv.genImaDifference(impDIR1,
+				// // impDIR2);
+				// Overlay overDiffDIR = new Overlay();
+				// overDiffDIR.setStrokeColor(Color.red);
+				// impDiffDIR.setOverlay(overDiffDIR);
+				// impDiffDIR.setRoi(new OvalRoi(circleDIR[0] - diamMROIDIR / 2,
+				// circleDIR[1] - diamMROIDIR / 2,
+				// diamMROIDIR, diamMROIDIR));
+				// impDiffDIR.getRoi().setStrokeColor(Color.red);
+				// overDiffDIR.addElement(impDiffDIR.getRoi());
+				// ImageStatistics statImaDiffDIR = impDiffDIR.getStatistics();
+				// impDiffDIR.deleteRoi();
+				// // double meanImaDiff = statImaDiff.mean;
+				// double sd_ImaDiffDIR = statImaDiffDIR.stdDev;
+				// double noiseImaDiffDIR = sd_ImaDiffDIR / Math.sqrt(2);
+				// double snRatioDIR = Math.sqrt(2) * meanDIR / sd_ImaDiffDIR;
+				// ArrayList<Integer> pixListSignalXY1 = new
+				// ArrayList<Integer>();
+				// pixVectorize1(impDIR1, circleDIR[0], circleDIR[1],
+				// diamMROIDIR, pixListSignalXY1);
+				// int[] pixListSignalDIR =
+				// ArrayUtils.arrayListToArrayInt(pixListSignalXY1);
+				// double naadDIR = naadCalculation(pixListSignalDIR);
 
 				// ########################################################################################ààà
 
 				//// risultati analisi 2D
+				// ----------------------------------
 				rt1.incrementCounter();
 				rt1.addValue("TIPO ", tit1[i1]);
 
 				rt1.addValue("subCOIL", subCoil);
-				rt1.addValue("Fantoccio [x:y:z:d] ", IJ.d2s(circleDIR[0], 0) + ":" + IJ.d2s(circleDIR[1], 0) + ":"
-						+ "___" + ":" + IJ.d2s(circleDIR[2], 0));
+				rt1.addValue("Fantoccio [x:y:z:d] ", IJ.d2s(sphereA[0], 0) + ":" + IJ.d2s(sphereA[1], 0) + ":"
+						+ IJ.d2s(sphereA[2], 0) + ":" + IJ.d2s(sphereA[3], 0));
 
-				// rt1.addValue("hotSphere [x:y:z:d] ", IJ.d2s(sphereB[0], 0) +
-				// ":" + IJ.d2s(sphereB[1], 0) + ":"
-				// + IJ.d2s(sphereB[2], 0) + ":" + IJ.d2s(sphereB[3], 0));
+				rt1.addValue("hotSphere [x:y:z:d] ", IJ.d2s(statMROI_7x7.roiX, 0) + ":" + IJ.d2s(statMROI_7x7.roiY, 0)
+						+ ":" + "___" + ":" + IJ.d2s(sqNEA, 0));
 
-				rt1.addValue("SEGNALE", meanDIR);
-				rt1.addValue("RUMORE", sd_ImaDiffDIR);
-				rt1.addValue("SNR", snRatioDIR);
+				// rt1.addValue("SEGNALE", meanDIR);
+				// rt1.addValue("RUMORE", sd_ImaDiffDIR);
+				// rt1.addValue("SNR", snRatioDIR);
+				// rt1.addValue("FWHM ", outFwhmDIR2[0]);
+				// rt1.addValue("peak/2", outFwhmDIR2[2] / 2);
+
+				rt1.addValue("SEGNALE", statMROI_7x7.mean);
+				rt1.addValue("RUMORE", background);
+				rt1.addValue("SNR", finalSnrNEMA);
 				rt1.addValue("FWHM ", outFwhmDIR2[0]);
 				rt1.addValue("peak/2", outFwhmDIR2[2] / 2);
 				// rt1.addValue("NAAD", naadDIR);
@@ -1020,18 +1057,19 @@ public class Uncombined3D_2017 implements PlugIn {
 				// MyLog.waitHere("simulata colori " + minimi.length);
 
 				double totColoratiDIR = 0;
-				for (int i2 = 0; i2 < matClassiDIR.length; i2++) {
+				for (int i2 = 0; i2 < matClassiDIR.length - 1; i2++) {
 					totColoratiDIR = totColoratiDIR + matClassiDIR[i2][1];
 				}
 				double totFondoDIR = matClassiDIR[matClassiDIR.length - 1][1];
 
-				double[] matPercClassiDIR = new double[matClassiDIR.length];
-				for (int i2 = 0; i2 < matClassiDIR.length; i2++) {
+				double[] matPercClassiDIR = new double[matClassiDIR.length - 1];
+				for (int i2 = 0; i2 < matClassiDIR.length - 1; i2++) {
 					matPercClassiDIR[i2] = matClassiDIR[i2][1] * 100 / (totColoratiDIR + totFondoDIR);
 				}
 
-				// rt1.addValue("Voxels colorati", totColoratiDIR);
-				// rt1.addValue("Voxels fondo", totFondoDIR);
+				rt1.addValue("Voxels sfera colorati", totColoratiDIR);
+				rt1.addValue("Voxels sfera fondo", totFondoDIR);
+
 				// IJ.log("lunghezze");
 				// IJ.log("min= " + minimi.length);
 				// IJ.log("max= " + massimi.length);
@@ -1042,32 +1080,29 @@ public class Uncombined3D_2017 implements PlugIn {
 					// " classi " + matClassiDIR[i2][1]);
 					rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2], matClassiDIR[i2][1]);
 				}
-
-				// MyLog.waitHere();
-
-				// rt1.addValue("Voxels colorati [%]",
-				// ResultsTable.d2s(totColoratiDIR * 100 / (totColoratiDIR +
-				// totFondoDIR), 2));
-				// rt1.addValue("Voxels fondo [%]", ResultsTable
-				// .d2s(matClassiDIR[matClassiDIR.length - 1][1] * 100 /
-				// (totColoratiDIR + totFondoDIR), 2));
-				for (int i2 = 0; i2 < minimi.length; i2++) {
+				rt1.addValue("Voxels sfera colorati [%]",
+						ResultsTable.d2s(totColoratiDIR * 100 / (totColoratiDIR + totFondoDIR), 2));
+				rt1.addValue("Voxels sfera fondo [%]", ResultsTable
+						.d2s(matClassiDIR[matClassiDIR.length - 1][1] * 100 / (totColoratiDIR + totFondoDIR), 2));
+				for (int i2 = 0; i2 < minimi.length - 1; i2++) {
 					rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2] + "[%]",
 							ResultsTable.d2s(matPercClassiDIR[i2], 2));
 				}
+
 				ImageUtils.closeImageWindow(impDIR1);
 				ImageUtils.closeImageWindow(impDiffDIR);
-
+				rt1.show("Results");
 			}
 
-			rt1.show("Results");
 			if (WindowManager.getFrame("Profilo penetrazione__") != null) {
 				IJ.selectWindow("Profilo penetrazione__");
 				IJ.run("Close");
 			}
+			rt1.show("Results");
 
 			ImageUtils.closeImageWindow(impUncombined1);
 			ImageUtils.closeImageWindow(impUncombined2);
+			ImageUtils.closeImageWindow(impDiff);
 			//
 			// ImageWindow iw1 = impUncombined1.getWindow();
 			// if (iw1 != null)
