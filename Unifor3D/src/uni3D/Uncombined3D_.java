@@ -895,72 +895,73 @@ public class Uncombined3D_ implements PlugIn {
 		return rt1;
 	}
 
-	/**
+	 /**
 	 * Ricerca della posizione della ROI per il calcolo dell'uniformita'
-	 * 
+	 *
 	 * @param imp11
-	 *            immagine di input
+	 * immagine di input
 	 * @param profond
-	 *            profondita' ROI
+	 * profondita' ROI
 	 * @param info1
-	 *            messaggio esplicativo
+	 * messaggio esplicativo
 	 * @param autoCalled
-	 *            flag true se chiamato in automatico
+	 * flag true se chiamato in automatico
 	 * @param step
-	 *            flag true se funzionamento passo - passo
+	 * flag true se funzionamento passo - passo
 	 * @param verbose
-	 *            flag true se funzionamento verbose
+	 * flag true se funzionamento verbose
 	 * @param test
-	 *            flag true se in test
+	 * flag true se in test
 	 * @param fast
-	 *            flag true se modo batch
+	 * flag true se modo batch
 	 * @return vettore con dati ROI
 	 */
-
-	public static double[] positionSearchZZ(ImagePlus imp11, double profond, String info1, int mode, int timeout) {
-		// boolean autoCalled=false;
-
-		boolean demo = false;
-		if (mode == 10 || mode == 3) {
-			demo = true;
-		}
-
-		// boolean demo = verbose;
-		// boolean showProfiles = demo;
-
-		if (imp11 == null)
-			MyLog.waitHere("imp11==null");
-
-		if (demo)
-			imp11.show();
-		ImageWindow iw11 = null;
-		if (demo)
-			iw11 = imp11.getWindow();
-
-		double[] out10 = MyFilter.maxPosition11x11_NEW(imp11);
-		if (out10 == null) {
-			if (iw11 == null) {
-			} else
-				iw11.close();
-			imp11.close();
-			return null;
-		}
-		int latoMaxima = 11;
-		int xMaxima = (int) Math.round(out10[0] - latoMaxima / 2);
-		int yMaxima = (int) Math.round(out10[1] - latoMaxima / 2);
-
-		imp11.setRoi(xMaxima, yMaxima, latoMaxima, latoMaxima);
-
-		imp11.updateAndDraw();
-		if (demo)
-			IJ.wait(timeout);
-		if (iw11 == null) {
-		} else
-			iw11.close();
-		imp11.close();
-
-		return out10;
-	}
+	
+	 public static double[] positionSearchZZ(ImagePlus imp11, double profond,
+	 String info1, int mode, int timeout) {
+	 // boolean autoCalled=false;
+	
+	 boolean demo = false;
+	 if (mode == 10 || mode == 3) {
+	 demo = true;
+	 }
+	
+	 // boolean demo = verbose;
+	 // boolean showProfiles = demo;
+	
+	 if (imp11 == null)
+	 MyLog.waitHere("imp11==null");
+	
+	 if (demo)
+	 imp11.show();
+	 ImageWindow iw11 = null;
+	 if (demo)
+	 iw11 = imp11.getWindow();
+	
+	 double[] out10 = MyFilter.maxPosition11x11_NEW(imp11);
+	 if (out10 == null) {
+	 if (iw11 == null) {
+	 } else
+	 iw11.close();
+	 imp11.close();
+	 return null;
+	 }
+	 int latoMaxima = 11;
+	 int xMaxima = (int) Math.round(out10[0] - latoMaxima / 2);
+	 int yMaxima = (int) Math.round(out10[1] - latoMaxima / 2);
+	
+	 imp11.setRoi(xMaxima, yMaxima, latoMaxima, latoMaxima);
+	
+	 imp11.updateAndDraw();
+	 if (demo)
+	 IJ.wait(timeout);
+	 if (iw11 == null) {
+	 } else
+	 iw11.close();
+	 imp11.close();
+	
+	 return out10;
+	 }
 
 	public static double[] positionSearchPhantom(ImagePlus imp11, int mode, int timeout) {
 
@@ -1289,7 +1290,7 @@ public class Uncombined3D_ implements PlugIn {
 	 * @return vettore con dati ROI
 	 */
 
-	public static double[] positionSearchZZOLD(ImagePlus imp11, double profond, String info1, int mode, int timeout) {
+	public static double[] positionSearchZZOLD_DELETABLE(ImagePlus imp11, double profond, String info1, int mode, int timeout) {
 		// boolean autoCalled=false;
 
 		boolean demo = false;

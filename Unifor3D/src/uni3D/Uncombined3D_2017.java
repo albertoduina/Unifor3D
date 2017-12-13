@@ -471,6 +471,9 @@ public class Uncombined3D_2017 implements PlugIn {
 			double[] vetpixel_7x7 = MySphere.vectorizeSphericalSpot16(impUncombined1, sphereC, paintPixels);
 
 			int len1 = vetpixel_7x7.length;
+
+			MyLog.logVector(vetpixel_7x7, "vetpixel_7x7 vectorizeSphericalSpot16");
+
 			double sMROI = ArrayUtils.vetMean(vetpixel_7x7);
 
 			double sd_MROI = ArrayUtils.vetSdKnuth(vetpixel_7x7);
@@ -482,6 +485,8 @@ public class Uncombined3D_2017 implements PlugIn {
 			IJ.log("Mean sfera " + count0 + " = " + sMROI);
 			IJ.log("Volume effettivo sfera [voxels] = " + len1 + "[voxels]");
 			double[] vetpixel_11x11 = MySphere.vectorizeSphericalSpot16(impUncombined1, sphereB, paintPixels);
+			MyLog.logVector(vetpixel_11x11, "vetpixel_11x11 vectorizeSphericalSpot16");
+
 			ImageStack imaStack2 = impUncombined2.getImageStack();
 			if (imaStack2 == null) {
 				IJ.log("imageFromStack.imaStack== null");
@@ -499,6 +504,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			}
 
 			double[] vetpixeldiff_11x11 = MySphere.vectorizeSphericalSpot32(impDiff, sphereB, paintPixels);
+			MyLog.logVector(vetpixeldiff_11x11, "vetpixeldiff_11x11 vectorizeSphericalSpot32");
 
 			// ============================================
 			// INIZIO CALCOLO SNR
@@ -934,8 +940,8 @@ public class Uncombined3D_2017 implements PlugIn {
 				double[] out11 = devStandardNemaCentered(impDIR1, impDiff, xCenterRoi, yCenterRoi, sqNEA,
 						checkPixelsLimit, paintPixels, over2);
 				double background = out11[1] / Math.sqrt(2);
-				if (step)
-					MyLog.waitHere("vedi area");
+				// if (step)
+				// MyLog.waitHere("vedi area");
 
 				// MyLog.waitHere("<<<<<<<<<<<<<<<<<< FINE CALCOLO DEVIAZIONE
 				// STANDARD NEMA >>>>>>>>>>>>>>>>>>>>>>");
