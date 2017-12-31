@@ -43,7 +43,7 @@ public class UncombinedStackComposer_ implements PlugIn {
 
 		// double maxFitError = +20;
 		// double maxBubbleGapLimit = 2;
-		IJ.log("IW2AYV the best");
+		IJ.log("- start -");
 		UtilAyv.logResizer();
 
 		try {
@@ -62,48 +62,53 @@ public class UncombinedStackComposer_ implements PlugIn {
 		// PUNTO UNO : APRIRE STACK
 		// ===============================
 
-		String dir10 = Prefs.get("prefer.Uncombined3D_dir1", "none");
-		DirectoryChooser.setDefaultDirectory(dir10);
-		DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA IMMAGINI");
-		String dir1 = od1.getDirectory();
-		Prefs.set("prefer.Uncombine3D_dir1", dir1);
-		DirectoryChooser.setDefaultDirectory(dir10);
-		// ------------------------------
-		String[] dir1a = new File(dir1).list();
-		String[] dir1b = new String[dir1a.length];
-		for (int i1 = 0; i1 < dir1a.length; i1++) {
-			dir1b[i1] = dir1 + "\\" + dir1a[i1];
-		}
-		String[][] sortedList1 = pathSorterUncombined(dir1b);
-		// ------------------------------
-		// ResultsTable rt3 = vectorResultsTable2(sortedList1);
-		// rt3.show("sortedList1");
-		// MyLog.waitHere("verificare sortedlist");
-		// ------------------------------
+		do {
 
-		String[][] vetConta = contaList(sortedList1);
+			String dir10 = Prefs.get("prefer.Uncombined3D_dir1", "none");
+			DirectoryChooser.setDefaultDirectory(dir10);
+			DirectoryChooser od1 = new DirectoryChooser("SELEZIONARE CARTELLA IMMAGINI");
+			String dir1 = od1.getDirectory();
+			if (dir1 == null)
+				return;
+			Prefs.set("prefer.Uncombine3D_dir1", dir1);
+			DirectoryChooser.setDefaultDirectory(dir10);
+			// ------------------------------
+			String[] dir1a = new File(dir1).list();
+			String[] dir1b = new String[dir1a.length];
+			for (int i1 = 0; i1 < dir1a.length; i1++) {
+				dir1b[i1] = dir1 + "\\" + dir1a[i1];
+			}
+			String[][] sortedList1 = pathSorterUncombined(dir1b);
+			// ------------------------------
+			// ResultsTable rt3 = vectorResultsTable2(sortedList1);
+			// rt3.show("sortedList1");
+			// MyLog.waitHere("verificare sortedlist");
+			// ------------------------------
 
-		// ResultsTable rt14 = vectorResultsTable2(vetConta);
-		// rt14.show("VetConta");
-		// MyLog.waitHere("verificare vetConta dopo contaList");
+			String[][] vetConta = contaList(sortedList1);
 
-		createDirectory(dir1 + "\\stack\\");
+			// ResultsTable rt14 = vectorResultsTable2(vetConta);
+			// rt14.show("VetConta");
+			// MyLog.waitHere("verificare vetConta dopo contaList");
 
-		for (int k1 = 0; k1 < vetConta[0].length; k1++) {
-			IJ.log("salvo stack " + (k1 + 1) + " / " + vetConta[0].length);
-			int coil1 = k1;
-			String coil2 = vetConta[0][k1];
-			int num1 = Integer.valueOf(vetConta[1][k1]);
-			String[] dir1c = estrai(sortedList1, coil1, num1);
-			// ResultsTable rt4 = vectorResultsTable(dir1c);
-			// rt4.show("dir1c");
-			// MyLog.waitHere("coil2= " + coil2);
-			ImagePlus imp10 = MyStackUtils.imagesToStack16(dir1c);
-			new FileSaver(imp10).saveAsTiff(dir1 + "\\stack\\" + coil2);
-			imp10.close();
-		}
+			createDirectory(dir1 + "\\stack\\");
 
-		MyLog.waitHere("FINITO SALVATAGGIO STACKS UNCOMBINED");
+			for (int k1 = 0; k1 < vetConta[0].length; k1++) {
+				IJ.log("salvo stack " + (k1 + 1) + " / " + vetConta[0].length);
+				int coil1 = k1;
+				String coil2 = vetConta[0][k1];
+				int num1 = Integer.valueOf(vetConta[1][k1]);
+				String[] dir1c = estrai(sortedList1, coil1, num1);
+				// ResultsTable rt4 = vectorResultsTable(dir1c);
+				// rt4.show("dir1c");
+				// MyLog.waitHere("coil2= " + coil2);
+				ImagePlus imp10 = MyStackUtils.imagesToStack16(dir1c);
+				new FileSaver(imp10).saveAsTiff(dir1 + "\\stack\\" + coil2);
+				imp10.close();
+			}
+
+			MyLog.waitHere("FINITO SALVATAGGIO STACKS UNCOMBINED");
+		} while (true);
 
 	} // chiude
 

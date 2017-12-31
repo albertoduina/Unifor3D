@@ -221,7 +221,7 @@ public class VolumeStatistics implements PlugIn {
 	 * @param value
 	 */
 
-	public static void pixStackVectorize(ImagePlus impStackImage, ImagePlus impStackMask, ArrayList<Integer> pixList,
+	public static void pixStackVectorizeOLD(ImagePlus impStackImage, ImagePlus impStackMask, ArrayList<Integer> pixList,
 			int value) {
 
 		for (int z1 = 1; z1 <= impStackImage.getImageStackSize(); z1++) {
@@ -230,6 +230,30 @@ public class VolumeStatistics implements PlugIn {
 			ImageProcessor ipSingleImage = impSingleImage.getProcessor();
 			ImageProcessor maskSingleImage = impSingleMask.getProcessor();
 			short[] imagePixels = (short[]) ipSingleImage.getPixels();
+			float[] maskPixels = (float[]) maskSingleImage.getPixels();
+			for (int y1 = 0; y1 < impSingleImage.getHeight(); y1++) {
+				int offset = y1 * impSingleImage.getWidth();
+				for (int x1 = 0; x1 < impSingleImage.getWidth(); x1++) {
+					int aux1 = (int) maskPixels[offset + x1];
+					if ((value == 0 && aux1 != 0)) {
+						pixList.add((int) imagePixels[offset + x1]);
+					}
+					if ((value > 0 && aux1 == value)) {
+						pixList.add((int) imagePixels[offset + x1]);
+					}
+				}
+			}
+		}
+	}
+	public static void pixStackVectorize(ImagePlus impStackImage, ImagePlus impStackMask, ArrayList<Integer> pixList,
+			int value) {
+
+		for (int z1 = 1; z1 <= impStackImage.getImageStackSize(); z1++) {
+			ImagePlus impSingleImage = MyStackUtils.imageFromStack(impStackImage, z1);
+			ImagePlus impSingleMask = MyStackUtils.imageFromStack(impStackMask, z1);
+			ImageProcessor ipSingleImage = impSingleImage.getProcessor();
+			ImageProcessor maskSingleImage = impSingleMask.getProcessor();
+			float[] imagePixels = (float[]) ipSingleImage.getPixels();
 			float[] maskPixels = (float[]) maskSingleImage.getPixels();
 			for (int y1 = 0; y1 < impSingleImage.getHeight(); y1++) {
 				int offset = y1 * impSingleImage.getWidth();

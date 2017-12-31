@@ -567,7 +567,13 @@ public class Unifor3D_2017 implements PlugIn {
 				impDIR2 = impXZ2;
 			}
 			impDIR1.show();
-			double[] circleDIR = MySphere.centerCircleCannyEdge(impDIR1, direction, maxFitError, maxBubbleGapLimit, demo1);
+			double[] circleDIR = MySphere.centerCircleCannyEdge(impDIR1, direction, maxFitError, maxBubbleGapLimit,
+					demo1);
+			if (circleDIR == null) {
+				MyLog.waitHere("circleDIR==null in direzione " + i1);
+				continue;
+			}
+
 			circleDIR[2] = sphereA[3];
 
 			Overlay overDIR = new Overlay();

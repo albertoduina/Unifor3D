@@ -70,43 +70,49 @@ import utils.UtilAyv;
 //     13 ottobre 2017 
 //     By A.Duina - IW2AYV
 //     Linguaggio: Java per ImageJ
+
 //=====================================================
 
 public class ItalianCSV_ implements PlugIn {
 
 	public void run(String arg) {
 
-		MyLog.waitHere("italianCSV");
-		OpenDialog dd2 = new OpenDialog("SELEZIONARE IL FILE CSV DA ITALIANIZZARE");
-		String path1 = dd2.getPath();
-		if (path1 == null)
-			return;
-		File csvFile = new File(path1);
-		InputOutput io = new InputOutput();
-		String aux1 = io.extractDirectory(path1);
-		String aux2 = io.extractFileName(path1);
-		IJ.log("aux2= " + aux2);
-		int sep = aux2.lastIndexOf(".");
-		String aux3 = aux2.substring(0, sep);
-		IJ.log(aux3);
-		File outFile = new File(aux1 + "\\" + aux3 + ".tmp");
-		try {
-			copyFile(csvFile, outFile);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		new AboutBox().about("ItalianCSV", MyVersionUtils.CURRENT_VERSION);
+		IJ.wait(2000);
+		new AboutBox().close();
 
-		File old1 = new File(aux1 + "\\" + aux3 + ".csv");
-		File new1 = new File(aux1 + "\\" + aux3 + ".bak");
-		boolean success1 = old1.renameTo(new1);
-		File old2 = new File(aux1 + "\\" + aux3 + ".tmp");
-		File new2 = new File(aux1 + "\\" + aux3 + ".csv");
-		boolean success2 = old2.renameTo(new2);
-		if (success1 && success2)
-			IJ.log("FINE");
-		else
-			IJ.log("HOUSTON ABBIAMO UN PROBLEMA");
+		do {
+			OpenDialog dd2 = new OpenDialog("SELEZIONARE IL FILE CSV DA ITALIANIZZARE");
+			String path1 = dd2.getPath();
+			if (path1 == null)
+				return;
+			File csvFile = new File(path1);
+			InputOutput io = new InputOutput();
+			String aux1 = io.extractDirectory(path1);
+			String aux2 = io.extractFileName(path1);
+			IJ.log("aux2= " + aux2);
+			int sep = aux2.lastIndexOf(".");
+			String aux3 = aux2.substring(0, sep);
+			IJ.log(aux3);
+			File outFile = new File(aux1 + "\\" + aux3 + ".tmp");
+			try {
+				copyFile(csvFile, outFile);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			File old1 = new File(aux1 + "\\" + aux3 + ".csv");
+			File new1 = new File(aux1 + "\\" + aux3 + ".bak");
+			boolean success1 = old1.renameTo(new1);
+			File old2 = new File(aux1 + "\\" + aux3 + ".tmp");
+			File new2 = new File(aux1 + "\\" + aux3 + ".csv");
+			boolean success2 = old2.renameTo(new2);
+			if (success1 && success2)
+				IJ.log("FINE");
+			else
+				IJ.log("HOUSTON ABBIAMO UN PROBLEMA");
+		} while (true);
 	}
 
 	private static void copyFile(File source, File dest) throws IOException {
