@@ -70,7 +70,7 @@ import utils.UtilAyv;
 //     13 ottobre 2017 
 //     By A.Duina - IW2AYV
 //     Linguaggio: Java per ImageJ
-
+//
 //=====================================================
 
 public class ItalianCSV_ implements PlugIn {
