@@ -4,7 +4,11 @@ import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Rectangle;
 import java.awt.TextField;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import ij.IJ;
@@ -35,6 +39,7 @@ import ij.process.ShortProcessor;
 import utils.ArrayUtils;
 import utils.ButtonMessages;
 import utils.ImageUtils;
+import utils.InputOutput;
 import utils.AboutBox;
 import utils.MyCircleDetector;
 import utils.MyConst;
@@ -435,6 +440,8 @@ public class Unifor3D_2017 implements PlugIn {
 				diamMROI2S = 0;
 
 			// demo0, test);
+			// impSimulata = ImageUtils.generaStandardDeviationImage(meanMROI,
+			// impSliceCombined1, minimi, massimi, myColor);
 			impSimulata = ImageUtils.generaSimulataMultiColori(meanMROI, impSliceCombined1, minimi, massimi, myColor);
 
 			// impSimulata.show();
@@ -615,7 +622,10 @@ public class Unifor3D_2017 implements PlugIn {
 			int[] pixListSignalDIR = ArrayUtils.arrayListToArrayInt(pixListSignalXY1);
 			double naadDIR = naadCalculation(pixListSignalDIR);
 
+			// ImagePlus imaDIRsimulata = ImageUtils.generaStandardDeviationImage(meanDIR,
+			// impDIR1, minimi, massimi, myColor);
 			ImagePlus imaDIRsimulata = ImageUtils.generaSimulataMultiColori(meanDIR, impDIR1, minimi, massimi, myColor);
+
 			imaDIRsimulata.setTitle(tit2[i1]);
 
 			imaDIRsimulata.show();
@@ -694,6 +704,13 @@ public class Unifor3D_2017 implements PlugIn {
 
 		IJ.log("-----------------------------");
 
+		String dir0 = InputOutput.extractDirectory(dir1);
+		IJ.selectWindow("Log"); // select Log-window
+		IJ.saveAs("Text", dir0 + "\\Log.txt");
+		IJ.selectWindow("Results");
+		IJ.saveAs("Results", dir0+"\\Results.txt");
+		IJ.saveAsTiff(simulataStack, dir0 + "\\SimulataStack");
+
 		// ResultsTable rt2 = vectorResultsTable(classi);
 
 		// rt2.show("Results");
@@ -702,8 +719,32 @@ public class Unifor3D_2017 implements PlugIn {
 		// run
 
 	/**
-	 * 13/11/2016 Nuovo algoritmo per uniformita' per immagini con grappa datomi
-	 * da Lorella CHIAMASI NAAD
+	 * Saves this ResultsTable as a tab or comma delimited text file. The table is
+	 * saved as a CSV (comma-separated values) file if 'path' ends with ".csv".
+	 * Displays a file save dialog if 'path' is empty or null. Does nothing if the
+	 * table is empty.
+	 */
+	public static void mySaveAs(String path, ResultsTable rt) throws IOException {
+
+		if (rt.getCounter() == 0) {
+			MyLog.waitHere("NO_SAVE table empty!");
+			return;
+		}
+		PrintWriter pw = null;
+		boolean append = true;
+		FileOutputStream fos = new FileOutputStream(path, append);
+		BufferedOutputStream bos = new BufferedOutputStream(fos);
+		pw = new PrintWriter(bos);
+		String headings = rt.getColumnHeadings();
+		pw.println("## " + headings);
+		for (int i = 0; i < rt.getCounter(); i++)
+			pw.println(rt.getRowAsString(i));
+		pw.close();
+	}
+
+	/**
+	 * 13/11/2016 Nuovo algoritmo per uniformita' per immagini con grappa datomi da
+	 * Lorella CHIAMASI NAAD
 	 * 
 	 * @param pixListSignal
 	 * @return

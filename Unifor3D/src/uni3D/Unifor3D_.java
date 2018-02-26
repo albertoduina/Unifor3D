@@ -542,7 +542,10 @@ public class Unifor3D_ implements PlugIn {
 
 			// demo0, test);
 
+//			ImagePlus impSimulata = ImageUtils.generaStandardDeviationImage(mean11, imp11S, minimi, massimi, myColor);
 			ImagePlus impSimulata = ImageUtils.generaSimulataMultiColori(mean11, imp11S, minimi, massimi, myColor);
+			
+			
 
 			impSimulata.show();
 			ImageProcessor ipSimulata = impSimulata.getProcessor();

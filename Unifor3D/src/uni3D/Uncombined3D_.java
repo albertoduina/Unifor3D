@@ -358,6 +358,7 @@ public class Uncombined3D_ implements PlugIn {
 //					impSimulata = ImageUtils.generaSimulata12colori(mean11, imp20, step2, demo0, test);
 //				} else {
 
+				//	impSimulata = ImageUtils.generaStandardDeviationImage(mean11, imp20, minimi, massimi, myColor);
 					impSimulata = ImageUtils.generaSimulataMultiColori(mean11, imp20, minimi, massimi, myColor);
 
 					// impSimulata = ImageUtils.generaSimulata5Colori(mean11,

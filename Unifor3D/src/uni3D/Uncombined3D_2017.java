@@ -61,7 +61,7 @@ import utils.UtilAyv;
 
 public class Uncombined3D_2017 implements PlugIn {
 	static boolean debug1 = false;
-	final static int timeout = 100;
+	final static int timeout = 200;
 	public static String VERSION = "CDQ 3D";
 
 	static boolean stampa = true;
@@ -221,11 +221,12 @@ public class Uncombined3D_2017 implements PlugIn {
 
 		int decimals = 0;
 		String title2 = "LIMITI CLASSI PIXELS (sempre 12)";
-		if (mgdg.showDialog3(gridWidth, gridHeight, tf2, lab2, value2, value3, title2, decimals)) {
-		}
+		if (mgdg.showDialog3(gridWidth, gridHeight, tf2, lab2, value3, value2, title2, decimals)) {
 
-		for (int i1 = 0; i1 < value2.length; i1++) {
-			Prefs.set("prefer.Uncombined3D_MAPPAZZA_classi_" + i1, value2[i1]);
+			for (int i1 = 0; i1 < value2.length; i1++) {
+				Prefs.set("prefer.Uncombined3D_MAPPAZZA_classi_" + i1, value2[i1]);
+			}
+
 		}
 
 		int[] minimi = new int[livelli3];
@@ -881,7 +882,7 @@ public class Uncombined3D_2017 implements PlugIn {
 
 				int enlarge = 0;
 				int pixx = 0;
-
+				boolean fallito = false;
 				do {
 
 					// boolean paintPixels = true;
@@ -904,131 +905,145 @@ public class Uncombined3D_2017 implements PlugIn {
 					// dall'immagine
 
 					if ((xCenterRoi + sqNEA - enlarge) >= width || (xCenterRoi - enlarge) <= 0) {
+						// MyLog.waitHere("ATTENZIONE la NEA esce dall'immagine senza riuscire a \n"
+						// + "trovare 121 pixel che superino il test il programma \n" + "TERMINA
+						// PREMATURAMENTE");
+
 						MyLog.waitHere("ATTENZIONE la NEA esce dall'immagine senza riuscire a \n"
-								+ "trovare 121 pixel che superino il  test il programma \n" + "TERMINA PREMATURAMENTE");
+								+ "trovare 121 pixel che superino il  test il programma \n" + "TERMINA PREMATURAMENTE",
+								false, timeout);
+
 						// return null;
 						// broken = true;
-						return;
+						fallito = true;
 					}
 					if ((yCenterRoi + sqNEA - enlarge) >= height || (yCenterRoi - enlarge) <= 0) {
 						MyLog.waitHere("ATTENZIONE la NEA esce dall'immagine senza riuscire a \n"
-								+ "trovare 121 pixel che superino il  test il programma \n" + "TERMINA PREMATURAMENTE");
+								+ "trovare 121 pixel che superino il  test il programma \n" + "TERMINA PREMATURAMENTE",
+								false, timeout);
 						// return null;
 						// broken = true;
-						return;
+						fallito = true;
 					}
 					// if (pixx >= area11x11)
 					// MyLog.waitHere("Accrescimento NEA riuscito, pixels
 					// validi= ");
 
-				} while (pixx < area11x11);
+				} while (pixx < area11x11 && !fallito);
 
-				impDIR1.setRoi(xCenterRoi - sqNEA / 2, yCenterRoi - sqNEA / 2, sqNEA, sqNEA);
-				over3.addElement(impDIR1.getRoi());
-				over3.setStrokeColor(Color.green);
-
-				impDIR1.updateAndDraw();
-
-				ImageUtils.roiCenter(impDIR1);
-				//
-				// calcolo SD su imaDiff quando i corrispondenti pixel
-				// di imp1 passano il test
-				//
-				// qui era il problema devStandardNema non era centered e quindi
-				// faceva il quadrato spostato
-
-				double[] out11 = devStandardNemaCentered(impDIR1, impDiff, xCenterRoi, yCenterRoi, sqNEA,
-						checkPixelsLimit, paintPixels, over2);
-				double background = out11[1] / Math.sqrt(2);
-				// if (step)
-				// MyLog.waitHere("vedi area");
-
-				// MyLog.waitHere("<<<<<<<<<<<<<<<<<< FINE CALCOLO DEVIAZIONE
-				// STANDARD NEMA >>>>>>>>>>>>>>>>>>>>>>");
-
-				double finalSnrNEMA = statMROI_7x7.mean / (out11[1] / Math.sqrt(2));
-
-				String simulataName = "SIMULATA";
-
-				double mean = 0;
-				boolean test = false;
-
-				ImagePlus impSimulata2 = ImageUtils.generaSimulata12colori(mean, impDIR1, step, verbose, test);
-
-				// int[][] classiSimulata =
-				// ImageUtils.generaSimulata12colori(xCenterRoi, yCenterRoi,
-				// sq7, impDIR1,
-				// simulataName, mode, timeout);
-				double[] out3 = ImageUtils.crossingFrame(xCenterRoi, yCenterRoi, xCenterCircle, yCenterCircle, width,
-						height);
-
-				double dist1 = MyFwhm.lengthCalculation(out3[0], out3[1], xCenterRoi, yCenterRoi);
-				double dist2 = MyFwhm.lengthCalculation(out3[2], out3[3], xCenterRoi, yCenterRoi);
+				double background = 0;
+				double finalSnrNEMA = 0;
+				double[] outFwhmDIR2 = null;
 				int xStartProfile = 0;
 				int yStartProfile = 0;
 				int xEndProfile = 0;
 				int yEndProfile = 0;
 
-				if (dist1 <= dist2) {
-					xStartProfile = (int) Math.round(out3[0]);
-					yStartProfile = (int) Math.round(out3[1]);
-					xEndProfile = (int) Math.round(out3[2]);
-					yEndProfile = (int) Math.round(out3[3]);
-				} else {
-					xStartProfile = (int) Math.round(out3[2]);
-					yStartProfile = (int) Math.round(out3[3]);
-					xEndProfile = (int) Math.round(out3[0]);
-					yEndProfile = (int) Math.round(out3[1]);
-				}
+				if (!fallito) {
+					impDIR1.setRoi(xCenterRoi - sqNEA / 2, yCenterRoi - sqNEA / 2, sqNEA, sqNEA);
+					over3.addElement(impDIR1.getRoi());
+					over3.setStrokeColor(Color.green);
 
-				if (true) {
-					impDIR1.setRoi(new Line(xStartProfile, yStartProfile, xEndProfile, yEndProfile));
 					impDIR1.updateAndDraw();
+
+					ImageUtils.roiCenter(impDIR1);
+					//
+					// calcolo SD su imaDiff quando i corrispondenti pixel
+					// di imp1 passano il test
+					//
+					// qui era il problema devStandardNema non era centered e quindi
+					// faceva il quadrato spostato
+
+					double[] out11 = devStandardNemaCentered(impDIR1, impDiff, xCenterRoi, yCenterRoi, sqNEA,
+							checkPixelsLimit, paintPixels, over2);
+					background = out11[1] / Math.sqrt(2);
+					// if (step)
+					// MyLog.waitHere("vedi area");
+
+					// MyLog.waitHere("<<<<<<<<<<<<<<<<<< FINE CALCOLO DEVIAZIONE
+					// STANDARD NEMA >>>>>>>>>>>>>>>>>>>>>>");
+
+					finalSnrNEMA = statMROI_7x7.mean / (out11[1] / Math.sqrt(2));
+
+					String simulataName = "SIMULATA";
+
+					double mean = 0;
+					boolean test = false;
+
+					ImagePlus impSimulata2 = ImageUtils.generaSimulata12colori(mean, impDIR1, step, verbose, test);
+
+					// int[][] classiSimulata =
+					// ImageUtils.generaSimulata12colori(xCenterRoi, yCenterRoi,
+					// sq7, impDIR1,
+					// simulataName, mode, timeout);
+					double[] out3 = ImageUtils.crossingFrame(xCenterRoi, yCenterRoi, xCenterCircle, yCenterCircle,
+							width, height);
+
+					double dist1 = MyFwhm.lengthCalculation(out3[0], out3[1], xCenterRoi, yCenterRoi);
+					double dist2 = MyFwhm.lengthCalculation(out3[2], out3[3], xCenterRoi, yCenterRoi);
+
+					if (dist1 <= dist2) {
+						xStartProfile = (int) Math.round(out3[0]);
+						yStartProfile = (int) Math.round(out3[1]);
+						xEndProfile = (int) Math.round(out3[2]);
+						yEndProfile = (int) Math.round(out3[3]);
+					} else {
+						xStartProfile = (int) Math.round(out3[2]);
+						yStartProfile = (int) Math.round(out3[3]);
+						xEndProfile = (int) Math.round(out3[0]);
+						yEndProfile = (int) Math.round(out3[1]);
+					}
+
+					if (true) {
+						impDIR1.setRoi(new Line(xStartProfile, yStartProfile, xEndProfile, yEndProfile));
+						impDIR1.updateAndDraw();
+					}
+
+					step = false;
+					verbose = step;
+					double[] profileDIR2 = getProfile(impDIR1, xStartProfile, yStartProfile, xEndProfile, yEndProfile,
+							dimPixel, step);
+					outFwhmDIR2 = MyFwhm.analyzeProfile(profileDIR2, dimPixel, codice, step, verbose);
+
+					IJ.wait(MyConst.TEMPO_VISUALIZZ * 10);
+
+					if (step)
+						MyLog.waitHere("vedi profilo");
+
+					// ########################################################################################ààà
+					// double meanDIR = statDIR.mean;
+					// double uiPercDIR = uiPercCalculation(statDIR.max,
+					// statDIR.min);
+					// // ImagePlus impDiffDIR = UtilAyv.genImaDifference(impDIR1,
+					// // impDIR2);
+					// Overlay overDiffDIR = new Overlay();
+					// overDiffDIR.setStrokeColor(Color.red);
+					// impDiffDIR.setOverlay(overDiffDIR);
+					// impDiffDIR.setRoi(new OvalRoi(circleDIR[0] - diamMROIDIR / 2,
+					// circleDIR[1] - diamMROIDIR / 2,
+					// diamMROIDIR, diamMROIDIR));
+					// impDiffDIR.getRoi().setStrokeColor(Color.red);
+					// overDiffDIR.addElement(impDiffDIR.getRoi());
+					// ImageStatistics statImaDiffDIR = impDiffDIR.getStatistics();
+					// impDiffDIR.deleteRoi();
+					// // double meanImaDiff = statImaDiff.mean;
+					// double sd_ImaDiffDIR = statImaDiffDIR.stdDev;
+					// double noiseImaDiffDIR = sd_ImaDiffDIR / Math.sqrt(2);
+					// double snRatioDIR = Math.sqrt(2) * meanDIR / sd_ImaDiffDIR;
+					// ArrayList<Integer> pixListSignalXY1 = new
+					// ArrayList<Integer>();
+					// pixVectorize1(impDIR1, circleDIR[0], circleDIR[1],
+					// diamMROIDIR, pixListSignalXY1);
+					// int[] pixListSignalDIR =
+					// ArrayUtils.arrayListToArrayInt(pixListSignalXY1);
+					// double naadDIR = naadCalculation(pixListSignalDIR);
+
+					// ########################################################################################ààà
+
+					//// risultati analisi 2D
+					// ----------------------------------
+
 				}
-
-				step = false;
-				verbose = step;
-				double[] profileDIR2 = getProfile(impDIR1, xStartProfile, yStartProfile, xEndProfile, yEndProfile,
-						dimPixel, step);
-				double[] outFwhmDIR2 = MyFwhm.analyzeProfile(profileDIR2, dimPixel, codice, step, verbose);
-
-				IJ.wait(MyConst.TEMPO_VISUALIZZ * 10);
-
-				if (step)
-					MyLog.waitHere("vedi profilo");
-
-				// ########################################################################################ààà
-				// double meanDIR = statDIR.mean;
-				// double uiPercDIR = uiPercCalculation(statDIR.max,
-				// statDIR.min);
-				// // ImagePlus impDiffDIR = UtilAyv.genImaDifference(impDIR1,
-				// // impDIR2);
-				// Overlay overDiffDIR = new Overlay();
-				// overDiffDIR.setStrokeColor(Color.red);
-				// impDiffDIR.setOverlay(overDiffDIR);
-				// impDiffDIR.setRoi(new OvalRoi(circleDIR[0] - diamMROIDIR / 2,
-				// circleDIR[1] - diamMROIDIR / 2,
-				// diamMROIDIR, diamMROIDIR));
-				// impDiffDIR.getRoi().setStrokeColor(Color.red);
-				// overDiffDIR.addElement(impDiffDIR.getRoi());
-				// ImageStatistics statImaDiffDIR = impDiffDIR.getStatistics();
-				// impDiffDIR.deleteRoi();
-				// // double meanImaDiff = statImaDiff.mean;
-				// double sd_ImaDiffDIR = statImaDiffDIR.stdDev;
-				// double noiseImaDiffDIR = sd_ImaDiffDIR / Math.sqrt(2);
-				// double snRatioDIR = Math.sqrt(2) * meanDIR / sd_ImaDiffDIR;
-				// ArrayList<Integer> pixListSignalXY1 = new
-				// ArrayList<Integer>();
-				// pixVectorize1(impDIR1, circleDIR[0], circleDIR[1],
-				// diamMROIDIR, pixListSignalXY1);
-				// int[] pixListSignalDIR =
-				// ArrayUtils.arrayListToArrayInt(pixListSignalXY1);
-				// double naadDIR = naadCalculation(pixListSignalDIR);
-
-				// ########################################################################################ààà
-
-				//// risultati analisi 2D
-				// ----------------------------------
 				rt1.incrementCounter();
 				rt1.addValue("TIPO ", tit1[i1]);
 
@@ -1039,17 +1054,20 @@ public class Uncombined3D_2017 implements PlugIn {
 				rt1.addValue("hotSphere [x:y:z:d] ", IJ.d2s(statMROI_7x7.roiX, 0) + ":" + IJ.d2s(statMROI_7x7.roiY, 0)
 						+ ":" + "___" + ":" + IJ.d2s(sqNEA, 0));
 
-				// rt1.addValue("SEGNALE", meanDIR);
-				// rt1.addValue("RUMORE", sd_ImaDiffDIR);
-				// rt1.addValue("SNR", snRatioDIR);
-				// rt1.addValue("FWHM ", outFwhmDIR2[0]);
-				// rt1.addValue("peak/2", outFwhmDIR2[2] / 2);
+				if (fallito) {
+					rt1.addValue("SEGNALE", "ERROR");
+					rt1.addValue("RUMORE", "ERROR");
+					rt1.addValue("SNR", "ERROR");
+					rt1.addValue("FWHM ", "ERROR");
+					rt1.addValue("peak/2", "ERROR");
+				} else {
 
-				rt1.addValue("SEGNALE", statMROI_7x7.mean);
-				rt1.addValue("RUMORE", background);
-				rt1.addValue("SNR", finalSnrNEMA);
-				rt1.addValue("FWHM ", outFwhmDIR2[0]);
-				rt1.addValue("peak/2", outFwhmDIR2[2] / 2);
+					rt1.addValue("SEGNALE", statMROI_7x7.mean);
+					rt1.addValue("RUMORE", background);
+					rt1.addValue("SNR", finalSnrNEMA);
+					rt1.addValue("FWHM ", outFwhmDIR2[0]);
+					rt1.addValue("peak/2", outFwhmDIR2[2] / 2);
+				}
 				// rt1.addValue("NAAD", naadDIR);
 
 				// circleDIR[0] = sphereA[0];
@@ -1109,6 +1127,19 @@ public class Uncombined3D_2017 implements PlugIn {
 			ImageUtils.closeImageWindow(impUncombined1);
 			ImageUtils.closeImageWindow(impUncombined2);
 			ImageUtils.closeImageWindow(impDiff);
+
+			String dir4 = InputOutput.extractDirectory(dir1);
+			String dir0 = InputOutput.extractDirectory(dir4);
+			File fil1 = new File(dir0 + "\\risultati");
+			InputOutput.createDir(fil1);
+
+			IJ.selectWindow("Log"); // select Log-window
+			IJ.saveAs("Text", dir0 + "\\risultati\\Log.txt");
+			IJ.selectWindow("Results");
+			IJ.saveAs("Results", dir0 + "\\risultati\\Results.txt");
+			IJ.saveAsTiff(impMapRGB1, dir0 + "\\risultati\\MapRGB1");
+			IJ.saveAsTiff(impMapRGB2, dir0 + "\\risultati\\MapRGB2");
+
 			//
 			// ImageWindow iw1 = impUncombined1.getWindow();
 			// if (iw1 != null)
@@ -1426,10 +1457,10 @@ public class Uncombined3D_2017 implements PlugIn {
 			imp11.updateAndDraw();
 			imp11.getRoi().setStrokeColor(Color.red);
 			imp11.getRoi().setStrokeWidth(1.1);
-			MyLog.waitHere(
-					"imp11= " + imp11.getTitle() + "\nNon si riescono a determinare le coordinate corrette del cerchio"
-							+ "\nRichiesto ridimensionamennto e riposizionamento della ROI indicata in rosso, attorno al fantoccio\n"
-							+ "POI premere  OK");
+			MyLog.waitHere("imp11= " + imp11.getTitle()
+					+ "\nNon si riescono a determinare le coordinate corrette del cerchio"
+					+ "\nRichiesto ridimensionamennto e riposizionamento della ROI indicata in rosso, attorno al fantoccio\n"
+					+ "POI premere  OK");
 
 			boundRec = imp11.getProcessor().getRoi();
 			xCenterCircle = boundRec.x + boundRec.width / 2;
@@ -2323,6 +2354,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		}
 
 		int width = imp1.getWidth();
+		int height = imp1.getHeight();
 		short[] pixels1 = UtilAyv.truePixels(imp1);
 		int pixelCount = 0;
 		int offset = 0;
@@ -2332,9 +2364,12 @@ public class Uncombined3D_2017 implements PlugIn {
 			for (int x1 = sqX; x1 < (sqX + sqR); x1++) {
 				ok = false;
 				offset = y1 * width + x1;
-				// IJ.log("offset= " + offset + " y1= " + y1 + " width= " +
-				// width
-				// + " x1= " + x1);
+				// IJ.log("offset= " + offset + " y1= " + y1 + " width= " + width + " x1= " +
+				// x1);
+				if (offset > width * height || offset < 0) {
+					// IJ.log("escape");
+					continue;
+				}
 				if (pixels1[offset] > limit) {
 					pixelCount++;
 					value4 = pixels4[offset];
