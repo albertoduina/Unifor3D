@@ -76,6 +76,8 @@ public class Uncombined3D_2017 implements PlugIn {
 		boolean step = false;
 		boolean paintPixels = false;
 
+		ArrayList<Integer> pixListSignal11 = new ArrayList<Integer>();
+
 		int diam7x7 = 16;
 		int diam11x11 = 20;
 		// int diam11x11 = 20;
@@ -83,7 +85,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		int debuglevel = 0;
 		ResultsTable rt1 = ResultsTable.getResultsTable();
 		new AboutBox().about("Uncombined3D", MyVersion.CURRENT_VERSION);
-		IJ.wait(20);
+		IJ.wait(1000);
 		new AboutBox().close();
 
 		IJ.log("=================================================");
@@ -101,6 +103,9 @@ public class Uncombined3D_2017 implements PlugIn {
 		}
 		ImagePlus impUncombined1 = null;
 		ImagePlus impUncombined2 = null;
+		ImagePlus impUncombined3 = null;
+		
+		ImagePlus impFiltrata =null;
 		String pathUncombined1 = null;
 		String pathUncombined2 = null;
 		String pathCombined = null;
@@ -114,6 +119,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		String dir2 = null;
 		int num1 = 0;
 		boolean auto = true;
+		boolean fault = false;
 		if (auto) {
 			dirDefaultUncombined1 = Prefs.get("prefer.Unifor3D_dir3", "none");
 			DirectoryChooser.setDefaultDirectory(dirDefaultUncombined1);
@@ -192,12 +198,6 @@ public class Uncombined3D_2017 implements PlugIn {
 		// String level = gd.getNextRadioButton();
 		int livelli = (int) gd.getNextNumber();
 		int livelli3 = 12;
-		// int livelli = 0;
-		// if (level.equals("5 livelli")) {
-		// livelli = 5;
-		// } else {
-		// livelli = 12;
-		// }
 
 		int gridWidth = 2;
 		int gridHeight = livelli3;
@@ -208,34 +208,49 @@ public class Uncombined3D_2017 implements PlugIn {
 				"max% classe 6", "min% classe7", "max% classe 7", "min% classe 8", "max% classe 8", "min% classe 9",
 				"max% classe 9", "min% classe 10", "max% classe 10", "min% classe 11", "max% classe 11",
 				"min% classe 12", "max% classe 12" };
-		double[] value2 = new double[gridSize];
 
-		double[] value3 = { 20, 100, 10, 20, -10, 10, -20, -10, -30, -20, -40, -30, -50, -40, -60, -50, -70, -60, -80,
-				-70, -90, -80, -100, -90 };
+		double[] valuePrevious = new double[gridSize];
+		double[] valueReturned = new double[gridSize];
+
+		double[] valueDefault = { 20, 100, 10, 20, -10, 10, -20, -10, -30, -20, -40, -30, -50, -40, -60, -50, -70, -60,
+				-80, -70, -90, -80, -100, -90 };
 
 		MyGenericDialogGrid mgdg = new MyGenericDialogGrid();
 
-		for (int i1 = 0; i1 < value2.length; i1++) {
-			value2[i1] = mgdg.getValue2(Prefs.get("prefer.Uncombined3D_MAPPAZZA_classi_" + i1, "0"));
+		for (int i1 = 0; i1 < valuePrevious.length; i1++) {
+			String aux1 = Prefs.get("prefer.Uncombined3D_classi_" + i1, "0");
+			IJ.log("" + aux1);
+			valuePrevious[i1] = mgdg.getValue2(aux1);
 		}
+
+		// for (int i1 = 0; i1 < value2.length; i1++) {
+		// value2[i1] = mgdg.getValue2(Prefs.get("prefer.Uncombined3D_MAPPAZZA_classi_"
+		// + i1, "0"));
+		// }
 
 		int decimals = 0;
 		String title2 = "LIMITI CLASSI PIXELS (sempre 12)";
-		if (mgdg.showDialog3(gridWidth, gridHeight, tf2, lab2, value3, value2, title2, decimals)) {
+		if (mgdg.showDialog3(gridWidth, gridHeight, tf2, lab2, valuePrevious, valueDefault, valueReturned, title2,
+				decimals)) {
+			// MyLog.logVector(valueReturned, "valueReturned");
 
-			for (int i1 = 0; i1 < value2.length; i1++) {
-				Prefs.set("prefer.Uncombined3D_MAPPAZZA_classi_" + i1, value2[i1]);
+			for (int i1 = 0; i1 < valuePrevious.length; i1++) {
+				Prefs.set("prefer.Uncombined3D_classi_" + i1, "" + valueReturned[i1]);
 			}
+			// MyLog.waitHere("hai premuto ok");
+		} else
+			return;
 
-		}
+		MyLog.logVector(valueReturned, "valueReturned");
+		// MyLog.waitHere();
 
 		int[] minimi = new int[livelli3];
 		int[] massimi = new int[livelli3];
 		int conta = 0;
 		boolean buco = false;
 		for (int i1 = 0; i1 < livelli3; i1++) {
-			minimi[i1] = (int) value2[conta++];
-			massimi[i1] = (int) value2[conta++];
+			minimi[i1] = (int) valueReturned[conta++];
+			massimi[i1] = (int) valueReturned[conta++];
 		}
 
 		for (int i1 = 0; i1 < livelli3 - 1; i1++) {
@@ -278,7 +293,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		}
 
 		if (stackCombined.getSize() < 2) {
-			MyLog.waitHere("Per le elaborazioni 3D ci vuole uno stack di più immagini!");
+			MyLog.waitHere("Per le elaborazioni 3D ci vuole uno stack di piu' immagini!");
 			return;
 		}
 
@@ -290,10 +305,12 @@ public class Uncombined3D_2017 implements PlugIn {
 		coordinates1[3] = 0;
 
 		double[] sphereA = MySphere.centerSphere(impCombined, demo0);
+		if (sphereA == null)
+			fault = true;
 
-		IJ.log("centro fantoccio X=" + sphereA[0] + " Y= " + sphereA[1] + " Z= " + sphereA[2] + " diametro= "
-				+ sphereA[3]);
-
+		
+		
+		
 		ImagePlus impMapR1 = null;
 		ImagePlus impMapG1 = null;
 		ImagePlus impMapB1 = null;
@@ -308,6 +325,14 @@ public class Uncombined3D_2017 implements PlugIn {
 		ImagePlus impMapR3 = null;
 		ImagePlus impMapG3 = null;
 		ImagePlus impMapB3 = null;
+		
+		
+		ImagePlus impMapR4 = null;
+		ImagePlus impMapG4 = null;
+		ImagePlus impMapB4 = null;
+		ImagePlus impMapRGB4 = null;
+		ImageStack stackRGB4 = null;
+
 
 		int width = impCombined.getWidth();
 		int height = impCombined.getHeight();
@@ -315,21 +340,27 @@ public class Uncombined3D_2017 implements PlugIn {
 		int bitdepth = 24;
 		int algoColor = 1;
 
+		IJ.log("centro fantoccio X=" + sphereA[0] + " Y= " + sphereA[1] + " Z= " + sphereA[2] + " diametro= "
+				+ sphereA[3]);
+
 		boolean generate = true;
 		if (generate) {
-			impMapR1 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR");
-			impMapG1 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG");
-			impMapB1 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB");
+			impMapR1 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR1");
+			impMapG1 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG1");
+			impMapB1 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB1");
 			stackRGB1 = ImageStack.create(width, height, depth, bitdepth);
 			impMapRGB1 = new ImagePlus("mapRGB1", stackRGB1);
-			impMapR2 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR");
-			impMapG2 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG");
-			impMapB2 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB");
+			impMapR2 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR2");
+			impMapG2 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG2");
+			impMapB2 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB2");
 			stackRGB2 = ImageStack.create(width, height, depth, bitdepth);
 			impMapRGB2 = new ImagePlus("mapRGB2", stackRGB2);
-			impMapR3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR");
-			impMapG3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG");
-			impMapB3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB");
+			impMapR3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR3");
+			impMapG3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG3");
+			impMapB3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB3");
+			
+
+			
 			generate = false;
 		}
 
@@ -358,6 +389,15 @@ public class Uncombined3D_2017 implements PlugIn {
 		impCombined.repaintWindow();
 		while (count0 < num1) {
 			long time1 = System.nanoTime();
+			
+			impMapR4 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR4");
+			impMapG4 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG4");
+			impMapB4 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB4");
+			stackRGB4 = ImageStack.create(width, height, depth, bitdepth);
+			impMapRGB4 = new ImagePlus("mapRGB4", stackRGB4);
+
+			
+			
 			int[] vetClassi = null;
 			int[] vetClassi3 = null;
 			int[] vetTotClassi = new int[livelli3 + 1];
@@ -376,6 +416,14 @@ public class Uncombined3D_2017 implements PlugIn {
 				MyLog.waitHere("uncombined2==null");
 			String t1 = impUncombined2.getTitle();
 
+			
+			impUncombined3 = UtilAyv.openImageNoDisplay(pathUncombined1, false);
+			impFiltrata = MySphere.clearOutsideSphere(impUncombined3, sphereA);
+			impFiltrata.show();
+			MyLog.waitHere();
+			
+			
+			
 			// =========================================================
 			// Utilizzando le coordinate sfera trovate sulla immagine combinata
 			// estraggo le tre proiezioni di ognuno dei due stack
@@ -422,12 +470,6 @@ public class Uncombined3D_2017 implements PlugIn {
 			Orthogonal_Views.stop();
 			ImageUtils.closeImageWindow(impXY2);
 
-			//
-			//
-			//
-			// =========================================================
-			// =========================================================
-
 			t1 = t1 + "-2";
 			count0++;
 			IJ.log("===================================");
@@ -442,6 +484,10 @@ public class Uncombined3D_2017 implements PlugIn {
 				return;
 			}
 			int demolevel = 0;
+
+			// Ricerca gli hotspot circolari, slice per slice, utilizza un diam11x11 di 20
+			// pixel (trovato in pratica)
+
 			double[] circularSpot = MySphere.searchCircularSpot(impUncombined1, sphereA, diam11x11, "", demolevel);
 			int x2 = (int) circularSpot[0];
 			int y2 = (int) circularSpot[1];
@@ -461,6 +507,8 @@ public class Uncombined3D_2017 implements PlugIn {
 				colorCoil = 0;
 
 			colorRGB2 = MyColor.coloreSfera(colorCoil, livelli);
+
+			MyLog.logVector(colorRGB2, "colorRGB2");
 			// }
 			MySphere.addSphere(impMapR1, impMapG1, impMapB1, sphereB, bounds, colorRGB2, surfaceonly);
 			MySphere.compilaMappazzaCombinata(impMapR1, impMapG1, impMapB1, impMapRGB1, algoColor);
@@ -468,6 +516,11 @@ public class Uncombined3D_2017 implements PlugIn {
 
 			double[] sphereC = sphereB.clone();
 			sphereC[3] = diam7x7;
+
+			// ==================================================================================
+			// ACCODO I PIXEL DI SEGNALE DELLA ROI AL VETTORE DEI PIXEL DELLO
+			// STACK SEGNALE CON UNA SFERA DIAMETRO 16 PIXEL
+			// ==================================================================================
 
 			double[] vetpixel_7x7 = MySphere.vectorizeSphericalSpot16(impUncombined1, sphereC, paintPixels);
 
@@ -479,6 +532,11 @@ public class Uncombined3D_2017 implements PlugIn {
 
 			double sd_MROI = ArrayUtils.vetSdKnuth(vetpixel_7x7);
 			double p_MROI = sd_MROI / Math.sqrt(2.0);
+
+			// ==================================================================================
+			// ACCODO I PIXEL DI SEGNALE DELLA ROI AL VETTORE DEI PIXEL DELLO
+			// STACK SEGNALE CON UNA SFERA DIAMETRO 20 PIXEL
+			// ==================================================================================
 
 			IJ.log("Dati sfera (xc, yc, zc, radius)= " + sphereC[0] + ", " + sphereC[1] + ", " + sphereC[2] + ", "
 					+ sphereC[3]);
@@ -535,6 +593,14 @@ public class Uncombined3D_2017 implements PlugIn {
 			}
 			IJ.log("snrMROI= " + snrMROI);
 			String subCoil = ReadDicom.readDicomParameter(impUncombined1, MyConst.DICOM_COIL);
+
+			// =================================================================================
+
+			int[] pixListSignal = ArrayUtils.arrayListToArrayInt(pixListSignal11);
+			double uiNew = naadCalculation(vetpixel_11x11);
+
+			// =================================================================================
+
 			rt1.incrementCounter();
 			rt1.addValue("TIPO ", "ANALISI 3D BOBINA UNCOMBINED");
 
@@ -565,6 +631,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			if (outFwhm2 == null)
 				MyLog.waitHere("fwhm2==null");
 			rt1.addValue("FWHM ", outFwhm2[0]);
+			rt1.addValue("NAAD", uiNew);
 			rt1.addValue("peak/2", outFwhm2[2] / 2);
 
 			// ================================================
@@ -572,14 +639,25 @@ public class Uncombined3D_2017 implements PlugIn {
 			// ================================================
 			int slice = 0;
 			if (true) {
-				// impMapR2.show();
-				// impMapG2.show();
-				// impMapB2.show();
+				impMapR1.show();
+				impMapG1.show();
+				impMapB1.show();
+
+				impMapR2.show();
+				impMapG2.show();
+				impMapB2.show();
+				
+				
+				impMapR4.show();
+				impMapG4.show();
+				impMapB4.show();
+				
+				
 				// impUncombined1.show();
 				// =========================
 				// SFERA ESTERNA GRIGIA
 				// =========================
-				int[] colorRGB44 = { 6, 6, 6 };
+				int[] colorRGB44 = { 100, 100, 100 }; // 6,6,6
 				surfaceonly = true;
 				int[] bounds2 = new int[3];
 				bounds2[0] = width;
@@ -588,6 +666,12 @@ public class Uncombined3D_2017 implements PlugIn {
 				MySphere.addSphere(impMapR2, impMapG2, impMapB2, sphereA, bounds, colorRGB44, surfaceonly);
 				MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
 				impMapRGB2.show();
+				
+				
+				MySphere.addSphere(impMapR4, impMapG4, impMapB4, sphereA, bounds, colorRGB44, surfaceonly);
+				MySphere.compilaMappazzaCombinata(impMapR4, impMapG4, impMapB4, impMapRGB4, algoColor);
+				impMapRGB4.show();
+
 
 				debuglevel = 0;
 				for (int i1 = 0; i1 < depth; i1++) {
@@ -599,6 +683,8 @@ public class Uncombined3D_2017 implements PlugIn {
 					double diam1 = MySphere.projectedDiameter(sphereA, slice);
 					circle[2] = diam1;
 					vetClassi = MySphere.simulataGrigio16(sMROI, imp20, circle, impMapR2, impMapG2, impMapB2, slice,
+							livelli, minimi, massimi, colorCoil, puntatore, debuglevel, sphereC);
+					MySphere.simulataGrigio16(sMROI, imp20, circle, impMapR4, impMapG4, impMapB4, slice,
 							livelli, minimi, massimi, colorCoil, puntatore, debuglevel, sphereC);
 					debuglevel = 0;
 
@@ -613,6 +699,11 @@ public class Uncombined3D_2017 implements PlugIn {
 					impMapG2.updateAndDraw();
 					impMapB2.updateAndDraw();
 					MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
+					
+					impMapR4.updateAndDraw();
+					impMapG4.updateAndDraw();
+					impMapB4.updateAndDraw();
+					MySphere.compilaMappazzaCombinata(impMapR4, impMapG4, impMapB4, impMapRGB4, algoColor);
 				}
 			}
 
@@ -883,6 +974,7 @@ public class Uncombined3D_2017 implements PlugIn {
 				int enlarge = 0;
 				int pixx = 0;
 				boolean fallito = false;
+				double naadDIR = -999;
 				do {
 
 					// boolean paintPixels = true;
@@ -1030,13 +1122,10 @@ public class Uncombined3D_2017 implements PlugIn {
 					// double sd_ImaDiffDIR = statImaDiffDIR.stdDev;
 					// double noiseImaDiffDIR = sd_ImaDiffDIR / Math.sqrt(2);
 					// double snRatioDIR = Math.sqrt(2) * meanDIR / sd_ImaDiffDIR;
-					// ArrayList<Integer> pixListSignalXY1 = new
-					// ArrayList<Integer>();
-					// pixVectorize1(impDIR1, circleDIR[0], circleDIR[1],
-					// diamMROIDIR, pixListSignalXY1);
-					// int[] pixListSignalDIR =
-					// ArrayUtils.arrayListToArrayInt(pixListSignalXY1);
-					// double naadDIR = naadCalculation(pixListSignalDIR);
+					ArrayList<Float> pixListSignalXY1 = new ArrayList<Float>();
+					pixVectorize2(impDIR1, circleDIR[0], circleDIR[1], diamMROIDIR, pixListSignalXY1);
+					double[] pixListSignalDIR = ArrayUtils.arrayListToArrayDouble2(pixListSignalXY1);
+					naadDIR = naadCalculation(pixListSignalDIR);
 
 					// ########################################################################################ààà
 
@@ -1059,16 +1148,18 @@ public class Uncombined3D_2017 implements PlugIn {
 					rt1.addValue("RUMORE", "ERROR");
 					rt1.addValue("SNR", "ERROR");
 					rt1.addValue("FWHM ", "ERROR");
+					rt1.addValue("NAAD", "ERROR");
 					rt1.addValue("peak/2", "ERROR");
+
 				} else {
 
 					rt1.addValue("SEGNALE", statMROI_7x7.mean);
 					rt1.addValue("RUMORE", background);
 					rt1.addValue("SNR", finalSnrNEMA);
 					rt1.addValue("FWHM ", outFwhmDIR2[0]);
+					rt1.addValue("NAAD", naadDIR);
 					rt1.addValue("peak/2", outFwhmDIR2[2] / 2);
 				}
-				// rt1.addValue("NAAD", naadDIR);
 
 				// circleDIR[0] = sphereA[0];
 				// circleDIR[1] = sphereA[1];
@@ -1116,6 +1207,7 @@ public class Uncombined3D_2017 implements PlugIn {
 				ImageUtils.closeImageWindow(impDIR1);
 				ImageUtils.closeImageWindow(impDiffDIR);
 				rt1.show("Results");
+
 			}
 
 			if (WindowManager.getFrame("Profilo penetrazione__") != null) {
@@ -1130,15 +1222,19 @@ public class Uncombined3D_2017 implements PlugIn {
 
 			String dir4 = InputOutput.extractDirectory(dir1);
 			String dir0 = InputOutput.extractDirectory(dir4);
+
 			File fil1 = new File(dir0 + "\\risultati");
+			// if (fil1.exists()) InputOutput.deleteDir(fil1);
 			InputOutput.createDir(fil1);
 
 			IJ.selectWindow("Log"); // select Log-window
 			IJ.saveAs("Text", dir0 + "\\risultati\\Log.txt");
-			IJ.selectWindow("Results");
-			IJ.saveAs("Results", dir0 + "\\risultati\\Results.txt");
+			IJ.saveAs("Results", dir0 + "\\risultati\\Result.txt");
+			IJ.saveAs("Results", dir0 + "\\risultati\\Result.xls");
+
 			IJ.saveAsTiff(impMapRGB1, dir0 + "\\risultati\\MapRGB1");
 			IJ.saveAsTiff(impMapRGB2, dir0 + "\\risultati\\MapRGB2");
+			IJ.saveAsTiff(impMapRGB4, dir0 + "\\risultati\\MapRGB4" + subCoil);
 
 			//
 			// ImageWindow iw1 = impUncombined1.getWindow();
@@ -1627,9 +1723,9 @@ public class Uncombined3D_2017 implements PlugIn {
 			double[] circle) {
 
 		boolean demo = false;
-		Color colore1 = Color.red;
-		Color colore2 = Color.green;
-		Color colore3 = Color.red;
+		// Color colore1 = Color.red;
+		// Color colore2 = Color.green;
+		// Color colore3 = Color.red;
 
 		if (mode == 10 || mode == 3)
 			demo = true;
@@ -1648,7 +1744,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		double angle11 = 0;
 		double xCenterRoi = 0;
 		double yCenterRoi = 0;
-		double maxFitError = 30;
+		// double maxFitError = 30;
 		Overlay over12 = new Overlay();
 		if (imp11 == null)
 			MyLog.waitHere("imp11==null");
@@ -1658,310 +1754,10 @@ public class Uncombined3D_2017 implements PlugIn {
 		if (demo)
 			iw11 = imp11.getWindow();
 
-		int width = imp11.getWidth();
-		int height = imp11.getHeight();
+		// int width = imp11.getWidth();
+		// int height = imp11.getHeight();
 		ImagePlus imp12 = imp11.duplicate();
 		imp12.setTitle("DUP");
-		// -------------------------------------------------
-		// Determinazione del cerchio
-		// -------------------------------------------------
-		// ImageProcessor ip12 = imp12.getProcessor();
-		// RankFilters rk1 = new RankFilters();
-		// double radius = 0.1;
-		// int filterType = RankFilters.VARIANCE;
-		// rk1.rank(ip12, radius, filterType);
-		// imp12.updateAndDraw();
-		// double max1 = imp12.getStatistics().max;
-		// ip12.subtract(max1 / 30);
-		// imp12.updateAndDraw();
-		// imp12.setOverlay(over12);
-		// double[][] myPeaks = new double[4][1];
-		// int[] myXpoints = new int[16];
-		// int[] myYpoints = new int[16];
-		// int[] xcoord = new int[2];
-		// int[] ycoord = new int[2];
-		// boolean manualOverride = false;
-		// int[] vetx0 = new int[8];
-		// int[] vetx1 = new int[8];
-		// int[] vety0 = new int[8];
-		// int[] vety1 = new int[8];
-		//
-		// vetx0[0] = 0;
-		// vety0[0] = height / 2;
-		// vetx1[0] = width;
-		// vety1[0] = height / 2;
-		// // ----
-		// vetx0[1] = width / 2;
-		// vety0[1] = 0;
-		// vetx1[1] = width / 2;
-		// vety1[1] = height;
-		// // ----
-		// vetx0[2] = 0;
-		// vety0[2] = 0;
-		// vetx1[2] = width;
-		// vety1[2] = height;
-		// // -----
-		// vetx0[3] = width;
-		// vety0[3] = 0;
-		// vetx1[3] = 0;
-		// vety1[3] = height;
-		// // -----
-		// vetx0[4] = width / 4;
-		// vety0[4] = 0;
-		// vetx1[4] = width * 3 / 4;
-		// vety1[4] = height;
-		// // ----
-		// vetx0[5] = width * 3 / 4;
-		// vety0[5] = 0;
-		// vetx1[5] = width / 4;
-		// vety1[5] = height;
-		// // ----
-		// vetx0[6] = width;
-		// vety0[6] = height * 1 / 4;
-		// vetx1[6] = 0;
-		// vety1[6] = height * 3 / 4;
-		// // ----
-		// vetx0[7] = 0;
-		// vety0[7] = height * 1 / 4;
-		// vetx1[7] = width;
-		// vety1[7] = height * 3 / 4;
-		//
-		// String[] vetTitle = { "orizzontale", "verticale", "diagonale
-		// sinistra", "diagonale destra", "inclinata 1",
-		// "inclinata 2", "inclinata 3", "inclinata 4" };
-		//
-		// // multipurpose line analyzer
-		//
-		// int count = -1;
-		//
-		// int[] xPoints3 = null;
-		// int[] yPoints3 = null;
-		// boolean vertical = false;
-		// boolean valido = true;
-		// for (int i1 = 0; i1 < 8; i1++) {
-		// xcoord[0] = vetx0[i1];
-		// ycoord[0] = vety0[i1];
-		// xcoord[1] = vetx1[i1];
-		// ycoord[1] = vety1[i1];
-		// imp12.setRoi(new Line(xcoord[0], ycoord[0], xcoord[1], ycoord[1]));
-		// if (demo) {
-		// imp12.getRoi().setStrokeColor(colore2);
-		// over12.addElement(imp12.getRoi());
-		// imp12.updateAndDraw();
-		// }
-		// if (i1 == 1)
-		// vertical = true;
-		// else
-		// vertical = false;
-		//
-		// boolean showProfiles = false;
-		//
-		// if (demo && i1 == 0)
-		// showProfiles = true;
-		//
-		// myPeaks = profileAnalyzer(imp12, dimPixel, vetTitle[i1],
-		// showProfiles, vertical, timeout);
-		//
-		// valido = true;
-		// // String direction1 = ReadDicom.readDicomParameter(imp11,
-		// // MyConst.DICOM_IMAGE_ORIENTATION);
-		// // String direction2 = "1\0\0\01\0";
-		//
-		// if (myPeaks != null) {
-		//
-		// // per evitare le bolle d'aria escluderò il punto in alto per
-		// // l'immagine assiale ed il punto a sinistra dell'immagine
-		// // sagittale. Considero punto in alto quello con coordinata y <
-		// // mat/2 e come punto a sinistra quello con coordinata x < mat/2
-		//
-		// for (int i2 = 0; i2 < myPeaks[0].length; i2++) {
-		//
-		// // if ((direction1.compareTo("0\\1\\0\\0\\0\\-1") == 0) &&
-		// // (i1 == 0)) {
-		// // if (((int) (myPeaks[0][i2]) < width / 2)) {
-		// // valido = false;
-		// // } else
-		// // ;
-		// // }
-		// //
-		// // if ((direction1.compareTo("1\\0\\0\\1\\0") == 0) && (i1
-		// // == 1)) {
-		// // if (((int) (myPeaks[1][i2]) < height / 2)) {
-		// // valido = false;
-		// // } else
-		// // ;
-		// // }
-		//
-		// if (valido) {
-		// count++;
-		// myXpoints[count] = (int) (myPeaks[0][i2]);
-		// myYpoints[count] = (int) (myPeaks[1][i2]);
-		// ImageUtils.plotPoints(imp12, over12, (int) (myPeaks[0][i2]), (int)
-		// (myPeaks[1][i2]), colore1);
-		// imp12.updateAndDraw();
-		// ImageUtils.imageToFront(imp12);
-		// }
-		// }
-		// }
-		//
-		// // devo compattare i vettori myXpoints e myYpoints, ovviamente a
-		// // patto che count >=0;
-		// }
-		//
-		// if (count >= 0) {
-		// count++;
-		// xPoints3 = new int[count];
-		// yPoints3 = new int[count];
-		//
-		// for (int i3 = 0; i3 < count; i3++) {
-		// xPoints3[i3] = myXpoints[i3];
-		// yPoints3[i3] = myYpoints[i3];
-		// }
-		// } else {
-		// xPoints3 = null;
-		// yPoints3 = null;
-		// }
-		// // qui di seguito pulisco l'overlay, dovrò preoccuparmi di
-		// ridisegnare i
-		// // punti
-		// imp12.deleteRoi();
-		// over12.clear();
-		// imp12.updateAndDraw();
-		//
-		// //
-		// ----------------------------------------------------------------------
-		// // Verifica di avere trovato almeno 3 punti, altrimenti chiede la
-		// // selezione manuale del cerchio
-		// //
-		// -------------------------------------------------------------------
-		//
-		// if (xPoints3 == null || xPoints3.length < 3) {
-		// UtilAyv.showImageMaximized(imp11);
-		//
-		// // MyLog.waitHere(listaMessaggi(19), debug);
-		// manual = true;
-		// }
-		//
-		// if (!manual) {
-		// // reimposto i punti trovati
-		// PointRoi pr12 = new PointRoi(xPoints3, yPoints3, xPoints3.length);
-		// pr12.setPointType(2);
-		// pr12.setSize(4);
-		// imp12.setRoi(pr12);
-		//
-		// if (demo) {
-		// // ridisegno i punti sull'overlay
-		// imp12.getRoi().setStrokeColor(colore1);
-		// over12.addElement(imp12.getRoi());
-		// imp12.setOverlay(over12);
-		// }
-		// // ---------------------------------------------------
-		// // eseguo ora fitCircle per trovare centro e dimensione del
-		// // fantoccio
-		// // ---------------------------------------------------
-		// ImageUtils.fitCircle(imp12);
-		// if (demo) {
-		// imp12.getRoi().setStrokeColor(colore3);
-		// over12.addElement(imp12.getRoi());
-		// }
-		//
-		// Rectangle boundRec = imp12.getProcessor().getRoi();
-		// xCenterCircle = Math.round(boundRec.x + boundRec.width / 2);
-		// yCenterCircle = Math.round(boundRec.y + boundRec.height / 2);
-		// diamCircle = boundRec.width;
-		// if (!manualOverride)
-		// writeStoredRoiData(boundRec);
-		// MyCircleDetector.drawCenter(imp12, over12, xCenterCircle,
-		// yCenterCircle, colore3);
-		// // ----------------------------------------------------------
-		// // Misuro l'errore sul fit rispetto ai punti imposti
-		// // -----------------------------------------------------------
-		// double[] vetDist = new double[xPoints3.length];
-		// double sumError = 0;
-		// for (int i1 = 0; i1 < xPoints3.length; i1++) {
-		// vetDist[i1] = ImageUtils.pointCirconferenceDistance(xPoints3[i1],
-		// yPoints3[i1], xCenterCircle,
-		// yCenterCircle, diamCircle / 2);
-		// sumError += Math.abs(vetDist[i1]);
-		// }
-		// if (sumError > maxFitError) {
-		// // MyLog.waitHere("maxFitError");
-		// // -------------------------------------------------------------
-		// // disegno il cerchio ed i punti, in modo da date un feedback
-		// // grafico al messaggio di eccessivo errore nel fit
-		// // -------------------------------------------------------------
-		// UtilAyv.showImageMaximized(imp12);
-		// over12.remove(pr12);
-		// imp12.setOverlay(over12);
-		// imp12.setRoi(new OvalRoi(xCenterCircle - diamCircle / 2,
-		// yCenterCircle - diamCircle / 2, diamCircle,
-		// diamCircle));
-		// imp12.getRoi().setStrokeColor(colore2);
-		// over12.addElement(imp12.getRoi());
-		// PointRoi pr1 = new PointRoi(xPoints3, yPoints3, xPoints3.length);
-		// pr1.setSize(4);
-		// pr1.setPointType(1);
-		// imp12.setRoi(pr1);
-		// imp12.getRoi().setStrokeColor(Color.red);
-		// over12.addElement(imp12.getRoi());
-		// imp12.deleteRoi();
-		// manual = true;
-		// }
-		//
-		// }
-		//
-		// Rectangle boundRec = null;
-		// //
-		// ----------------------------------------------------------------------
-		// // Verifica di avere trovato almeno 3 punti, altrimenti chiede la
-		// // selezione manuale del cerchio
-		// //
-		// -------------------------------------------------------------------
-		// if (xPoints3 != null && xPoints3.length >= 3 && !manual) {
-		// imp12.setRoi(new PointRoi(xPoints3, yPoints3, xPoints3.length));
-		// ImageUtils.fitCircle(imp12);
-		// if (demo) {
-		// over12.addElement(imp12.getRoi());
-		// over12.setStrokeColor(Color.red);
-		// }
-		// boundRec = imp12.getProcessor().getRoi();
-		//
-		// } else {
-		//
-		// // NON SI SONO DETERMINATI 3 PUNTI DEL CERCHIO, SELEZIONE MANUALE
-		//
-		// if (!imp11.isVisible())
-		// UtilAyv.showImageMaximized(imp11);
-		// imp11.setRoi(new OvalRoi((width / 2) - 100, (height / 2) - 100, 180,
-		// 180));
-		// imp11.updateAndDraw();
-		// imp11.getRoi().setStrokeColor(Color.red);
-		// imp11.getRoi().setStrokeWidth(1.1);
-		// MyLog.waitHere(
-		// "imp11= " + imp11.getTitle() + "\nNon si riescono a determinare le
-		// coordinate corrette del cerchio"
-		// + "\nRichiesto ridimensionamennto e riposizionamento della ROI
-		// indicata in rosso, attorno al fantoccio\n"
-		// + "POI premere OK");
-		//
-		// boundRec = imp11.getProcessor().getRoi();
-		// xCenterCircle = boundRec.x + boundRec.width / 2;
-		// yCenterCircle = boundRec.y + boundRec.height / 2;
-		// diamCircle = boundRec.width;
-		//
-		// imp11.setRoi(new OvalRoi(xCenterCircle - diamCircle / 2,
-		// yCenterCircle - diamCircle / 2, diamCircle,
-		// diamCircle));
-		// imp11.updateAndDraw();
-		// imp11.getRoi().setStrokeColor(Color.green);
-		// imp11.getRoi().setStrokeWidth(0);
-		// over12.clear();
-		// over12.add(imp11.getRoi());
-		// //
-		// // Ho cosi' risolto la mancata localizzazione automatica del
-		// // fantoccio (messaggi non visualizzati in junit)
-		// //
-		// }
 
 		// ==========================================================================
 		// ==========================================================================
@@ -2273,7 +2069,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		}
 	}
 
-	public static double naadCalculation(int[] pixListSignal) {
+	public static double naadCalculation(double[] pixListSignal) {
 
 		double mean1 = ArrayUtils.vetMean(pixListSignal);
 		// MyLog.waitHere("mean1= "+mean1);
@@ -2284,7 +2080,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			sum1 = sum1 + val;
 		}
 		// MyLog.waitHere("sum1= "+sum1);
-		double result = sum1 / (mean1 * pixListSignal.length);
+		double result = (1 - (sum1 / (mean1 * pixListSignal.length)));
 		return result;
 	}
 
@@ -2421,5 +2217,7 @@ public class Uncombined3D_2017 implements PlugIn {
 		}
 		return (profi1);
 	}
+	
+	
 
 } // ultima

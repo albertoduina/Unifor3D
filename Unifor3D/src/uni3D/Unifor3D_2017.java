@@ -72,7 +72,7 @@ public class Unifor3D_2017 implements PlugIn {
 		// new MyAboutBox().about10("Unifor3D");
 
 		new AboutBox().about("Unifor3D_2017", MyVersion.CURRENT_VERSION);
-		IJ.wait(2000);
+		IJ.wait(1000);
 		new AboutBox().close();
 
 		// double maxFitError = +20;
@@ -108,6 +108,11 @@ public class Unifor3D_2017 implements PlugIn {
 			return;
 		Prefs.set("prefer.Unifor3D_dir2", dir2);
 
+		String dir4 = InputOutput.extractDirectory(dir1);
+		String dir0 = InputOutput.extractDirectory(dir4);
+		File fil1 = new File(dir0 + "\\risultati");
+		InputOutput.createDir(fil1);
+
 		ImagePlus impCombined1 = UtilAyv.openImageNoDisplay(dir1, true);
 		impCombined1.show();
 		double dimPixel = ReadDicom.readDouble(
@@ -128,33 +133,38 @@ public class Unifor3D_2017 implements PlugIn {
 				"min% classe 3 (-10)", "max% classe 3 (10) ", "min% classe 4 (-20)", "max% classe 4 (-10)",
 				"min% classe 5 (-90)", "max% classe 5 (-20)" };
 
-		double[] value2 = new double[gridSize];
-		double[] value3 = { 20, 100, 10, 20, -10, 10, -20, -10, -90, -20 };
+		double[] valueReturned = new double[gridSize];
+		double[] valuePrevious = new double[gridSize];
+		double[] valueDefault = { 20, 100, 10, 20, -10, 10, -20, -10, -90, -20 };
 
 		MyGenericDialogGrid mgdg = new MyGenericDialogGrid();
 
-		for (int i1 = 0; i1 < value2.length; i1++) {
-			value2[i1] = mgdg.getValue2(Prefs.get("prefer.Unifor3D_classi_" + i1, "0"));
+		for (int i1 = 0; i1 < valuePrevious.length; i1++) {
+			String aux1 = Prefs.get("prefer.Unifor3D_classi_" + i1, "0");
+			IJ.log("" + aux1);
+			valuePrevious[i1] = mgdg.getValue2(aux1);
 		}
 
 		int decimals = 0;
 		String title2 = "LIMITI CLASSI PIXELS";
 
-		if (mgdg.showDialog3(gridWidth, gridHeight, tf2, lab2, value2, value3, title2, decimals)) {
+		if (mgdg.showDialog3(gridWidth, gridHeight, tf2, lab2, valuePrevious, valueDefault, valueReturned, title2,
+				decimals)) {
 			// comodo il preset ????
-			// displayValues2(gridSize, value2);
+			for (int i1 = 0; i1 < valueReturned.length; i1++) {
+				Prefs.set("prefer.Unifor3D_classi_" + i1, valueReturned[i1]);
+			}
+
 		}
 
-		for (int i1 = 0; i1 < value2.length; i1++) {
-			Prefs.set("prefer.Unifor3D_classi_" + i1, value2[i1]);
-		}
+		MyLog.logVector(valueReturned, "valueReturned");
 
 		int[] minimi = new int[livello];
 		int[] massimi = new int[livello];
 		int conta = 0;
 		for (int i1 = 0; i1 < livello; i1++) {
-			minimi[i1] = (int) value2[conta++];
-			massimi[i1] = (int) value2[conta++];
+			minimi[i1] = (int) valueReturned[conta++];
+			massimi[i1] = (int) valueReturned[conta++];
 		}
 
 		for (int i1 = 0; i1 < livello - 1; i1++) {
@@ -188,6 +198,11 @@ public class Unifor3D_2017 implements PlugIn {
 		// =================================================================
 
 		double[] sphereA = MySphere.centerSphere(impCombined1, demo0);
+
+		if (sphereA == null) {
+			MyLog.waitHere("parametri centro sfera non determinati");
+			return;
+		}
 
 		ImagePlus impCombined2 = UtilAyv.openImageNoDisplay(dir2, true);
 
@@ -278,7 +293,7 @@ public class Unifor3D_2017 implements PlugIn {
 		ImagePlus impSliceCombined2;
 
 		// ==========================================================================
-		// CALCOLI RIPETUTO SUI VARI STRATI
+		// CALCOLO RIPETUTO SUI VARI STRATI DELLA SFERA
 		// ==========================================================================
 
 		for (int zslice = startSlice - 1; zslice < endSlice + 1; zslice++) {
@@ -345,14 +360,13 @@ public class Unifor3D_2017 implements PlugIn {
 
 			// ==================================================================================
 			// ACCODO I PIXEL DI SEGNALE DELLA ROI AL VETTORE DEI PIXEL DELLO
-			// STACK SEGNALE
+			// STACK SEGNALE DELLA SFERA
 			// ==================================================================================
-
 			pixVectorize1(impSliceCombined1, sphereA[0], sphereA[1], diamMROI2, pixListSignal11);
 
 			// ==================================================================================
 			// ACCODO I PIXEL DI SEGNALE DELLA ROI AL VETTORE DEI PIXEL DELLO
-			// STACK DIFFERENZA
+			// STACK DIFFERENZA DELLA SFERA
 			// ==================================================================================
 
 			ImagePlus impSliceDiff = MyStackUtils.imageFromStack(impDiff, zslice);
@@ -380,7 +394,7 @@ public class Unifor3D_2017 implements PlugIn {
 
 		// MyLog.waitHere("Max= " + maxSignal + " Min= " + minSignal);
 		double uiPerc1 = uiPercCalculation(maxSignal, minSignal);
-		double uiNew = naadCalculation(pixListSignal);
+		double naadSphere = naadCalculation(pixListSignal);
 
 		int countS = -1;
 		int[][] matClassi = new int[6][2];
@@ -483,6 +497,8 @@ public class Unifor3D_2017 implements PlugIn {
 
 		ImagePlus impColors = ImageUtils.generaScalaColori(myColor, myLabels);
 		impColors.show();
+		IJ.saveAsTiff(impColors, dir0 + "\\risultati\\ScalaColori");
+
 
 		// IJ.log("NORMAL VECTOR mean11 pixels SEGNALE= " + mean11 + " devst11
 		// pixels DIFFERENZA= " + devst11);
@@ -532,7 +548,7 @@ public class Unifor3D_2017 implements PlugIn {
 		rt1.addValue("MAX", maxSignal);
 		rt1.addValue("MIN", minSignal);
 		rt1.addValue("UI%", uiPerc1);
-		rt1.addValue("NAAD", uiNew);
+		rt1.addValue("NAAD", naadSphere);
 		rt1.addValue("Voxels colorati", totColorati);
 		rt1.addValue("Voxels fondo", totFondo);
 		for (int i2 = 0; i2 < minimi.length; i2++) {
@@ -546,9 +562,10 @@ public class Unifor3D_2017 implements PlugIn {
 			rt1.addValue("classe >" + minimi[i2] + "<" + massimi[i2] + "[%]", ResultsTable.d2s(matPercClassi[i2], 2));
 		}
 
-		// ===========================================================
+		// ================================================================================
 		// CALCOLO UNIFORMITA' 2D ( E TE PAREVA CHE CE LA FACEVAMO MANCARE )
-		// ===========================================================
+		// IL DIR NEI NOMI DELLE VARIABILI VA INTESO COME ABBREVIAZIONE DI DIRECTION
+		// ================================================================================
 
 		int direction = 1;
 		double maxFitError = 20.0;
@@ -557,7 +574,6 @@ public class Unifor3D_2017 implements PlugIn {
 		String[] tit1 = { "ANALISI 2D PROIEZ.XY", "ANALISI 2D PROIEZ.YZ", "ANALISI 2D PROIEZ.XZ" };
 		String[] tit2 = { "coloriSimulataXY", "coloriSimulataYZ", "coloriSimulataXZ" };
 		int[][] matClassiDIR = new int[6][2];
-
 		ImagePlus impDIR1 = null;
 		ImagePlus impDIR2 = null;
 		for (int i1 = 0; i1 < 3; i1++) {
@@ -630,6 +646,8 @@ public class Unifor3D_2017 implements PlugIn {
 
 			imaDIRsimulata.show();
 
+			IJ.saveAsTiff(imaDIRsimulata, dir0 + "\\risultati\\" + tit2[i1]);
+
 			matClassiDIR = numeroPixelsColori(imaDIRsimulata, myColor);
 
 			double totColoratiDIR = 0;
@@ -686,7 +704,7 @@ public class Unifor3D_2017 implements PlugIn {
 				+ "\n***********************************************************");
 		IJ.log("mean pixels SEGNALE= " + IJ.d2s(meanMROI, 3));
 		IJ.log("unint% pixels SEGNALE= " + IJ.d2s(uiPerc1, 3));
-		IJ.log("uiNEW pixels SEGNALE= " + IJ.d2s(uiNew, 3));
+		IJ.log("uiNEW pixels SEGNALE= " + IJ.d2s(naadSphere, 3));
 		IJ.log("devSt pixels DIFFERENZA= " + IJ.d2s(sd_diff, 3) + " %");
 		IJ.log("SNR_3D= " + IJ.d2s(snr3D, 3));
 		IJ.log("-----------------------------");
@@ -704,42 +722,14 @@ public class Unifor3D_2017 implements PlugIn {
 
 		IJ.log("-----------------------------");
 
-		String dir0 = InputOutput.extractDirectory(dir1);
+		// if (fil1.exists()) InputOutput.deleteDir(fil1);
+
 		IJ.selectWindow("Log"); // select Log-window
-		IJ.saveAs("Text", dir0 + "\\Log.txt");
-		IJ.selectWindow("Results");
-		IJ.saveAs("Results", dir0+"\\Results.txt");
-		IJ.saveAsTiff(simulataStack, dir0 + "\\SimulataStack");
+		IJ.saveAs("Text", dir0 + "\\risultati\\Log.txt");
+		IJ.saveAs("Results", dir0 + "\\risultati\\Result.txt");
+		IJ.saveAs("Results", dir0 + "\\risultati\\Result.xls");
+		IJ.saveAsTiff(simulataStack, dir0 + "\\risultati\\MapRGB1");
 
-		// ResultsTable rt2 = vectorResultsTable(classi);
-
-		// rt2.show("Results");
-
-	} // chiude
-		// run
-
-	/**
-	 * Saves this ResultsTable as a tab or comma delimited text file. The table is
-	 * saved as a CSV (comma-separated values) file if 'path' ends with ".csv".
-	 * Displays a file save dialog if 'path' is empty or null. Does nothing if the
-	 * table is empty.
-	 */
-	public static void mySaveAs(String path, ResultsTable rt) throws IOException {
-
-		if (rt.getCounter() == 0) {
-			MyLog.waitHere("NO_SAVE table empty!");
-			return;
-		}
-		PrintWriter pw = null;
-		boolean append = true;
-		FileOutputStream fos = new FileOutputStream(path, append);
-		BufferedOutputStream bos = new BufferedOutputStream(fos);
-		pw = new PrintWriter(bos);
-		String headings = rt.getColumnHeadings();
-		pw.println("## " + headings);
-		for (int i = 0; i < rt.getCounter(); i++)
-			pw.println(rt.getRowAsString(i));
-		pw.close();
 	}
 
 	/**
@@ -761,7 +751,10 @@ public class Unifor3D_2017 implements PlugIn {
 			sum1 = sum1 + val;
 		}
 		// MyLog.waitHere("sum1= "+sum1);
-		double result = sum1 / (mean1 * pixListSignal.length);
+		// double result = sum1 / (mean1 * pixListSignal.length);
+
+		double result = (1 - (sum1 / (mean1 * pixListSignal.length)));
+
 		return result;
 	}
 
@@ -782,7 +775,11 @@ public class Unifor3D_2017 implements PlugIn {
 	}
 
 	/***
-	 * pixVectorize1 lavora sulle immagini costituite da interi
+	 * pixVectorize1 lavora sulle immagini costituite da interi. Utilizza la Mask
+	 * per identificare i pixel appartenenti ad una ROI circolare. Aggiunge i pixel
+	 * appartenenti alla ROI con coordinate (xCenterMROI, yCenterMROI) e diametro
+	 * diamMROI, all'Array contenente i valori dei pixel pixList11. Tale Array viene
+	 * utilizzato tipicamente per ottenere tutti i pixels appartenenti ad una sfera
 	 * 
 	 * @param imp11
 	 * @param xCenterMROI
@@ -809,7 +806,11 @@ public class Unifor3D_2017 implements PlugIn {
 	}
 
 	/***
-	 * pixVectorize1 lavora sulle immagini costituite da float
+	 * pixVectorize1 lavora sulle immagini costituite da float. Utilizza la Mask per
+	 * identificare i pixel appartenenti ad una ROI circolare. Aggiunge i pixel
+	 * appartenenti alla ROI con coordinate (xCenterMROI, yCenterMROI) e diametro
+	 * diamMROI, all'Array contenente i valori dei pixel pixList11. Tale Array viene
+	 * utilizzato tipicamente per ottenere tutti i pixels appartenenti ad una sfera
 	 * 
 	 * @param imp11
 	 * @param xCenterMROI

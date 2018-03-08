@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Ant-Version: Apache Ant 1.10.1
 Created-By: 1.8.0_161-b12 (Oracle Corporation)
 Built-By: AlbertoDuina
-Built-Date: February 26 2018
+Built-Date: March 8 2018
 Main-Class: Unifor3D.Unifor3D_
-Implementation-Version: $b783
+Implementation-Version: $b889
 
