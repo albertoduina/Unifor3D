@@ -231,8 +231,8 @@ public class ShrinkMask implements PlugIn {
 
 	/**
 	 * Restituisce, in un ArrayList fornito come parametro, i valori di tutti i
-	 * pixel dell'immagine sorgente, in cui il valore del pixel corrispondente
-	 * nella immagine mask non sia zero
+	 * pixel dell'immagine sorgente, in cui il valore del pixel corrispondente nella
+	 * immagine mask non sia zero
 	 * 
 	 * @param impSingleImage
 	 * @param impSingleMask
@@ -298,11 +298,10 @@ public class ShrinkMask implements PlugIn {
 	}
 
 	/**
-	 * dispone il contenuto dei pixel nella tabella in formato float [][][].
-	 * Nella tabella di output le dimensioni saranno [z][x][y].
+	 * dispone il contenuto dei pixel nella tabella in formato float [][][]. Nella
+	 * tabella di output le dimensioni saranno [z][x][y].
 	 * 
-	 * @param stack1
-	 *            stack di immagini da processare
+	 * @param stack1 stack di immagini da processare
 	 * @return valori dei pixel nel formato int[z][x][y], in cui a=posiz.
 	 */
 
@@ -317,10 +316,8 @@ public class ShrinkMask implements PlugIn {
 		float pixValue = 0;
 
 		float[][][] matrix = new float[dimensions[2]][dimensions[1]][dimensions[0]];
-		// IJ.log("dimensions z= " + dimensions[2] + " x= " + dimensions[1] + "
-		// y= " + dimensions[0]);
-		// IJ.log("dimensions z= " + matrix.length + " x= " + matrix[0].length +
-		// " y= " + matrix[0][0].length);
+		IJ.log("dimensions z= " + dimensions[2] + " x= " + dimensions[1] + " y= " + dimensions[0]);
+		IJ.log("dimensions z= " + matrix.length + " x= " + matrix[0].length + " y= " + matrix[0][0].length);
 
 		// Calibration cal8 = imp1.getCalibration();
 
@@ -401,14 +398,14 @@ public class ShrinkMask implements PlugIn {
 
 		if (mz) {
 			for (int x1 = 0; x1 < matrix1[0].length; x1++) {
-				for (int y1 = 0; y1 < matrix1[0].length; y1++) {
+				for (int y1 = 0; y1 < matrix1[0][0].length; y1++) {
 					// lavoro su x
-					float[] vectz = new float[matrix1[0].length];
-					for (int z1 = 0; z1 < matrix1[0].length; z1++) {
+					float[] vectz = new float[matrix1.length];
+					for (int z1 = 0; z1 < matrix1.length; z1++) {
 						vectz[z1] = matrix1[z1][x1][y1];
 					}
 					float[] out1 = scanVector(vectz, 300); // 300
-					for (int z1 = 0; z1 < matrix1[0].length; z1++) {
+					for (int z1 = 0; z1 < matrix1.length; z1++) {
 						matrix1[z1][x1][y1] = out1[z1];
 					}
 				}
