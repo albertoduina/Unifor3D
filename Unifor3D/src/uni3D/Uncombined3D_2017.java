@@ -104,8 +104,9 @@ public class Uncombined3D_2017 implements PlugIn {
 		ImagePlus impUncombined1 = null;
 		ImagePlus impUncombined2 = null;
 		ImagePlus impUncombined3 = null;
-		
-		ImagePlus impFiltrata =null;
+
+		ImagePlus impFiltrata = null;
+		ImagePlus impNormal = null;
 		String pathUncombined1 = null;
 		String pathUncombined2 = null;
 		String pathCombined = null;
@@ -308,9 +309,6 @@ public class Uncombined3D_2017 implements PlugIn {
 		if (sphereA == null)
 			fault = true;
 
-		
-		
-		
 		ImagePlus impMapR1 = null;
 		ImagePlus impMapG1 = null;
 		ImagePlus impMapB1 = null;
@@ -325,14 +323,12 @@ public class Uncombined3D_2017 implements PlugIn {
 		ImagePlus impMapR3 = null;
 		ImagePlus impMapG3 = null;
 		ImagePlus impMapB3 = null;
-		
-		
+
 		ImagePlus impMapR4 = null;
 		ImagePlus impMapG4 = null;
 		ImagePlus impMapB4 = null;
 		ImagePlus impMapRGB4 = null;
 		ImageStack stackRGB4 = null;
-
 
 		int width = impCombined.getWidth();
 		int height = impCombined.getHeight();
@@ -358,9 +354,7 @@ public class Uncombined3D_2017 implements PlugIn {
 			impMapR3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR3");
 			impMapG3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG3");
 			impMapB3 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB3");
-			
 
-			
 			generate = false;
 		}
 
@@ -389,15 +383,13 @@ public class Uncombined3D_2017 implements PlugIn {
 		impCombined.repaintWindow();
 		while (count0 < num1) {
 			long time1 = System.nanoTime();
-			
+
 			impMapR4 = MySphere.generaMappazzaVuota16(width, height, depth, "mapR4");
 			impMapG4 = MySphere.generaMappazzaVuota16(width, height, depth, "mapG4");
 			impMapB4 = MySphere.generaMappazzaVuota16(width, height, depth, "mapB4");
 			stackRGB4 = ImageStack.create(width, height, depth, bitdepth);
 			impMapRGB4 = new ImagePlus("mapRGB4", stackRGB4);
 
-			
-			
 			int[] vetClassi = null;
 			int[] vetClassi3 = null;
 			int[] vetTotClassi = new int[livelli3 + 1];
@@ -416,14 +408,13 @@ public class Uncombined3D_2017 implements PlugIn {
 				MyLog.waitHere("uncombined2==null");
 			String t1 = impUncombined2.getTitle();
 
-			
 			impUncombined3 = UtilAyv.openImageNoDisplay(pathUncombined1, false);
 			impFiltrata = MySphere.clearOutsideSphere(impUncombined3, sphereA);
 			impFiltrata.show();
-			MyLog.waitHere();
-			
-			
-			
+
+			impNormal = MySphere.stackNormalize8bit(impUncombined3);
+			impNormal.show();
+
 			// =========================================================
 			// Utilizzando le coordinate sfera trovate sulla immagine combinata
 			// estraggo le tre proiezioni di ognuno dei due stack
@@ -646,13 +637,11 @@ public class Uncombined3D_2017 implements PlugIn {
 				impMapR2.show();
 				impMapG2.show();
 				impMapB2.show();
-				
-				
+
 				impMapR4.show();
 				impMapG4.show();
 				impMapB4.show();
-				
-				
+
 				// impUncombined1.show();
 				// =========================
 				// SFERA ESTERNA GRIGIA
@@ -666,12 +655,10 @@ public class Uncombined3D_2017 implements PlugIn {
 				MySphere.addSphere(impMapR2, impMapG2, impMapB2, sphereA, bounds, colorRGB44, surfaceonly);
 				MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
 				impMapRGB2.show();
-				
-				
+
 				MySphere.addSphere(impMapR4, impMapG4, impMapB4, sphereA, bounds, colorRGB44, surfaceonly);
 				MySphere.compilaMappazzaCombinata(impMapR4, impMapG4, impMapB4, impMapRGB4, algoColor);
 				impMapRGB4.show();
-
 
 				debuglevel = 0;
 				for (int i1 = 0; i1 < depth; i1++) {
@@ -684,8 +671,8 @@ public class Uncombined3D_2017 implements PlugIn {
 					circle[2] = diam1;
 					vetClassi = MySphere.simulataGrigio16(sMROI, imp20, circle, impMapR2, impMapG2, impMapB2, slice,
 							livelli, minimi, massimi, colorCoil, puntatore, debuglevel, sphereC);
-					MySphere.simulataGrigio16(sMROI, imp20, circle, impMapR4, impMapG4, impMapB4, slice,
-							livelli, minimi, massimi, colorCoil, puntatore, debuglevel, sphereC);
+					MySphere.simulataGrigio16(sMROI, imp20, circle, impMapR4, impMapG4, impMapB4, slice, livelli,
+							minimi, massimi, colorCoil, puntatore, debuglevel, sphereC);
 					debuglevel = 0;
 
 					// vetClassi = MySphere.simulataGrigio16(sMROI, imp20,
@@ -699,7 +686,7 @@ public class Uncombined3D_2017 implements PlugIn {
 					impMapG2.updateAndDraw();
 					impMapB2.updateAndDraw();
 					MySphere.compilaMappazzaCombinata(impMapR2, impMapG2, impMapB2, impMapRGB2, algoColor);
-					
+
 					impMapR4.updateAndDraw();
 					impMapG4.updateAndDraw();
 					impMapB4.updateAndDraw();
@@ -1235,6 +1222,8 @@ public class Uncombined3D_2017 implements PlugIn {
 			IJ.saveAsTiff(impMapRGB1, dir0 + "\\risultati\\MapRGB1");
 			IJ.saveAsTiff(impMapRGB2, dir0 + "\\risultati\\MapRGB2");
 			IJ.saveAsTiff(impMapRGB4, dir0 + "\\risultati\\MapRGB4" + subCoil);
+			IJ.saveAsTiff(impFiltrata, dir0 + "\\risultati\\Filtrata" + subCoil);
+			IJ.saveAsTiff(impNormal, dir0 + "\\risultati\\Normal" + subCoil);
 
 			//
 			// ImageWindow iw1 = impUncombined1.getWindow();
@@ -2217,7 +2206,5 @@ public class Uncombined3D_2017 implements PlugIn {
 		}
 		return (profi1);
 	}
-	
-	
 
 } // ultima
